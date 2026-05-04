@@ -6,6 +6,7 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { getThemeServerFn } from "#/lib/theme.ts";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -34,12 +35,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
+	beforeLoad: async () => ({
+		theme: await getThemeServerFn(),
+	}),
 	shellComponent: RootDocument,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	const { theme } = Route.useRouteContext();
 	return (
-		<html lang="en">
+		<html lang="en" className={theme}>
 			<head>
 				<HeadContent />
 			</head>
