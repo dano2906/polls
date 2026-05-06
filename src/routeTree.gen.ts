@@ -10,11 +10,41 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSubmissionIndexRouteImport } from './routes/api/submission/index'
+import { Route as ApiQuestionIndexRouteImport } from './routes/api/question/index'
+import { Route as ApiPollIndexRouteImport } from './routes/api/poll/index'
+import { Route as ApiAnswerIndexRouteImport } from './routes/api/answer/index'
+import { Route as ApiPollIdRouteImport } from './routes/api/poll/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSubmissionIndexRoute = ApiSubmissionIndexRouteImport.update({
+  id: '/api/submission/',
+  path: '/api/submission/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiQuestionIndexRoute = ApiQuestionIndexRouteImport.update({
+  id: '/api/question/',
+  path: '/api/question/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPollIndexRoute = ApiPollIndexRouteImport.update({
+  id: '/api/poll/',
+  path: '/api/poll/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAnswerIndexRoute = ApiAnswerIndexRouteImport.update({
+  id: '/api/answer/',
+  path: '/api/answer/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPollIdRoute = ApiPollIdRouteImport.update({
+  id: '/api/poll/$id',
+  path: '/api/poll/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -26,27 +56,69 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/poll/$id': typeof ApiPollIdRoute
+  '/api/answer/': typeof ApiAnswerIndexRoute
+  '/api/poll/': typeof ApiPollIndexRoute
+  '/api/question/': typeof ApiQuestionIndexRoute
+  '/api/submission/': typeof ApiSubmissionIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/poll/$id': typeof ApiPollIdRoute
+  '/api/answer': typeof ApiAnswerIndexRoute
+  '/api/poll': typeof ApiPollIndexRoute
+  '/api/question': typeof ApiQuestionIndexRoute
+  '/api/submission': typeof ApiSubmissionIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/poll/$id': typeof ApiPollIdRoute
+  '/api/answer/': typeof ApiAnswerIndexRoute
+  '/api/poll/': typeof ApiPollIndexRoute
+  '/api/question/': typeof ApiQuestionIndexRoute
+  '/api/submission/': typeof ApiSubmissionIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/api/auth/$'
+    | '/api/poll/$id'
+    | '/api/answer/'
+    | '/api/poll/'
+    | '/api/question/'
+    | '/api/submission/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/auth/$'
-  id: '__root__' | '/' | '/api/auth/$'
+  to:
+    | '/'
+    | '/api/auth/$'
+    | '/api/poll/$id'
+    | '/api/answer'
+    | '/api/poll'
+    | '/api/question'
+    | '/api/submission'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/auth/$'
+    | '/api/poll/$id'
+    | '/api/answer/'
+    | '/api/poll/'
+    | '/api/question/'
+    | '/api/submission/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPollIdRoute: typeof ApiPollIdRoute
+  ApiAnswerIndexRoute: typeof ApiAnswerIndexRoute
+  ApiPollIndexRoute: typeof ApiPollIndexRoute
+  ApiQuestionIndexRoute: typeof ApiQuestionIndexRoute
+  ApiSubmissionIndexRoute: typeof ApiSubmissionIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +128,41 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/submission/': {
+      id: '/api/submission/'
+      path: '/api/submission'
+      fullPath: '/api/submission/'
+      preLoaderRoute: typeof ApiSubmissionIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/question/': {
+      id: '/api/question/'
+      path: '/api/question'
+      fullPath: '/api/question/'
+      preLoaderRoute: typeof ApiQuestionIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/poll/': {
+      id: '/api/poll/'
+      path: '/api/poll'
+      fullPath: '/api/poll/'
+      preLoaderRoute: typeof ApiPollIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/answer/': {
+      id: '/api/answer/'
+      path: '/api/answer'
+      fullPath: '/api/answer/'
+      preLoaderRoute: typeof ApiAnswerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/poll/$id': {
+      id: '/api/poll/$id'
+      path: '/api/poll/$id'
+      fullPath: '/api/poll/$id'
+      preLoaderRoute: typeof ApiPollIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -71,6 +178,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPollIdRoute: ApiPollIdRoute,
+  ApiAnswerIndexRoute: ApiAnswerIndexRoute,
+  ApiPollIndexRoute: ApiPollIndexRoute,
+  ApiQuestionIndexRoute: ApiQuestionIndexRoute,
+  ApiSubmissionIndexRoute: ApiSubmissionIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
