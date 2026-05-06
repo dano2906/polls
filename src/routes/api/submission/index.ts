@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { db } from "#/db/index.ts";
+import type { NewSubmission } from "#/shared/types";
 import type { UserAnswer } from "#/shared/types.js";
-import type { NewSubmission } from "#/shared/validation.ts";
 import { submission, userAnswer } from "@/db/schema";
 
 export const Route = createFileRoute("/api/submission/")({
