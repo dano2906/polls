@@ -1,7 +1,7 @@
 import { useRouteContext, useRouter } from "@tanstack/react-router";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { setThemeServerFn } from "#/lib/theme.ts";
-import { Button } from "../button";
+import { Button } from "../ui/button";
 
 const ThemeToggle = () => {
 	const { theme } = useRouteContext({ from: "__root__" });

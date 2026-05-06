@@ -1,0 +1,55 @@
+import {
+	createFileRoute,
+	isRedirect,
+	Outlet,
+	redirect,
+} from "@tanstack/react-router";
+import type { User } from "better-auth";
+import DashboardAside from "#/components/partials/dashboard-aside.tsx";
+import { ensureSession, getSession } from "#/lib/auth-functions.ts";
+
+export const Route = createFileRoute("/_protected")({
+	component: RouteComponent,
+	beforeLoad: async ({ location }) => {
+		try {
+			const user = await getSession(); // might throw on network error
+			if (!user) {
+				throw redirect({
+					to: "/",
+					search: { redirect: location.href },
+				});
+			}
+			return { user };
+		} catch (error) {
+			// Re-throw redirects (they're intentional, not errors)
+			if (isRedirect(error)) throw error;
+
+			// Auth check failed (network error, etc.) - redirect to login
+			throw redirect({
+				to: "/",
+				search: { redirect: location.href },
+			});
+		}
+	},
+	loader: {
+		handler: async () => {
+			const session = await ensureSession();
+			return {
+				user: session.user as User,
+			};
+		},
+	},
+});
+
+function RouteComponent() {
+	const { user } = Route.useLoaderData();
+	return (
+		<div className="bg-background text-foreground relative w-full min-h-screen">
+			<main className="max-w-6xl mx-auto py-6 px-2">
+				<h1>Probando</h1>
+				<Outlet />
+			</main>
+			<DashboardAside user={user} />
+		</div>
+	);
+}
