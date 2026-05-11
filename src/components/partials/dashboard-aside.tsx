@@ -29,7 +29,7 @@ const DashboardAside = ({ user }: DashboardAsideProps) => {
 	}
 
 	return (
-		<aside className="absolute top-8 right-6 space-y-5">
+		<aside className="hidden md:block absolute top-8 right-6 space-y-5">
 			<div className="w-full flex items-center justify-end gap-2">
 				<div className="w-full flex flex-col items-end justify-center gap-0.5">
 					<span className="text-base font-sg font-semibold">{user.name}</span>

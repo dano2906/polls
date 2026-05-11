@@ -45,8 +45,7 @@ function RouteComponent() {
 	const { user } = Route.useLoaderData();
 	return (
 		<div className="bg-background text-foreground relative w-full min-h-screen">
-			<main className="max-w-6xl mx-auto py-6 px-2">
-				<h1>Probando</h1>
+			<main className="w-full max-w-md sm:max-lg md:max-w-xl xl:max-w-4xl mx-auto py-6 px-2">
 				<Outlet />
 			</main>
 			<DashboardAside user={user} />
