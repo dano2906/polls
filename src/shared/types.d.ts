@@ -6,6 +6,7 @@ import type {
 	createPollInput,
 	createQuestionInput,
 	createSubmissionInput,
+	questionsBatchSchema,
 	selectAnswerOutput,
 	selectPollOutput,
 	selectQuestionOutput,
@@ -17,6 +18,7 @@ export type NewPollInput = z.infer<typeof createPollInput>;
 
 export type Question = z.infer<typeof selectQuestionOutput>;
 export type NewQuestion = z.infer<typeof createQuestionInput>;
+export type NewQuestionBatch = z.infer<typeof questionsBatchSchema>;
 
 export type Answer = z.infer<typeof selectAnswerOutput>;
 export type NewAswer = z.infer<typeof createAnswerInput>;

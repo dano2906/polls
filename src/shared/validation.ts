@@ -35,8 +35,29 @@ export const createPollInput = z
 			path: ["slug"],
 		},
 	);
+export const createQuestionInput = z
+	.object({
+		type: z.enum(["single_choice", "multiple_choice"]),
+		text: z.string().max(500),
+		hasCorrectAnswer: z.boolean(),
+		config: z.object({
+			maxSelections: z.number().optional(),
+			isRequired: z.boolean().optional(),
+		}),
+	})
+	.refine((data) => {
+		if (
+			data.type === "single_choice" &&
+			data.config.maxSelections &&
+			data.config.maxSelections > 1
+		)
+			return false;
+		else return true;
+	});
+export const questionsBatchSchema = z.object({
+	questions: z.array(createQuestionInput),
+});
 export const selectPollOutput = createSelectSchema(poll);
-export const createQuestionInput = createInsertSchema(question);
 export const selectQuestionOutput = createSelectSchema(question);
 export const createAnswerInput = createInsertSchema(answer);
 export const selectAnswerOutput = createSelectSchema(answer);

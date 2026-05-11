@@ -128,7 +128,6 @@ export const question = sqliteTable("question", {
 		mode: "boolean",
 	}).default(false),
 	config: text("config", { mode: "json" }).$type<{
-		placeholder?: string;
 		maxSelections?: number;
 		isRequired?: boolean;
 	}>(),
