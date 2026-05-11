@@ -97,14 +97,14 @@ export const poll = sqliteTable("poll", {
 		.references(() => user.id, { onDelete: "cascade" }),
 	name: text("name").notNull(),
 	description: text("description"),
-	slug: text("slug").unique().notNull(),
+	slug: text("slug").unique(),
 	status: text("status", { enum: ["draft", "published", "archived"] }).default(
 		"draft",
 	),
 	version: integer("version").default(1),
-	startDate: integer("start_date", { mode: "timestamp" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
+	startDate: integer("start_date", { mode: "timestamp" })
+		.default(sql`CURRENT_TIMESTAMP`)
+		.notNull(),
 	endDate: integer("end_date", { mode: "timestamp" }),
 	createdAt: integer("created_at", { mode: "timestamp" }).default(
 		sql`CURRENT_TIMESTAMP`,

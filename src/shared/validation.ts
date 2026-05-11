@@ -1,30 +1,44 @@
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { answer, poll, question, submission } from "#/db/schema";
 
-extendZodWithOpenApi(z);
-export const createPollInput = createInsertSchema(poll).openapi({
-	title: "Crear encuestas",
-});
-export const selectPollOutput = createSelectSchema(poll).openapi({
-	title: "Listar encuestas",
-});
-export const createQuestionInput = createInsertSchema(question).openapi({
-	title: "Crear preguntas",
-});
-export const selectQuestionOutput = createSelectSchema(question).openapi({
-	title: "Listar preguntas",
-});
-export const createAnswerInput = createInsertSchema(answer).openapi({
-	title: "Crear respuesta",
-});
-export const selectAnswerOutput = createSelectSchema(answer).openapi({
-	title: "Listar respuesta",
-});
-export const createSubmissionInput = createInsertSchema(submission).openapi({
-	title: "Crear completamiento de encuesta",
-});
-export const selectSubmissionOutput = createSelectSchema(submission).openapi({
-	title: "Listar completamientos de encuesta",
-});
+export const createPollInput = z
+	.object({
+		name: z
+			.string()
+			.min(2, { message: "Debe tener mínimo 2 caracteres" })
+			.max(32, { message: "Debe tener máximo 32 caracteres" }),
+		slug: z.string().optional(),
+		startDate: z.date(),
+		endDate: z.date().optional(),
+		description: z.string().max(200).optional(),
+		status: z.enum(["draft", "published", "archived"]).optional(),
+		userId: z.string(),
+	})
+	.refine(
+		(data) => {
+			if (!data.endDate) return true;
+			return data.endDate >= (data.startDate as Date);
+		},
+		{
+			message: "La fecha de fin no puede ser anterior a la de inicio",
+			path: ["endDate"],
+		},
+	)
+	.refine(
+		(data) => {
+			if (!data.slug) return true;
+			return data.slug.length < 6;
+		},
+		{
+			message: "El slug debe 6 caracteres alfanuméricos.",
+			path: ["slug"],
+		},
+	);
+export const selectPollOutput = createSelectSchema(poll);
+export const createQuestionInput = createInsertSchema(question);
+export const selectQuestionOutput = createSelectSchema(question);
+export const createAnswerInput = createInsertSchema(answer);
+export const selectAnswerOutput = createSelectSchema(answer);
+export const createSubmissionInput = createInsertSchema(submission);
+export const selectSubmissionOutput = createSelectSchema(submission);
