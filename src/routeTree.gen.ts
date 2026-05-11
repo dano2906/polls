@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
+import { Route as ProtectedPollUpdateSlugRouteImport } from './routes/_protected/poll/update.$slug'
 
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
@@ -39,18 +40,25 @@ const ProtectedPollNewRoute = ProtectedPollNewRouteImport.update({
   path: '/poll/new',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedPollUpdateSlugRoute = ProtectedPollUpdateSlugRouteImport.update({
+  id: '/poll/update/$slug',
+  path: '/poll/update/$slug',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +67,18 @@ export interface FileRoutesById {
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_protected/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_protected/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/poll/new' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/poll/new'
+    | '/api/auth/$'
+    | '/poll/update/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/poll/new' | '/api/auth/$'
+  to: '/' | '/dashboard' | '/poll/new' | '/api/auth/$' | '/poll/update/$slug'
   id:
     | '__root__'
     | '/'
@@ -72,6 +86,7 @@ export interface FileRouteTypes {
     | '/_protected/dashboard'
     | '/_protected/poll/new'
     | '/api/auth/$'
+    | '/_protected/poll/update/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,17 +132,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPollNewRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/poll/update/$slug': {
+      id: '/_protected/poll/update/$slug'
+      path: '/poll/update/$slug'
+      fullPath: '/poll/update/$slug'
+      preLoaderRoute: typeof ProtectedPollUpdateSlugRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
   }
 }
 
 interface ProtectedRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
   ProtectedPollNewRoute: typeof ProtectedPollNewRoute
+  ProtectedPollUpdateSlugRoute: typeof ProtectedPollUpdateSlugRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
   ProtectedPollNewRoute: ProtectedPollNewRoute,
+  ProtectedPollUpdateSlugRoute: ProtectedPollUpdateSlugRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

@@ -1,3 +1,5 @@
+
+import { ListUserPolls } from "#/components/partials/list-user-polls";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_protected/dashboard")({
@@ -5,5 +7,9 @@ export const Route = createFileRoute("/_protected/dashboard")({
 });
 
 function RouteComponent() {
-	return <div>Hello "/dashboard/"!</div>;
+	return (
+		<main>
+			<ListUserPolls />
+		</main>
+	)
 }

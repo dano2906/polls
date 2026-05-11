@@ -4,7 +4,6 @@ import {
 	Outlet,
 	redirect,
 } from "@tanstack/react-router";
-import type { User } from "better-auth";
 import DashboardAside from "#/components/partials/dashboard-aside.tsx";
 import { ensureSession, getSession } from "#/lib/auth-functions.ts";
 
@@ -35,20 +34,20 @@ export const Route = createFileRoute("/_protected")({
 		handler: async () => {
 			const session = await ensureSession();
 			return {
-				user: session.user as User,
+				session,
 			};
 		},
 	},
 });
 
 function RouteComponent() {
-	const { user } = Route.useLoaderData();
+	const { session } = Route.useLoaderData();
 	return (
 		<div className="bg-background text-foreground relative w-full min-h-screen">
 			<main className="w-full max-w-md sm:max-lg md:max-w-xl xl:max-w-4xl mx-auto py-6 px-2">
 				<Outlet />
 			</main>
-			<DashboardAside user={user} />
+			<DashboardAside user={session.user} />
 		</div>
 	);
 }
