@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Dispatch, SetStateAction } from "react";
 import { createPoll } from "#/actions/poll";
 import type { NewPollInput } from "#/shared/types.d.ts";
@@ -14,6 +14,7 @@ interface Props {
 }
 
 const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
+	const qc = useQueryClient()
 	const defaultPollValues: NewPollInput = {
 		name: "",
 		slug: undefined,
@@ -26,6 +27,13 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 	const createPollMutation = useMutation({
 		mutationKey: ["create", "poll"],
 		mutationFn: async (values: NewPollInput) => createPoll({ data: values }),
+		onSuccess: async (data) => {
+			onCreatePoll(data?.id as string)
+			form.reset()
+			await qc.invalidateQueries({
+				queryKey: ['list','poll',userId]
+			})
+		}
 	});
 	const form = useForm({
 		defaultValues: defaultPollValues,
@@ -33,11 +41,7 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 			onChange: createPollInput,
 		},
 		onSubmit: async ({ value }) => {
-			const newPoll = await createPollMutation.mutateAsync(value);
-			if (newPoll) {
-				onCreatePoll(newPoll.id);
-				form.reset();
-			}
+			await createPollMutation.mutateAsync(value);
 		},
 	});
 

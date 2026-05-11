@@ -7,5 +7,5 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const generateRandomCode = (): string => {
-	return Math.random().toString(36).substring(2, 8).toUpperCase();
+	return Math.random().toString(36).substring(2, 8).toLowerCase();
 };

@@ -7,7 +7,7 @@ export const createPollInput = z
 		name: z
 			.string()
 			.min(2, { message: "Debe tener mínimo 2 caracteres" })
-			.max(32, { message: "Debe tener máximo 32 caracteres" }),
+			.max(200, { message: "Debe tener máximo 32 caracteres" }),
 		slug: z.string().optional(),
 		startDate: z.date(),
 		endDate: z.date().optional(),
