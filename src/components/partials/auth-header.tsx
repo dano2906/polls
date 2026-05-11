@@ -5,7 +5,7 @@ import { GithubLight } from "#/components/ui/svgs/githubLight.tsx";
 import { Google } from "#/components/ui/svgs/google";
 import { authClient } from "#/lib/auth-client";
 
-export default function BetterAuthHeader() {
+export default function AuthHeader() {
 	const { data: session, isPending } = authClient.useSession();
 	const { theme } = useRouteContext({ from: "__root__" });
 	const router = useRouter();

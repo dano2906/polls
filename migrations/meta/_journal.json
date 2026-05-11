@@ -15,6 +15,13 @@
       "when": 1778080327081,
       "tag": "0001_amazing_green_goblin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778507658704,
+      "tag": "0002_shiny_jazinda",
+      "breakpoints": true
     }
   ]
 }

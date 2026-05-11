@@ -11,14 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DocsIndexRouteImport } from './routes/docs/index'
-import { Route as ApiOpenapiRouteImport } from './routes/api/openapi'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
-import { Route as ApiSubmissionIndexRouteImport } from './routes/api/submission/index'
-import { Route as ApiQuestionIndexRouteImport } from './routes/api/question/index'
-import { Route as ApiPollIndexRouteImport } from './routes/api/poll/index'
-import { Route as ApiAnswerIndexRouteImport } from './routes/api/answer/index'
-import { Route as ApiPollIdRouteImport } from './routes/api/poll/$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
 
@@ -31,45 +24,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DocsIndexRoute = DocsIndexRouteImport.update({
-  id: '/docs/',
-  path: '/docs/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiOpenapiRoute = ApiOpenapiRouteImport.update({
-  id: '/api/openapi',
-  path: '/api/openapi',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => ProtectedRoute,
-} as any)
-const ApiSubmissionIndexRoute = ApiSubmissionIndexRouteImport.update({
-  id: '/api/submission/',
-  path: '/api/submission/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiQuestionIndexRoute = ApiQuestionIndexRouteImport.update({
-  id: '/api/question/',
-  path: '/api/question/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPollIndexRoute = ApiPollIndexRouteImport.update({
-  id: '/api/poll/',
-  path: '/api/poll/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAnswerIndexRoute = ApiAnswerIndexRouteImport.update({
-  id: '/api/answer/',
-  path: '/api/answer/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPollIdRoute = ApiPollIdRouteImport.update({
-  id: '/api/poll/$id',
-  path: '/api/poll/$id',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -85,98 +43,41 @@ const ProtectedPollNewRoute = ProtectedPollNewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof ProtectedDashboardRoute
-  '/api/openapi': typeof ApiOpenapiRoute
-  '/docs/': typeof DocsIndexRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/poll/$id': typeof ApiPollIdRoute
-  '/api/answer/': typeof ApiAnswerIndexRoute
-  '/api/poll/': typeof ApiPollIndexRoute
-  '/api/question/': typeof ApiQuestionIndexRoute
-  '/api/submission/': typeof ApiSubmissionIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof ProtectedDashboardRoute
-  '/api/openapi': typeof ApiOpenapiRoute
-  '/docs': typeof DocsIndexRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/poll/$id': typeof ApiPollIdRoute
-  '/api/answer': typeof ApiAnswerIndexRoute
-  '/api/poll': typeof ApiPollIndexRoute
-  '/api/question': typeof ApiQuestionIndexRoute
-  '/api/submission': typeof ApiSubmissionIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_protected': typeof ProtectedRouteWithChildren
   '/_protected/dashboard': typeof ProtectedDashboardRoute
-  '/api/openapi': typeof ApiOpenapiRoute
-  '/docs/': typeof DocsIndexRoute
   '/_protected/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/poll/$id': typeof ApiPollIdRoute
-  '/api/answer/': typeof ApiAnswerIndexRoute
-  '/api/poll/': typeof ApiPollIndexRoute
-  '/api/question/': typeof ApiQuestionIndexRoute
-  '/api/submission/': typeof ApiSubmissionIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/dashboard'
-    | '/api/openapi'
-    | '/docs/'
-    | '/poll/new'
-    | '/api/auth/$'
-    | '/api/poll/$id'
-    | '/api/answer/'
-    | '/api/poll/'
-    | '/api/question/'
-    | '/api/submission/'
+  fullPaths: '/' | '/dashboard' | '/poll/new' | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/dashboard'
-    | '/api/openapi'
-    | '/docs'
-    | '/poll/new'
-    | '/api/auth/$'
-    | '/api/poll/$id'
-    | '/api/answer'
-    | '/api/poll'
-    | '/api/question'
-    | '/api/submission'
+  to: '/' | '/dashboard' | '/poll/new' | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/_protected'
     | '/_protected/dashboard'
-    | '/api/openapi'
-    | '/docs/'
     | '/_protected/poll/new'
     | '/api/auth/$'
-    | '/api/poll/$id'
-    | '/api/answer/'
-    | '/api/poll/'
-    | '/api/question/'
-    | '/api/submission/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
-  ApiOpenapiRoute: typeof ApiOpenapiRoute
-  DocsIndexRoute: typeof DocsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiPollIdRoute: typeof ApiPollIdRoute
-  ApiAnswerIndexRoute: typeof ApiAnswerIndexRoute
-  ApiPollIndexRoute: typeof ApiPollIndexRoute
-  ApiQuestionIndexRoute: typeof ApiQuestionIndexRoute
-  ApiSubmissionIndexRoute: typeof ApiSubmissionIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -195,61 +96,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/docs/': {
-      id: '/docs/'
-      path: '/docs'
-      fullPath: '/docs/'
-      preLoaderRoute: typeof DocsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/openapi': {
-      id: '/api/openapi'
-      path: '/api/openapi'
-      fullPath: '/api/openapi'
-      preLoaderRoute: typeof ApiOpenapiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_protected/dashboard': {
       id: '/_protected/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof ProtectedDashboardRouteImport
       parentRoute: typeof ProtectedRoute
-    }
-    '/api/submission/': {
-      id: '/api/submission/'
-      path: '/api/submission'
-      fullPath: '/api/submission/'
-      preLoaderRoute: typeof ApiSubmissionIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/question/': {
-      id: '/api/question/'
-      path: '/api/question'
-      fullPath: '/api/question/'
-      preLoaderRoute: typeof ApiQuestionIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/poll/': {
-      id: '/api/poll/'
-      path: '/api/poll'
-      fullPath: '/api/poll/'
-      preLoaderRoute: typeof ApiPollIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/answer/': {
-      id: '/api/answer/'
-      path: '/api/answer'
-      fullPath: '/api/answer/'
-      preLoaderRoute: typeof ApiAnswerIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/poll/$id': {
-      id: '/api/poll/$id'
-      path: '/api/poll/$id'
-      fullPath: '/api/poll/$id'
-      preLoaderRoute: typeof ApiPollIdRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -285,14 +137,7 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
-  ApiOpenapiRoute: ApiOpenapiRoute,
-  DocsIndexRoute: DocsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiPollIdRoute: ApiPollIdRoute,
-  ApiAnswerIndexRoute: ApiAnswerIndexRoute,
-  ApiPollIndexRoute: ApiPollIndexRoute,
-  ApiQuestionIndexRoute: ApiQuestionIndexRoute,
-  ApiSubmissionIndexRoute: ApiSubmissionIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
