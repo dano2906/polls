@@ -35,31 +35,43 @@ export const createPollInput = z
 			path: ["slug"],
 		},
 	);
+export const createAnswerInput = z.object({
+	answerText: z
+		.string()
+		.min(1, { message: "Este campo es requerido" })
+		.max(500, { message: "Debe tener máximo 500 caracteres" }),
+	isCorrect: z.boolean().default(false),
+});
 export const createQuestionInput = z
 	.object({
 		type: z.enum(["single_choice", "multiple_choice"]),
-		text: z.string().max(500),
+		questionText: z.string().max(500),
 		hasCorrectAnswer: z.boolean(),
-		config: z.object({
-			maxSelections: z.number().optional(),
-			isRequired: z.boolean().optional(),
-		}),
+		maxSelections: z.number().default(1).optional(),
+		isRequired: z.boolean().optional(),
+		answers: z.array(createAnswerInput),
 	})
 	.refine((data) => {
 		if (
 			data.type === "single_choice" &&
-			data.config.maxSelections &&
-			data.config.maxSelections > 1
+			data.maxSelections &&
+			data.maxSelections > 1
 		)
 			return false;
 		else return true;
 	});
-export const questionsBatchSchema = z.object({
-	questions: z.array(createQuestionInput),
-});
+export const questionsBatchSchema = z
+	.object({
+		questions: z.array(createQuestionInput),
+		pollId: z.string(),
+	})
+	.refine((data) => {
+		if (data.questions.length === 0 || !data.pollId) return false;
+		return true;
+	});
 export const selectPollOutput = createSelectSchema(poll);
 export const selectQuestionOutput = createSelectSchema(question);
-export const createAnswerInput = createInsertSchema(answer);
+
 export const selectAnswerOutput = createSelectSchema(answer);
 export const createSubmissionInput = createInsertSchema(submission);
 export const selectSubmissionOutput = createSelectSchema(submission);

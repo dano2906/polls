@@ -1,7 +1,8 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { useForm } from "@tanstack/react-form-start";
 import { useMutation } from "@tanstack/react-query";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Save, Trash } from "lucide-react";
+import { toast } from "sonner";
 import { createQuestions } from "#/actions/question";
 import type { NewQuestionBatch } from "#/shared/types";
 import { questionsBatchSchema } from "#/shared/validation";
@@ -13,11 +14,12 @@ import {
 	CardFooter,
 	CardTitle,
 } from "../ui/card";
+import { FieldSet } from "../ui/field";
 import { LoadingSwap } from "../ui/loading-swap";
 import FormField, { FieldType } from "./form-field";
 
 interface Props {
-	pollId: string | null;
+	pollId: string;
 }
 
 const CreateQuestionForm = ({ pollId }: Props) => {
@@ -25,21 +27,34 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 		questions: [
 			{
 				type: "single_choice",
-				text: "",
+				questionText: "",
 				hasCorrectAnswer: false,
-				config: { isRequired: true, maxSelections: 1 },
+				isRequired: false,
+				maxSelections: 1,
+				answers: [
+					{
+						answerText: "",
+						isCorrect: false,
+					},
+				],
 			},
 		],
+		pollId,
 	};
 	const createQuestionsMutation = useMutation({
 		mutationKey: ["create", "question"],
 		mutationFn: async (values: NewQuestionBatch) =>
 			await createQuestions({ data: values }),
+		onSuccess: () => {
+			toast.success(
+				"Se han guardado las preguntas y las respuestas correctamente.",
+			);
+		},
 	});
 	const form = useForm({
 		defaultValues,
 		validators: {
-			onChange: questionsBatchSchema,
+			onSubmit: questionsBatchSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await createQuestionsMutation.mutateAsync(value);
@@ -51,6 +66,7 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 				e.preventDefault();
 				e.stopPropagation();
 			}}
+			className={!pollId ? "opacity-70 cursor-not-allowed" : "opacity-100"}
 		>
 			<form.Subscribe
 				selector={(state) => [
@@ -60,7 +76,7 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 				]}
 				// biome-ignore lint/correctness/noChildrenProp: <explanation>
 				children={([canSubmit]) => (
-					<fieldset className="space-y-4">
+					<FieldSet disabled={!pollId} className="space-y-4">
 						<form.Field name="questions" mode="array">
 							{(field) => (
 								<div className="space-y-4">
@@ -73,7 +89,7 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 												Pregunta {i + 1}
 											</CardTitle>
 											<CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5">
-												<form.Field name={`questions[${i}].text`}>
+												<form.Field name={`questions[${i}].questionText`}>
 													{(subField) => (
 														<FormField
 															field={subField}
@@ -106,9 +122,7 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 													)}
 												</form.Field>
 
-												<form.Field
-													name={`questions[${i}].config.maxSelections`}
-												>
+												<form.Field name={`questions[${i}].maxSelections`}>
 													{(configSubField) => (
 														<FormField
 															field={configSubField}
@@ -127,7 +141,7 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 														/>
 													)}
 												</form.Field>
-												<form.Field name={`questions[${i}].config.isRequired`}>
+												<form.Field name={`questions[${i}].isRequired`}>
 													{(configSubField) => (
 														<FormField
 															field={configSubField}
@@ -137,9 +151,83 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 														/>
 													)}
 												</form.Field>
+
+												<form.Field
+													name={`questions[${i}].answers`}
+													mode="array"
+												>
+													{(answersField) => (
+														<div className="w-full col-span-2 p-2 border border-border border-dashed grid grid-cols-1 md:grid-cols-2 gap-2">
+															{answersField.state.value.map((_, ai) => (
+																<div
+																	key={`${i}-${ai}`}
+																	className="w-full grid grid-cols-1 gap-4 items-center bg-primary-foreground/15 p-4 rounded shadow"
+																>
+																	<CardTitle className="text-xl font-sg font-medium col-span-1">
+																		Respuesta {ai + 1}
+																	</CardTitle>
+																	<form.Field
+																		name={`questions[${i}].answers[${ai}].answerText`}
+																	>
+																		{(answerSubField) => (
+																			<FormField
+																				field={answerSubField}
+																				field_type={FieldType.INPUT_TEXT}
+																				label="Texto de la respuesta"
+																				requried
+																			/>
+																		)}
+																	</form.Field>
+																	<form.Field
+																		name={`questions[${i}].answers[${ai}].isCorrect`}
+																	>
+																		{(answerSubField) => (
+																			<FormField
+																				field={answerSubField}
+																				field_type={FieldType.CHECKBOX}
+																				label="¿Es una respuesta correcta?"
+																			/>
+																		)}
+																	</form.Field>
+																	<div className="w-full flex items-center justify-end gap-2 col-span-1">
+																		<Button
+																			type="button"
+																			variant="destructive"
+																			onClick={() =>
+																				answersField.removeValue(ai)
+																			}
+																			className="w-fit"
+																			disabled={
+																				answersField.state.value.length <= 1
+																			}
+																		>
+																			<Trash />
+																			Eliminar respuesta
+																		</Button>
+																	</div>
+																</div>
+															))}
+
+															<div className="w-full flex items-center justify-end gap-2 col-span-2">
+																<Button
+																	type="button"
+																	variant="outline"
+																	onClick={() =>
+																		answersField.pushValue({
+																			answerText: "",
+																			isCorrect: false,
+																		})
+																	}
+																>
+																	<Plus /> Agregar respuesta
+																</Button>
+															</div>
+														</div>
+													)}
+												</form.Field>
 											</CardContent>
 
-											<CardFooter className="col-span-2 flex items-center justify-end">
+											<CardFooter className="col-span-2 flex items-center justify-end gap-2">
 												<CardAction>
 													<Button
 														variant={"destructive"}
@@ -147,48 +235,54 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 														onClick={() => field.removeValue(i)}
 														disabled={field.state.value.length <= 1}
 													>
-														<Trash /> Eliminar
+														<Trash /> Eliminar pregunta
 													</Button>
 												</CardAction>
 											</CardFooter>
 										</Card>
 									))}
-									<div className="w-full flex justify-end">
+									<div className="w-full flex items-center justify-end gap-2">
 										<Button
 											type="button"
 											variant={"secondary"}
 											onClick={() =>
 												field.pushValue({
 													type: "single_choice",
-													text: "",
+													questionText: "",
 													hasCorrectAnswer: false,
-													config: {
-														isRequired: false,
-														maxSelections: 0,
-													},
+													isRequired: false,
+													maxSelections: 1,
+													answers: [
+														{
+															answerText: "",
+															isCorrect: false,
+														},
+													],
 												})
 											}
 										>
 											<Plus />
 											Agregar pregunta
 										</Button>
+										<Button
+											type="submit"
+											variant={"default"}
+											onClick={() => form.handleSubmit()}
+											disabled={!canSubmit}
+										>
+											<LoadingSwap
+												isLoading={createQuestionsMutation.isPending}
+												className="flex items-center gap-2"
+											>
+												<Save />
+												Guardar preguntas y respuestas
+											</LoadingSwap>
+										</Button>
 									</div>
 								</div>
 							)}
 						</form.Field>
-						<div className="w-full flex items-center justify-end gap-2">
-							<Button
-								type="submit"
-								variant={"default"}
-								onClick={() => form.handleSubmit()}
-								disabled={!canSubmit}
-							>
-								<LoadingSwap isLoading={createQuestionsMutation.isPending}>
-									Crear pregunta
-								</LoadingSwap>
-							</Button>
-						</div>
-					</fieldset>
+					</FieldSet>
 				)}
 			/>
 		</form>

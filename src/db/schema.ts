@@ -123,14 +123,14 @@ export const question = sqliteTable("question", {
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
 	type: text("type", { enum: ["single_choice", "multiple_choice"] }).notNull(),
-	text: text("question_text").notNull(),
+	questionText: text("question_text").notNull(),
 	hasCorrectAnswers: integer("has_correct_answers", {
 		mode: "boolean",
 	}).default(false),
-	config: text("config", { mode: "json" }).$type<{
-		maxSelections?: number;
-		isRequired?: boolean;
-	}>(),
+	maxSelections: integer("max_selections").default(1),
+	isRequired: integer("is_required", { mode: "boolean" })
+		.default(false)
+		.notNull(),
 	createdAt: integer("created_at", { mode: "timestamp" }).default(
 		sql`CURRENT_TIMESTAMP`,
 	),
@@ -153,10 +153,15 @@ export const answer = sqliteTable("answer", {
 	questionId: text("question_id")
 		.notNull()
 		.references(() => question.id),
-	text: text("option_text").notNull(),
-	isCorrect: integer("is_correct", { mode: "boolean" }).default(false),
+	answerText: text("answer_text").notNull(),
+	isCorrect: integer("is_correct", { mode: "boolean" })
+		.default(false)
+		.notNull(),
 	order: integer("order").default(0),
 	metadata: text("metadata", { mode: "json" }),
+	createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(
+		() => new Date(),
+	),
 });
 
 export const submission = sqliteTable("submission", {
