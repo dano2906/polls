@@ -26,3 +26,9 @@ export type NewAswer = z.infer<typeof createAnswerInput>;
 export type Submission = z.infer<typeof selectSubmissionOutput>;
 export type NewSubmission = z.infer<typeof createSubmissionInput>;
 export type UserAnswer = InferSelectModel<typeof userAnswer>;
+
+export enum Statuses {
+	DRAFT = "draft",
+	PUBLISHED = "published",
+	ARCHIVED = "archived",
+}

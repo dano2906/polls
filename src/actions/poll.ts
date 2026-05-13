@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
+import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { asc, eq } from "drizzle-orm";
 import { poll } from "#/db/schema.ts";
 import { generateRandomCode } from "#/lib/utils.ts";
-import { createPollInput } from "#/shared/validation.ts";
+import { createPollInput, editPollInput } from "#/shared/validation.ts";
 import { db } from "@/db";
 
 export const getUserPolls = createServerFn({ method: "GET" })
@@ -33,7 +34,7 @@ export const getUserPolls = createServerFn({ method: "GET" })
 export const getPollDetails = createServerFn({ method: "GET" })
 	.inputValidator((data: { slug: string }) => data)
 	.handler(async ({ data }) => {
-		return await db.query.poll.findFirst({
+		const poll = await db.query.poll.findFirst({
 			where: (poll, { eq }) => eq(poll.slug, data.slug),
 			columns: {
 				description: true,
@@ -51,17 +52,40 @@ export const getPollDetails = createServerFn({ method: "GET" })
 					with: {
 						question: {
 							with: {
-								answers: true,
+								answers: {
+									columns: {
+										metadata: false,
+									},
+								},
 							},
 						},
 					},
 				},
 			},
 		});
+		if (!poll) {
+			throw notFound();
+		}
+		const questions = poll.pollQuestions.map((item) => {
+			return {
+				order: item.order,
+				...item.question,
+			};
+		});
+		return {
+			name: poll.name,
+			description: poll.description,
+			startDate: poll.startDate,
+			endDate: poll.endDate,
+			status: poll.status,
+			version: poll.version,
+			metadata: undefined,
+			questions,
+		};
 	});
 
 export const createPoll = createServerFn({ method: "POST" })
-	.inputValidator((data) => createPollInput.parse(data))
+	.inputValidator(createPollInput)
 	.handler(async ({ data }) => {
 		try {
 			const newId = randomUUID();
@@ -80,5 +104,35 @@ export const createPoll = createServerFn({ method: "POST" })
 			}
 		} catch (error) {
 			console.log("error", error);
+		}
+	});
+
+export const updatePoll = createServerFn({ method: "POST" })
+	.inputValidator(({ slug, values }) => ({
+		slug,
+		updatedData: editPollInput.parse(values),
+	}))
+	.handler(async ({ data }) => {
+		try {
+			if (!data.slug) {
+				throw new Error("El slug es necesario para identificar la encuesta");
+			}
+			const res = await db
+				.update(poll)
+				.set({
+					...data.updatedData,
+					updatedAt: new Date(),
+				})
+				.where(eq(poll.slug, data.slug));
+
+			if (res) {
+				return {
+					success: true,
+					slug: data.slug,
+				};
+			}
+		} catch (error) {
+			console.error("Error al actualizar la encuesta:", error);
+			throw error;
 		}
 	});

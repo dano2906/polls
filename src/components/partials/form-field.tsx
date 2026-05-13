@@ -32,6 +32,7 @@ interface Props {
 	label: string;
 	input_classes?: ClassValue;
 	requried?: boolean;
+	disabled?: boolean;
 	placeholder?: string;
 	options?: {
 		value: string;
@@ -44,6 +45,7 @@ const RenderField = ({
 	field_type,
 	placeholder,
 	options,
+	disabled = false,
 }: Omit<Props, "label" | "input_classes">) => {
 	switch (field_type) {
 		case "input_text":
@@ -54,6 +56,7 @@ const RenderField = ({
 					value={field.state.value}
 					onChange={(e) => field.handleChange(e.target.value)}
 					placeholder={placeholder}
+					disabled={disabled}
 				/>
 			);
 		case "input_number":
@@ -63,6 +66,7 @@ const RenderField = ({
 					name={field.name}
 					value={field.state.value}
 					onChange={(e) => field.handleChange(e)}
+					disabled={disabled}
 				/>
 			);
 		case "textarea":
@@ -73,6 +77,7 @@ const RenderField = ({
 					value={field.state.value}
 					onChange={(e) => field.handleChange(e.target.value)}
 					placeholder={placeholder}
+					disabled={disabled}
 				/>
 			);
 		case "simple_date":
@@ -89,6 +94,7 @@ const RenderField = ({
 				<Checkbox
 					checked={field.state.value}
 					onCheckedChange={(e) => field.handleChange(e)}
+					disabled={disabled}
 				/>
 			);
 		case "select":
@@ -97,6 +103,7 @@ const RenderField = ({
 					name={field.name}
 					value={field.state.value}
 					onValueChange={(e) => field.handleChange(e)}
+					disabled={disabled}
 				>
 					<SelectTrigger className="w-full">
 						<SelectValue placeholder={placeholder} />
@@ -122,6 +129,7 @@ const RenderField = ({
 					value={field.state.value}
 					onChange={(e) => field.handleChange(e.target.value)}
 					placeholder={placeholder}
+					disabled={disabled}
 				/>
 			);
 	}
@@ -135,6 +143,7 @@ const FormField = ({
 	requried = false,
 	placeholder,
 	options,
+	disabled,
 }: Props) => {
 	if (field_type === FieldType.CHECKBOX) {
 		return (
@@ -145,6 +154,7 @@ const FormField = ({
 						field={field}
 						placeholder={placeholder}
 						options={options}
+						disabled={disabled}
 					/>
 					<FieldLabel htmlFor={field.name}>
 						{label} {requried && <span className="text-destructive">*</span>}
@@ -168,6 +178,7 @@ const FormField = ({
 					field={field}
 					placeholder={placeholder}
 					options={options}
+					disabled={disabled}
 				/>
 				{!field.state.meta.isValid && (
 					<em role="alert" className="text-xs text-destructive font-sg">
