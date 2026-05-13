@@ -19,7 +19,7 @@ import { LoadingSwap } from "../ui/loading-swap";
 import FormField, { FieldType } from "./form-field";
 
 interface Props {
-	pollId: string;
+	pollId: string | null;
 }
 
 const CreateQuestionForm = ({ pollId }: Props) => {

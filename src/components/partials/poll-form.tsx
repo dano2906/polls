@@ -1,45 +1,65 @@
 import { useForm } from "@tanstack/react-form-start";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
-import { createPoll } from "#/actions/poll";
-import type { NewPollInput } from "#/shared/types.d.ts";
-import { createPollInput } from "#/shared/validation.ts";
+import { createPoll, updatePoll } from "#/actions/poll";
+import type { NewPollInput, Poll } from "#/shared/types.d.ts";
+import { createPollInput, editPollInput } from "#/shared/validation.ts";
 import { Button } from "../ui/button";
 import { LoadingSwap } from "../ui/loading-swap";
+import { ChangePollStatus } from "./change-poll-status";
 import FormField, { FieldType } from "./form-field";
 
 interface Props {
 	userId: string;
-	onCreatePoll: Dispatch<SetStateAction<string | null>>;
+	initialData?: Pick<
+		Poll,
+		"name" | "slug" | "description" | "endDate" | "startDate" | "status"
+	>;
+	onCreatePoll?: Dispatch<SetStateAction<string | null>>;
 }
 
-const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
-	const qc = useQueryClient();
-	const defaultPollValues: NewPollInput = {
-		name: "",
-		slug: undefined,
-		description: "",
-		startDate: new Date(),
-		endDate: undefined,
-		status: "draft",
-		userId,
-	};
+const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
+	const router = useRouter();
+	const isEditing = !!initialData;
 	const createPollMutation = useMutation({
-		mutationKey: ["create", "poll"],
-		mutationFn: async (values: NewPollInput) => createPoll({ data: values }),
+		mutationKey: [
+			isEditing ? "edit" : "create",
+			"poll",
+			isEditing && initialData.slug,
+		],
+		mutationFn: async (values: NewPollInput) => {
+			if (isEditing) {
+				return updatePoll({
+					data: {
+						slug: values.slug,
+						values,
+					},
+				});
+			}
+			return createPoll({ data: values });
+		},
 		onSuccess: async (data) => {
-			onCreatePoll(data?.id as string);
-			toast.success("Se ha guardado la encuesta correctamente.");
-			await qc.invalidateQueries({
-				queryKey: ["list", "poll", userId],
-			});
+			if (onCreatePoll && !isEditing) {
+				onCreatePoll((data as { id: string }).id);
+			}
+			router.invalidate();
+			toast.success(isEditing ? "Encuesta actualizada" : "Encuesta creada");
 		},
 	});
 	const form = useForm({
-		defaultValues: defaultPollValues,
+		defaultValues: {
+			name: initialData?.name ?? "",
+			slug: initialData?.slug ?? undefined,
+			description: initialData?.description ?? "",
+			startDate: initialData?.startDate ?? new Date(),
+			endDate: initialData?.endDate ?? undefined,
+			status: initialData?.status ?? "draft",
+			userId,
+		},
 		validators: {
-			onChange: createPollInput,
+			onChange: isEditing ? editPollInput : createPollInput,
 		},
 		onSubmit: async ({ value }) => {
 			await createPollMutation.mutateAsync(value);
@@ -61,7 +81,6 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 						field_type={FieldType.INPUT_TEXT}
 						label="Nombre de la encuesta"
 						placeholder="My first poll"
-						requried
 					/>
 				)}
 			</form.Field>
@@ -72,6 +91,8 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 						field_type={FieldType.INPUT_TEXT}
 						label="Slug"
 						placeholder="P14C3!"
+						disabled={isEditing}
+						input_classes={isEditing && "cursor-not-allowed"}
 					/>
 				)}
 			</form.Field>
@@ -81,7 +102,6 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 						field={field}
 						field_type={FieldType.SIMPLE_DATE}
 						label="Fecha de inicio"
-						requried
 					/>
 				)}
 			</form.Field>
@@ -113,6 +133,12 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 				// biome-ignore lint/correctness/noChildrenProp: <explanation>
 				children={([canSubmit]) => (
 					<div className="w-full flex items-center justify-end gap-2 col-span-2">
+						{isEditing && initialData.status && initialData.slug && (
+							<ChangePollStatus
+								status={initialData.status}
+								slug={initialData.slug}
+							/>
+						)}
 						<Button
 							type="submit"
 							variant={"default"}
@@ -120,7 +146,7 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 							disabled={!canSubmit}
 						>
 							<LoadingSwap isLoading={createPollMutation.isPending}>
-								Crear
+								{isEditing ? "Guardar cambios" : "Crear encuesta"}
 							</LoadingSwap>
 						</Button>
 					</div>
@@ -130,4 +156,4 @@ const CreatePollForm = ({ userId, onCreatePoll }: Props) => {
 	);
 };
 
-export default CreatePollForm;
+export default PollForm;
