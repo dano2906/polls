@@ -48,6 +48,7 @@ export const getPollDetails = createServerFn({ method: "GET" })
 				pollQuestions: {
 					columns: {
 						order: true,
+						pollId: true,
 					},
 					with: {
 						question: {
@@ -69,6 +70,7 @@ export const getPollDetails = createServerFn({ method: "GET" })
 		const questions = poll.pollQuestions.map((item) => {
 			return {
 				order: item.order,
+				pollId: item.pollId,
 				...item.question,
 			};
 		});

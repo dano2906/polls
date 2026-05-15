@@ -59,6 +59,7 @@ export const editPollInput = z
 		},
 	);
 export const createAnswerInput = z.object({
+	id: z.string().nullable().optional(),
 	answerText: z
 		.string()
 		.min(1, { message: "Este campo es requerido" })
@@ -67,9 +68,10 @@ export const createAnswerInput = z.object({
 });
 export const createQuestionInput = z
 	.object({
+		id: z.string().nullable().optional(),
 		type: z.enum(["single_choice", "multiple_choice"]),
 		questionText: z.string().max(500),
-		hasCorrectAnswer: z.boolean(),
+		hasCorrectAnswers: z.boolean(),
 		maxSelections: z.number().default(1).optional(),
 		isRequired: z.boolean().optional(),
 		answers: z.array(createAnswerInput),
@@ -89,7 +91,7 @@ export const questionsBatchSchema = z
 		pollId: z.string(),
 	})
 	.refine((data) => {
-		if (data.questions.length === 0 || !data.pollId) return false;
+		if (data.questions.length === 0) return false;
 		return true;
 	});
 export const selectPollOutput = createSelectSchema(poll);

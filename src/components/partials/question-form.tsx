@@ -1,10 +1,11 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { useForm } from "@tanstack/react-form-start";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
 import { Plus, Save, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { createQuestions } from "#/actions/question";
-import type { NewQuestionBatch } from "#/shared/types";
+import { createQuestions, saveQuestionsBatch } from "#/actions/question";
+import type { NewQuestion, NewQuestionBatch } from "#/shared/types";
 import { questionsBatchSchema } from "#/shared/validation";
 import { Button } from "../ui/button";
 import {
@@ -20,44 +21,57 @@ import FormField, { FieldType } from "./form-field";
 
 interface Props {
 	pollId: string | null;
+	initialData?: NewQuestion[];
 }
 
-const CreateQuestionForm = ({ pollId }: Props) => {
-	const defaultValues: NewQuestionBatch = {
-		questions: [
-			{
-				type: "single_choice",
-				questionText: "",
-				hasCorrectAnswer: false,
-				isRequired: false,
-				maxSelections: 1,
-				answers: [
-					{
-						answerText: "",
-						isCorrect: false,
-					},
-				],
-			},
-		],
-		pollId,
-	};
-	const createQuestionsMutation = useMutation({
-		mutationKey: ["create", "question"],
-		mutationFn: async (values: NewQuestionBatch) =>
-			await createQuestions({ data: values }),
-		onSuccess: () => {
+const QuestionForm = ({ pollId, initialData }: Props) => {
+	const isEditing = !!initialData;
+	const router = useRouter();
+	const questionMutation = useMutation({
+		mutationKey: [isEditing ? "update" : "create", "question"],
+		mutationFn: async (values: NewQuestionBatch) => {
+			if (isEditing) {
+				return saveQuestionsBatch({ data: values });
+			}
+			return await createQuestions({ data: values });
+		},
+		onSuccess: async () => {
+			await router.invalidate();
 			toast.success(
-				"Se han guardado las preguntas y las respuestas correctamente.",
+				isEditing
+					? "Se han editado las preguntas y las respuestas correctamente."
+					: "Se han guardado las preguntas y las respuestas correctamente.",
 			);
 		},
+		onError: () => toast.error("Hubo un error al guardar."),
 	});
 	const form = useForm({
-		defaultValues,
+		defaultValues: {
+			questions: initialData?.map((q) => ({
+				...q,
+				hasCorrectAnswers: q.hasCorrectAnswers ?? false,
+				answers: q.answers.map((a) => ({
+					id: a.id,
+					answerText: a.answerText,
+					isCorrect: a.isCorrect,
+				})),
+			})) || [
+				{
+					type: "single_choice" as const,
+					questionText: "",
+					hasCorrectAnswers: false,
+					isRequired: false,
+					maxSelections: 1,
+					answers: [{ answerText: "", isCorrect: false }],
+				},
+			],
+			pollId: pollId ?? "",
+		} as NewQuestionBatch,
 		validators: {
 			onSubmit: questionsBatchSchema,
 		},
 		onSubmit: async ({ value }) => {
-			await createQuestionsMutation.mutateAsync(value);
+			await questionMutation.mutateAsync(value);
 		},
 	});
 	return (
@@ -65,8 +79,11 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 			onSubmit={(e) => {
 				e.preventDefault();
 				e.stopPropagation();
+				form.handleSubmit();
 			}}
-			className={!pollId ? "opacity-70 cursor-not-allowed" : "opacity-100"}
+			className={
+				!pollId && !isEditing ? "opacity-70 cursor-not-allowed" : "opacity-100"
+			}
 		>
 			<form.Subscribe
 				selector={(state) => [
@@ -76,7 +93,7 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 				]}
 				// biome-ignore lint/correctness/noChildrenProp: <explanation>
 				children={([canSubmit]) => (
-					<FieldSet disabled={!pollId} className="space-y-4">
+					<FieldSet disabled={!pollId && !isEditing} className="space-y-4">
 						<form.Field name="questions" mode="array">
 							{(field) => (
 								<div className="space-y-4">
@@ -132,7 +149,7 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 														/>
 													)}
 												</form.Field>
-												<form.Field name={`questions[${i}].hasCorrectAnswer`}>
+												<form.Field name={`questions[${i}].hasCorrectAnswers`}>
 													{(subField) => (
 														<FormField
 															field={subField}
@@ -198,7 +215,8 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 																			}
 																			className="w-fit"
 																			disabled={
-																				answersField.state.value.length <= 1
+																				answersField.state.value.length <= 1 ||
+																				questionMutation.isPending
 																			}
 																		>
 																			<Trash />
@@ -212,8 +230,10 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 																<Button
 																	type="button"
 																	variant="outline"
+																	disabled={questionMutation.isPending}
 																	onClick={() =>
 																		answersField.pushValue({
+																			id: null,
 																			answerText: "",
 																			isCorrect: false,
 																		})
@@ -233,7 +253,10 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 														variant={"destructive"}
 														type="button"
 														onClick={() => field.removeValue(i)}
-														disabled={field.state.value.length <= 1}
+														disabled={
+															field.state.value.length <= 1 ||
+															questionMutation.isPending
+														}
 													>
 														<Trash /> Eliminar pregunta
 													</Button>
@@ -245,11 +268,12 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 										<Button
 											type="button"
 											variant={"secondary"}
+											disabled={questionMutation.isPending}
 											onClick={() =>
 												field.pushValue({
 													type: "single_choice",
 													questionText: "",
-													hasCorrectAnswer: false,
+													hasCorrectAnswers: false,
 													isRequired: false,
 													maxSelections: 1,
 													answers: [
@@ -267,15 +291,14 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 										<Button
 											type="submit"
 											variant={"default"}
-											onClick={() => form.handleSubmit()}
-											disabled={!canSubmit}
+											disabled={!canSubmit || questionMutation.isPending}
 										>
 											<LoadingSwap
-												isLoading={createQuestionsMutation.isPending}
+												isLoading={questionMutation.isPending}
 												className="flex items-center gap-2"
 											>
 												<Save />
-												Guardar preguntas y respuestas
+												{isEditing ? "Actualizar cambios" : "Guardar preguntas"}
 											</LoadingSwap>
 										</Button>
 									</div>
@@ -289,4 +312,4 @@ const CreateQuestionForm = ({ pollId }: Props) => {
 	);
 };
 
-export default CreateQuestionForm;
+export default QuestionForm;

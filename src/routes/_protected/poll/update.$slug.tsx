@@ -2,6 +2,8 @@ import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { getPollDetails } from "#/actions/poll";
 import PageHeading from "#/components/partials/page-heading";
 import PollForm from "#/components/partials/poll-form";
+import QuestionForm from "#/components/partials/question-form";
+import type { NewQuestion } from "#/shared/types";
 
 export const Route = createFileRoute("/_protected/poll/update/$slug")({
 	component: RouteComponent,
@@ -24,6 +26,10 @@ function RouteComponent() {
 					...initialData,
 					slug,
 				}}
+			/>
+			<QuestionForm
+				initialData={questions as NewQuestion[]}
+				pollId={questions[0].pollId}
 			/>
 		</div>
 	);

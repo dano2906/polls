@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form-start";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
+import { Save } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import { createPoll, updatePoll } from "#/actions/poll";
@@ -25,7 +26,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 	const isEditing = !!initialData;
 	const createPollMutation = useMutation({
 		mutationKey: [
-			isEditing ? "edit" : "create",
+			isEditing ? "update" : "create",
 			"poll",
 			isEditing && initialData.slug,
 		],
@@ -145,7 +146,11 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 							onClick={() => form.handleSubmit()}
 							disabled={!canSubmit}
 						>
-							<LoadingSwap isLoading={createPollMutation.isPending}>
+							<LoadingSwap
+								isLoading={createPollMutation.isPending}
+								className="flex items-center gap-2"
+							>
+								<Save />
 								{isEditing ? "Guardar cambios" : "Crear encuesta"}
 							</LoadingSwap>
 						</Button>
