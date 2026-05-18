@@ -29,7 +29,10 @@ const ForkVersionButton = ({ slug, version }: Props) => {
 	});
 
 	return (
-		<Button variant={"ghost"} onClick={() => forkPollMutation.mutateAsync()}>
+		<Button
+			variant={"ghostContext"}
+			onClick={() => forkPollMutation.mutateAsync()}
+		>
 			<LoadingSwap
 				isLoading={forkPollMutation.isPending}
 				className="flex items-center gap-2"

@@ -37,7 +37,12 @@ const DashboardAside = ({ user }: DashboardAsideProps) => {
 				</div>
 				<Link to="/dashboard">
 					<Avatar size="lg">
-						<AvatarImage src={user.image || ""} />
+						<AvatarImage
+							src={
+								user.image ||
+								`https://api.dicebear.com/9.x/glass/svg?seed=${user.name}`
+							}
+						/>
 						<AvatarFallback>{user.name || user.email}</AvatarFallback>
 					</Avatar>
 				</Link>

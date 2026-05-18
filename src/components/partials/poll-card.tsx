@@ -18,6 +18,7 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "../ui/context-menu";
+import CopyClipboardPoll from "./copy-clipboard-poll";
 import ForkVersionButton from "./fork-poll-button";
 
 interface Props {
@@ -80,7 +81,7 @@ const PollCard = ({ poll }: Props) => {
 						}}
 						preload={false}
 						className={buttonVariants({
-							variant: "ghost",
+							variant: "ghostContext",
 						})}
 					>
 						<Pencil />
@@ -92,6 +93,9 @@ const PollCard = ({ poll }: Props) => {
 						slug={poll.slug as string}
 						version={poll.version as number}
 					/>
+				</ContextMenuItem>
+				<ContextMenuItem asChild>
+					<CopyClipboardPoll slug={poll.slug as string} />
 				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>

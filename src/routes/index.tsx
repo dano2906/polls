@@ -10,6 +10,14 @@ function Home() {
 			<AuthHeader />
 			<ThemeToggle />
 			<Link to="/dashboard">To dashboard</Link>
+			<Link
+				to="/p/$slug"
+				params={{
+					slug: "ABCDE",
+				}}
+			>
+				Encuesta
+			</Link>
 		</div>
 	);
 }
