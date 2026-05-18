@@ -1,5 +1,5 @@
 - Solo se ven encuestas publicadas
-- Hacer un fork de encuesta con otra version. Crear una nueva con nuevo slug y todo
+  [X] Hacer un fork de encuesta con otra version. Crear una nueva con nuevo slug y todo
 - Si un usuario edita una encuesta que ya tiene respuestas en vez de editar se crea una nueva con nueva version
 
 - Visualizador de la encuesta

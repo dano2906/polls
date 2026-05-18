@@ -1,40 +1,24 @@
 import { useMutation } from "@tanstack/react-query";
-import { useRouteContext, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { ListTree } from "lucide-react";
 import { toast } from "sonner";
 import { forkPoll } from "#/actions/poll";
-import type { Poll } from "#/shared/types";
 import { Button } from "../ui/button";
 import { LoadingSwap } from "../ui/loading-swap";
 
 interface Props {
-	poll: Pick<
-		Poll,
-		| "name"
-		| "description"
-		| "slug"
-		| "startDate"
-		| "endDate"
-		| "version"
-		| "status"
-	>;
+	slug: string;
+	version: number;
 }
 
-const ForkVersionButton = ({ poll }: Props) => {
+const ForkVersionButton = ({ slug, version }: Props) => {
 	const router = useRouter();
-	const { user } = useRouteContext({ from: "/_protected" });
 	const forkPollMutation = useMutation({
 		mutationKey: ["fork", "poll"],
 		mutationFn: async () => {
 			return await forkPoll({
 				data: {
-					name: poll.name,
-					startDate: poll.startDate,
-					userId: user.id,
-					description: poll.description as string,
-					endDate: poll.endDate as Date,
-					status: "draft",
-					version: (poll.version as number) + 1,
+					pollSlug: slug,
 				},
 			});
 		},
@@ -52,7 +36,7 @@ const ForkVersionButton = ({ poll }: Props) => {
 			>
 				<ListTree />
 				Crear nueva versión (v
-				{(poll.version as number) + 1})
+				{version + 1})
 			</LoadingSwap>
 		</Button>
 	);

@@ -35,9 +35,7 @@ export const createPollInput = z
 			path: ["slug"],
 		},
 	);
-export const forkPollInput = createPollInput.extend({
-	version: z.number(),
-});
+export const forkPollInput = z.object({ pollSlug: z.string().min(6).max(6) });
 export const editPollInput = z
 	.object({
 		name: z

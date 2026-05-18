@@ -88,7 +88,10 @@ const PollCard = ({ poll }: Props) => {
 					</Link>
 				</ContextMenuItem>
 				<ContextMenuItem asChild>
-					<ForkVersionButton poll={poll} />
+					<ForkVersionButton
+						slug={poll.slug as string}
+						version={poll.version as number}
+					/>
 				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>

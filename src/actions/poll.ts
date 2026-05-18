@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { asc, eq } from "drizzle-orm";
-import { poll } from "#/db/schema.ts";
+import { answer, poll, pollQuestions, question } from "#/db/schema.ts";
 import { generateRandomCode } from "#/lib/utils.ts";
 import {
 	createPollInput,
@@ -116,23 +116,104 @@ export const createPoll = createServerFn({ method: "POST" })
 export const forkPoll = createServerFn({ method: "POST" })
 	.inputValidator(forkPollInput)
 	.handler(async ({ data }) => {
+		const { pollSlug } = data;
+
 		try {
-			const newId = randomUUID();
-			const res = await db.insert(poll).values({
-				...data,
-				id: newId,
-				slug:
-					data.slug && data.slug.length === 6
-						? data.slug
-						: generateRandomCode(),
+			// Iniciamos una transacción para asegurar la atomicidad
+			const result = await db.transaction(async (tx) => {
+				// 1. Obtener la encuesta original con todas sus preguntas y respuestas
+				const originalPoll = await tx.query.poll.findFirst({
+					where: eq(poll.slug, pollSlug),
+					with: {
+						pollQuestions: {
+							with: {
+								question: {
+									with: {
+										answers: true,
+									},
+								},
+							},
+						},
+					},
+				});
+
+				if (!originalPoll) {
+					throw notFound({
+						throw: true,
+					});
+				}
+
+				// 2. Calcular la nueva versión y el nuevo slug único
+				const nextVersion = (originalPoll.version ?? 1) + 1;
+				const nextSlug = generateRandomCode();
+
+				// 3. Insertar la nueva encuesta clonada
+				const [insertedPoll] = await tx
+					.insert(poll)
+					.values({
+						userId: originalPoll.userId,
+						name: `${originalPoll.name}`,
+						description: originalPoll.description,
+						slug: nextSlug,
+						status: "draft",
+						version: nextVersion,
+						metadata: originalPoll.metadata,
+						startDate: new Date(originalPoll.startDate),
+						endDate: originalPoll.endDate
+							? new Date(originalPoll.endDate)
+							: null,
+					})
+					.returning({ id: poll.id });
+
+				const newPollId = insertedPoll.id;
+
+				// 4. Iterar sobre las preguntas para duplicarlas
+				for (const pq of originalPoll.pollQuestions) {
+					const origQuestion = pq.question;
+
+					// Insertar la nueva pregunta
+					const [insertedQuestion] = await tx
+						.insert(question)
+						.values({
+							type: origQuestion.type,
+							questionText: origQuestion.questionText,
+							hasCorrectAnswers: origQuestion.hasCorrectAnswers,
+							maxSelections: origQuestion.maxSelections,
+							isRequired: origQuestion.isRequired,
+						})
+						.returning({ id: question.id });
+
+					const newQuestionId = insertedQuestion.id;
+
+					// Crear la relación en la tabla intermedia de la nueva encuesta
+					await tx.insert(pollQuestions).values({
+						pollId: newPollId,
+						questionId: newQuestionId,
+						order: pq.order,
+					});
+
+					// 5. Si la pregunta tiene respuestas, duplicarlas en lote
+					if (origQuestion.answers && origQuestion.answers.length > 0) {
+						const newAnswers = origQuestion.answers.map((ans) => ({
+							questionId: newQuestionId,
+							answerText: ans.answerText,
+							isCorrect: ans.isCorrect,
+							order: ans.order,
+							metadata: ans.metadata,
+						}));
+
+						await tx.insert(answer).values(newAnswers);
+					}
+				}
+
+				// Retornamos el ID de la nueva encuesta clonada
+				return { success: true, newPollId };
 			});
-			if (res.rowsAffected > 0) {
-				return {
-					id: newId,
-				};
-			}
+
+			return result;
 		} catch (error) {
-			console.log("error", error);
+			console.error("Error al duplicar la encuesta:", error);
+			throw new Error("No se pudo duplicar la encuesta");
 		}
 	});
 
