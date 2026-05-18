@@ -95,6 +95,7 @@ export const poll = sqliteTable("poll", {
 	userId: text("user_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
+	rootId: text("root_id"),
 	name: text("name").notNull(),
 	description: text("description"),
 	slug: text("slug").unique(),

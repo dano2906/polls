@@ -1,7 +1,8 @@
 [X] Hacer un fork de encuesta con otra version. Crear una nueva con nuevo slug y todo
+[X] Copiar enlace publico de la encuesta
+[X] Generar QR con enlace
+[X] Enlazar versiones con la encuesta original
 
-- Copiar enlace publico de la encuesta
-- Generar QR con enlace
 - Solo se ven encuestas publicadas
 - Visualizador de la encuesta
 - Validarla en tiempo real

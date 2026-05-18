@@ -162,6 +162,7 @@ export const forkPoll = createServerFn({ method: "POST" })
 						endDate: originalPoll.endDate
 							? new Date(originalPoll.endDate)
 							: null,
+						rootId: originalPoll.id,
 					})
 					.returning({ id: poll.id });
 

@@ -43,6 +43,13 @@
       "when": 1778601238823,
       "tag": "0005_fat_impossible_man",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1779122679154,
+      "tag": "0006_normal_microbe",
+      "breakpoints": true
     }
   ]
 }
