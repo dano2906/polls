@@ -35,6 +35,9 @@ export const createPollInput = z
 			path: ["slug"],
 		},
 	);
+export const forkPollInput = createPollInput.extend({
+	version: z.number(),
+});
 export const editPollInput = z
 	.object({
 		name: z

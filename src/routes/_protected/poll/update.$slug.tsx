@@ -29,7 +29,7 @@ function RouteComponent() {
 			/>
 			<QuestionForm
 				initialData={questions as NewQuestion[]}
-				pollId={questions[0].pollId}
+				pollId={questions && questions.length > 0 ? questions[0].pollId : null}
 			/>
 		</div>
 	);

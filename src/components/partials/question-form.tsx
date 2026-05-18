@@ -291,7 +291,11 @@ const QuestionForm = ({ pollId, initialData }: Props) => {
 										<Button
 											type="submit"
 											variant={"default"}
-											disabled={!canSubmit || questionMutation.isPending}
+											disabled={
+												!canSubmit ||
+												questionMutation.isPending ||
+												field.state.value.length === 0
+											}
 										>
 											<LoadingSwap
 												isLoading={questionMutation.isPending}
