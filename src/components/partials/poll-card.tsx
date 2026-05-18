@@ -20,6 +20,7 @@ import {
 } from "../ui/context-menu";
 import CopyClipboardPoll from "./copy-clipboard-poll";
 import ForkVersionButton from "./fork-poll-button";
+import PollQrPopover from "./poll-qrcode-popover";
 
 interface Props {
 	poll: Pick<
@@ -96,6 +97,9 @@ const PollCard = ({ poll }: Props) => {
 				</ContextMenuItem>
 				<ContextMenuItem asChild>
 					<CopyClipboardPoll slug={poll.slug as string} />
+				</ContextMenuItem>
+				<ContextMenuItem asChild>
+					<PollQrPopover slug={poll.slug as string} />
 				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>
