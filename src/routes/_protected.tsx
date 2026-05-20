@@ -4,21 +4,19 @@ import {
 	Outlet,
 	redirect,
 } from "@tanstack/react-router";
+import type { User } from "better-auth";
 import DashboardAside from "#/components/partials/dashboard-aside.tsx";
-import { getSession } from "#/lib/auth-functions.ts";
 
 export const Route = createFileRoute("/_protected")({
 	component: RouteComponent,
-	beforeLoad: async ({ location }) => {
+	beforeLoad: async ({ context, location }) => {
 		try {
-			const session = await getSession();
-			if (!session) {
+			if (!context.auth?.session) {
 				throw redirect({
 					to: "/",
-					search: { redirect: location.href },
+					search: location.pathname,
 				});
 			}
-			return { user: session.user };
 		} catch (error) {
 			// Re-throw redirects (they're intentional, not errors)
 			if (isRedirect(error)) throw error;
@@ -33,13 +31,13 @@ export const Route = createFileRoute("/_protected")({
 });
 
 function RouteComponent() {
-	const { user } = Route.useRouteContext();
+	const { auth } = Route.useRouteContext();
 	return (
 		<div className="bg-background text-foreground relative w-full min-h-screen">
 			<main className="w-full max-w-md sm:max-lg md:max-w-xl xl:max-w-5xl mx-auto py-6 px-2">
 				<Outlet />
 			</main>
-			<DashboardAside user={user} />
+			<DashboardAside user={auth?.user as User} />
 		</div>
 	);
 }

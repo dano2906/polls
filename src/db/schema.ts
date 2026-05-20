@@ -1,5 +1,11 @@
 import { relations, sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+	index,
+	integer,
+	sqliteTable,
+	text,
+	uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
 	id: text("id").primaryKey(),
@@ -165,20 +171,26 @@ export const answer = sqliteTable("answer", {
 	),
 });
 
-export const submission = sqliteTable("submission", {
-	id: text("id")
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	pollId: text("poll_id")
-		.notNull()
-		.references(() => poll.id),
-	userId: text("userId")
-		.notNull()
-		.references(() => user.id),
-	submittedAt: integer("submitted_at", { mode: "timestamp" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
-});
+export const submission = sqliteTable(
+	"submission",
+	{
+		id: text("id")
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		pollId: text("poll_id")
+			.notNull()
+			.references(() => poll.id),
+		userId: text("userId")
+			.notNull()
+			.references(() => user.id),
+		submittedAt: integer("submitted_at", { mode: "timestamp" }).default(
+			sql`CURRENT_TIMESTAMP`,
+		),
+	},
+	(table) => [
+		uniqueIndex("user_poll_unique_idx").on(table.userId, table.pollId),
+	],
+);
 
 export const userAnswer = sqliteTable("user_answer", {
 	id: text("id")
@@ -197,6 +209,7 @@ export const userAnswer = sqliteTable("user_answer", {
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
+	polls: many(poll),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -213,8 +226,13 @@ export const accountRelations = relations(account, ({ one }) => ({
 	}),
 }));
 
-export const pollRelations = relations(poll, ({ many }) => ({
+export const pollRelations = relations(poll, ({ many, one }) => ({
 	pollQuestions: many(pollQuestions),
+	submission: many(submission),
+	user: one(user, {
+		fields: [poll.userId],
+		references: [user.id],
+	}),
 }));
 
 export const questionRelations = relations(question, ({ many }) => ({

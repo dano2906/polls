@@ -1,4 +1,4 @@
-import { useRouteContext, useRouter } from "@tanstack/react-router";
+import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import { Button } from "#/components/ui/button";
 import { GithubDark } from "#/components/ui/svgs/githubDark";
 import { GithubLight } from "#/components/ui/svgs/githubLight.tsx";
@@ -18,6 +18,11 @@ export default function AuthHeader() {
 		router.invalidate();
 	}
 
+	async function signOut() {
+		authClient.signOut();
+		await router.invalidate();
+	}
+
 	if (isPending) {
 		return (
 			<div className="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
@@ -27,6 +32,7 @@ export default function AuthHeader() {
 	if (session?.user) {
 		return (
 			<div className="flex items-center gap-2">
+				<Link to="/dashboard">Dash</Link>
 				{session.user.image ? (
 					<img src={session.user.image} alt="" className="h-8 w-8" />
 				) : (
@@ -38,9 +44,7 @@ export default function AuthHeader() {
 				)}
 				<button
 					type="button"
-					onClick={() => {
-						void authClient.signOut();
-					}}
+					onClick={signOut}
 					className="flex-1 h-9 px-4 text-sm font-medium bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
 				>
 					Sign out
