@@ -35,7 +35,7 @@ interface Props {
 	>;
 }
 
-const PollCard = ({ poll }: Props) => {
+const PollCardDashoard = ({ poll }: Props) => {
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger>
@@ -106,4 +106,4 @@ const PollCard = ({ poll }: Props) => {
 	);
 };
 
-export default PollCard;
+export default PollCardDashoard;

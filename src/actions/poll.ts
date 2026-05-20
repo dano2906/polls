@@ -11,6 +11,34 @@ import {
 } from "#/shared/validation.ts";
 import { db } from "@/db";
 
+export const getPublishedPolls = createServerFn({ method: "GET" }).handler(
+	async () => {
+		const res = await db.query.poll.findMany({
+			where: (poll, { eq }) => eq(poll.status, "published"),
+			columns: {
+				description: true,
+				endDate: true,
+				name: true,
+				startDate: true,
+				version: true,
+				slug: true,
+			},
+			with: {
+				user: {
+					columns: {
+						name: true,
+						email: true,
+						image: true,
+					},
+				},
+			},
+			orderBy: asc(poll.startDate),
+		});
+		if (!res || res.length === 0) return [];
+		return res;
+	},
+);
+
 export const getUserPolls = createServerFn({ method: "GET" })
 	.inputValidator((data: { userId: string }) => data)
 	.handler(async ({ data }) => {

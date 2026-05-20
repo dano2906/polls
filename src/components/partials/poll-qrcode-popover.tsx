@@ -14,8 +14,14 @@ import {
 
 interface Props {
 	slug: string;
+	label?: boolean;
+	buttonType?: "ghost" | "ghostContext";
 }
-const PollQrPopover = ({ slug }: Props) => {
+const PollQrPopover = ({
+	slug,
+	buttonType = "ghostContext",
+	label = true,
+}: Props) => {
 	const [copied, setCopied] = useState(false);
 	const handleCopy = async () => {
 		try {
@@ -54,9 +60,9 @@ const PollQrPopover = ({ slug }: Props) => {
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
-				<Button variant="ghostContext">
+				<Button variant={buttonType} size={label ? "default" : "icon-sm"}>
 					<QrCode />
-					Mostrar código QR
+					{label && "Mostrar código QR"}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent align="center">

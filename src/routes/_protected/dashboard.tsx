@@ -6,7 +6,9 @@ import { ListUserPolls } from "#/components/partials/list-user-polls";
 export const Route = createFileRoute("/_protected/dashboard")({
 	component: RouteComponent,
 	loader: ({ context }) => ({
-		userPollsPromise: getUserPolls({ data: { userId: context.user.id } }),
+		userPollsPromise: getUserPolls({
+			data: { userId: context?.auth?.user.id as string },
+		}),
 	}),
 });
 

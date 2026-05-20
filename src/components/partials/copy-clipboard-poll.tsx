@@ -5,9 +5,15 @@ import { Button } from "../ui/button";
 
 interface Props {
 	slug: string;
+	label?: boolean;
+	buttonType?: "ghost" | "ghostContext";
 }
 
-const ForkVersionButton = ({ slug }: Props) => {
+const CopyClipboardPoll = ({
+	slug,
+	buttonType = "ghostContext",
+	label = true,
+}: Props) => {
 	const [copied, setCopied] = useState(false);
 	const handleCopy = async () => {
 		try {
@@ -21,20 +27,24 @@ const ForkVersionButton = ({ slug }: Props) => {
 		}
 	};
 	return (
-		<Button variant={"ghostContext"} onClick={handleCopy}>
+		<Button
+			variant={buttonType}
+			size={label ? "default" : "icon-sm"}
+			onClick={handleCopy}
+		>
 			{copied ? (
 				<>
 					<Check />
-					<span>¡Copiado!</span>
+					{label && <span>¡Copiado!</span>}
 				</>
 			) : (
 				<>
 					<Copy />
-					<span>Copiar enlace de la encuesta</span>
+					{label && <span>Copiar enlace de la encuesta</span>}
 				</>
 			)}
 		</Button>
 	);
 };
 
-export default ForkVersionButton;
+export default CopyClipboardPoll;

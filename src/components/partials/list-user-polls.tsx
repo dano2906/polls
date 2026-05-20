@@ -1,7 +1,7 @@
 import { use } from "react";
 import type { getUserPolls } from "#/actions/poll";
 import { Skeleton } from "../ui/skeleton";
-import PollCard from "./poll-card";
+import PollCardDashoard from "./poll-card-dashboard";
 
 interface Props {
 	dataPromise: ReturnType<typeof getUserPolls>;
@@ -27,7 +27,7 @@ export const ListUserPolls = ({ dataPromise }: Props) => {
 			</h2>
 			<ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 group">
 				{polls.map((poll) => {
-					return <PollCard poll={poll} key={poll.slug} />;
+					return <PollCardDashoard poll={poll} key={poll.slug} />;
 				})}
 			</ul>
 		</>

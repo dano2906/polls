@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `user_poll_unique_idx` ON `submission` (`userId`,`poll_id`);
