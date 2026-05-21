@@ -18,13 +18,15 @@ import {
 import { FieldSet } from "../ui/field";
 import { LoadingSwap } from "../ui/loading-swap";
 import FormField, { FieldType } from "./form-field";
+import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
 	pollId: string | null;
+	pollDescription?: string | null;
 	initialData?: NewQuestion[];
 }
 
-const QuestionForm = ({ pollId, initialData }: Props) => {
+const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
 	const isEditing = !!initialData;
 	const router = useRouter();
 	const questionMutation = useMutation({
@@ -265,6 +267,10 @@ const QuestionForm = ({ pollId, initialData }: Props) => {
 										</Card>
 									))}
 									<div className="w-full flex items-center justify-end gap-2">
+										<GenerateQuestionsButton
+											pollDescription={pollDescription}
+											addQuestion={field.pushValue}
+										/>
 										<Button
 											type="button"
 											variant={"secondary"}

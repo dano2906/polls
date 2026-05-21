@@ -45,6 +45,7 @@ function RouteComponent() {
 			<QuestionForm
 				initialData={questions as NewQuestion[]}
 				pollId={questions && questions.length > 0 ? questions[0].pollId : null}
+				pollDescription={initialData.description}
 			/>
 		</div>
 	);

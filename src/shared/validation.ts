@@ -64,18 +64,38 @@ export const createAnswerInput = z.object({
 	answerText: z
 		.string()
 		.min(1, { message: "Este campo es requerido" })
-		.max(500, { message: "Debe tener máximo 500 caracteres" }),
-	isCorrect: z.boolean().default(false),
+		.max(500, { message: "Debe tener máximo 500 caracteres" })
+		.describe("Enunciado de la respuesta."),
+	isCorrect: z
+		.boolean()
+		.default(false)
+		.describe(
+			"Campo para saber si la respuesta es correcta o no. Por defecto es falso y va en dependencia de si la pregunta tiene respuestas correctas o no.",
+		),
 });
 export const createQuestionInput = z
 	.object({
 		id: z.string().nullable().optional(),
-		type: z.enum(["single_choice", "multiple_choice"]),
-		questionText: z.string().max(500),
-		hasCorrectAnswers: z.boolean(),
-		maxSelections: z.number().default(1).optional(),
-		isRequired: z.boolean().optional(),
-		answers: z.array(createAnswerInput),
+		type: z
+			.enum(["single_choice", "multiple_choice"])
+			.describe("Tipo de la pregunta."),
+		questionText: z
+			.string()
+			.max(500)
+			.describe("El enunciado o pregunta clara."),
+		hasCorrectAnswers: z
+			.boolean()
+			.describe("Campo para saber si la pregunta tiene respuestas correctas."),
+		maxSelections: z
+			.number()
+			.default(1)
+			.optional()
+			.describe("Cantidad máxima de selecciones posibles."),
+		isRequired: z
+			.boolean()
+			.optional()
+			.describe("Campo para saber si la pregunta es de respuesta obligatoria."),
+		answers: z.array(createAnswerInput).describe("Arreglo de respuestas"),
 	})
 	.refine((data) => {
 		if (
@@ -88,13 +108,18 @@ export const createQuestionInput = z
 	});
 export const questionsBatchSchema = z
 	.object({
-		questions: z.array(createQuestionInput),
-		pollId: z.string(),
+		questions: z.array(createQuestionInput).describe("Arreglo de preguntas"),
+		pollId: z.string().describe("Identificador de la encuesta"),
 	})
 	.refine((data) => {
 		if (data.questions.length === 0) return false;
 		return true;
 	});
+export const generateQuestionsSchema = z.object({
+	lang: z.enum(["spanish", "english"]),
+	pollDescription: z.string().optional().nullable(),
+	context: z.string().min(32).max(500),
+});
 export const selectPollOutput = createSelectSchema(poll);
 export const selectQuestionOutput = createSelectSchema(question);
 

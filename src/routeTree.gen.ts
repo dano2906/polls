@@ -13,6 +13,7 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PSlugRouteImport } from './routes/p/$slug'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
+import { Route as ApiPollGenerateQuestionsRouteImport } from './routes/api/poll/generate-questions'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
 import { Route as ProtectedPollUpdateSlugRouteImport } from './routes/_protected/poll/update.$slug'
@@ -36,6 +37,12 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ApiPollGenerateQuestionsRoute =
+  ApiPollGenerateQuestionsRouteImport.update({
+    id: '/api/poll/generate-questions',
+    path: '/api/poll/generate-questions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/p/$slug': typeof PSlugRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
   '/p/$slug': typeof PSlugRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
 }
 export interface FileRoutesById {
@@ -76,6 +85,7 @@ export interface FileRoutesById {
   '/p/$slug': typeof PSlugRoute
   '/_protected/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/_protected/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
 }
 export interface FileRouteTypes {
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/poll/new'
     | '/api/auth/$'
+    | '/api/poll/generate-questions'
     | '/poll/update/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/poll/new'
     | '/api/auth/$'
+    | '/api/poll/generate-questions'
     | '/poll/update/$slug'
   id:
     | '__root__'
@@ -103,6 +115,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/_protected/poll/new'
     | '/api/auth/$'
+    | '/api/poll/generate-questions'
     | '/_protected/poll/update/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -111,6 +124,7 @@ export interface RootRouteChildren {
   ProtectedRoute: typeof ProtectedRouteWithChildren
   PSlugRoute: typeof PSlugRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPollGenerateQuestionsRoute: typeof ApiPollGenerateQuestionsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -142,6 +156,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof ProtectedDashboardRouteImport
       parentRoute: typeof ProtectedRoute
+    }
+    '/api/poll/generate-questions': {
+      id: '/api/poll/generate-questions'
+      path: '/api/poll/generate-questions'
+      fullPath: '/api/poll/generate-questions'
+      preLoaderRoute: typeof ApiPollGenerateQuestionsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -188,6 +209,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProtectedRoute: ProtectedRouteWithChildren,
   PSlugRoute: PSlugRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPollGenerateQuestionsRoute: ApiPollGenerateQuestionsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

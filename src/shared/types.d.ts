@@ -32,3 +32,8 @@ export enum Statuses {
 	PUBLISHED = "published",
 	ARCHIVED = "archived",
 }
+
+export type GeneratePoll = {
+	context: string;
+	lang?: "spanish" | "english";
+};
