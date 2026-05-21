@@ -4,6 +4,7 @@
 [X] Enlazar versiones con la encuesta original
 [X] Solo se ven encuestas publicadas
 [!] Evitar que una persona vote mas de una vez por una encuesta
+[] Auto complete de preguntas-respuestas con ia
 
 - Visualizador de la encuesta
 - Validarla en tiempo real

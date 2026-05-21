@@ -25,9 +25,9 @@ interface Props {
 
 const PollCardLanding = ({ poll }: Props) => {
 	return (
-		<li key={poll.slug}>
-			<Card className="gap-3 w-full">
-				<CardHeader>
+		<li key={poll.slug} className="h-full w-full">
+			<Card className="gap-3 w-full h-full flex flex-col items-center justify-between">
+				<CardHeader className="w-full">
 					<CardTitle className="font-sg text-xl leading-tight tracking-wide font-medium text-accent-foreground">
 						{poll.name}
 					</CardTitle>
@@ -35,44 +35,46 @@ const PollCardLanding = ({ poll }: Props) => {
 						{poll.description}
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="space-y-1">
-					<Badge
-						variant={"secondary"}
-						className="text-xs font-sg font-thin px-0 py-1 gap-1 flex items-center w-fit"
-					>
-						<span className="text-muted-foreground">
-							Disponible desde el{" "}
-							<strong className="text-foreground font-normal">
-								{format(poll.startDate, "dd/MM/yyyy", { locale: es })}
-							</strong>
-						</span>
-
-						{poll.endDate && (
+				<div className="w-full space-y-2">
+					<CardContent className="space-y-1">
+						<Badge
+							variant={"secondary"}
+							className="text-xs font-sg font-thin px-0 py-1 gap-1 flex items-center w-fit"
+						>
 							<span className="text-muted-foreground">
-								{" "}
-								hasta el{" "}
+								Disponible desde el{" "}
 								<strong className="text-foreground font-normal">
-									{format(poll.endDate, "dd/MM/yyyy", { locale: es })}
+									{format(poll.startDate, "dd/MM/yyyy", { locale: es })}
 								</strong>
 							</span>
-						)}
-					</Badge>
-				</CardContent>
-				<CardFooter className="justify-end">
-					<CardAction className="space-x-2">
-						<PollQrPopover
-							slug={poll.slug as string}
-							buttonType="ghost"
-							label={false}
-						/>
-						<CopyClipboardPoll
-							slug={poll.slug as string}
-							buttonType="ghost"
-							label={false}
-						/>
-						<GoToPollLink slug={poll.slug} />
-					</CardAction>
-				</CardFooter>
+
+							{poll.endDate && (
+								<span className="text-muted-foreground">
+									{" "}
+									hasta el{" "}
+									<strong className="text-foreground font-normal">
+										{format(poll.endDate, "dd/MM/yyyy", { locale: es })}
+									</strong>
+								</span>
+							)}
+						</Badge>
+					</CardContent>
+					<CardFooter className="justify-end">
+						<CardAction className="space-x-2">
+							<PollQrPopover
+								slug={poll.slug as string}
+								buttonType="ghost"
+								label={false}
+							/>
+							<CopyClipboardPoll
+								slug={poll.slug as string}
+								buttonType="ghost"
+								label={false}
+							/>
+							<GoToPollLink slug={poll.slug} />
+						</CardAction>
+					</CardFooter>
+				</div>
 			</Card>
 		</li>
 	);

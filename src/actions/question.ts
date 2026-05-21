@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
+import { generateText, Output } from "ai";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "#/db";
 import { answer, pollQuestions, question } from "#/db/schema";
-import { questionsBatchSchema } from "#/shared/validation";
+import { openrouter } from "#/lib/openrouter";
+import {
+	createQuestionInput,
+	generateQuestionsSchema,
+	questionsBatchSchema,
+} from "#/shared/validation";
 
 export const createQuestions = createServerFn({ method: "POST" })
-	.inputValidator((data) => questionsBatchSchema.parse(data))
+	.inputValidator(questionsBatchSchema)
 	.handler(async ({ data }) => {
 		await db.transaction(async (tx) => {
 			for (const [index, qData] of data.questions.entries()) {
@@ -52,7 +58,7 @@ export const createQuestions = createServerFn({ method: "POST" })
 export const saveQuestionsBatch = createServerFn({
 	method: "POST",
 })
-	.inputValidator((data) => questionsBatchSchema.parse(data))
+	.inputValidator(questionsBatchSchema)
 	.handler(async ({ data }) => {
 		const { questions: questionsData, pollId } = data;
 		return await db.transaction(async (tx) => {
@@ -194,4 +200,55 @@ export const saveQuestionsBatch = createServerFn({
 
 			return { success: true };
 		});
+	});
+
+export const generateQuestionsFromContext = createServerFn({ method: "POST" })
+	.inputValidator(generateQuestionsSchema)
+	.handler(async ({ data }) => {
+		const result = await generateText({
+			model: openrouter.chat(process.env.OPENROUTER_MODEL as string),
+			output: Output.object({
+				schema: createQuestionInput,
+			}),
+			system: `You are an expert educational assessment specialist and survey design professional.
+
+Your task is to analyze the provided context and generate a high-quality, relevant, and objective questionnaire based ONLY on that context.
+
+Strictly adhere to the following guidelines:
+1. Accuracy: Every question, option, and correct answer must be directly verifiable using the provided context. Do not extrapolate, assume, or introduce external facts.
+2. Clarity: Statements must be concise, unambiguous, and free from trick or misleading phrasing.
+3. Distractors: Options (incorrect answers) must be plausible and distinct from one another, not obviously filler text.
+4. Consistency: The "correctAnswer" property must match exactly one of the items listed inside the "options" array.
+5. Answer in ${data.lang ?? "spanish"}.
+6. Maintain consistency between type of the question and max number of selections. A single choice question never must have max selection greater than 1.
+${data.pollDescription && `7. Use the description of the survey (${data.pollDescription}) to fill the info gaps. If there is no description use only the context`}
+
+You must output your response to fit the requested JSON schema perfectly. Do not include any conversational text, introductory remarks, or markdown wrappers outside the schema.`,
+			prompt: `Context: \n ${data.context}`,
+		});
+
+		return result.output;
+	});
+
+export const enhanceGenerateQuestionContext = createServerFn({ method: "POST" })
+	.inputValidator(generateQuestionsSchema.partial())
+	.handler(async ({ data }) => {
+		const result = await generateText({
+			model: openrouter.chat(process.env.OPENROUTER_MODEL as string),
+			system: `You are an expert content editor and data structuring specialist. 
+
+Your task is to analyze the provided raw text and rewrite it into a highly optimized, clean, and dense reference context that will be used by another AI model to generate test questions.
+
+Please strictly follow these editing guidelines:
+1. Retain All Core Facts: Ensure that all technical terms, definitions, statistics, historical dates, and specific concepts from the original text are preserved exactly as they are. Do not lose any substance.
+2. Eliminate Fluff & Redundancy: Remove conversational filler, repetitive explanations, emotional phrasing, and unnecessary introductory sentences. 
+3. Improve Structure & Clarity: Organize the information using clear, logical sections. When applicable, use bullet points or key-value structures to separate distinct concepts.
+4. Ensure Objectivity: Maintain an informative, authoritative, and completely neutral tone. 
+5. Do Not Extrapolate: Do not invent new facts, add external knowledge, or make assumptions that cannot be verified by the original text.
+6. Answer in ${data.lang ?? "spanish"}.
+Output ONLY the optimized, structured version of the text. Do not include any introductory phrases, explanations, or meta-commentary.`,
+			prompt: `Original Text to Optimize:\n"${data.context}"`,
+		});
+
+		return result.output;
 	});
