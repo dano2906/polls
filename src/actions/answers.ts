@@ -1,7 +1,8 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { eq } from "drizzle-orm";
 import { db } from "#/db";
-import { submission, userAnswer } from "#/db/schema";
+import { poll, submission, userAnswer } from "#/db/schema";
 import { getSession } from "#/lib/auth-functions";
 import { completePollInput } from "#/shared/validation";
 
@@ -15,6 +16,18 @@ export const submitPollAnswers = createServerFn()
 			throw redirect({
 				to: "/",
 			});
+		}
+
+		const existingPoll = await db.query.poll.findFirst({
+			where: eq(poll.id, pollId),
+		});
+
+		if (!existingPoll) {
+			throw new Error("Poll not found");
+		}
+
+		if (existingPoll.status !== "published") {
+			throw new Error("Poll is not accepting submissions");
 		}
 
 		// Usamos una transacción para asegurarnos de que se guarde todo o nada

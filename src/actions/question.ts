@@ -4,6 +4,7 @@ import { generateText, Output } from "ai";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "#/db";
 import { answer, poll, pollQuestions, question } from "#/db/schema";
+import { getSession } from "#/lib/auth-functions";
 import { openrouter } from "#/lib/openrouter";
 import {
 	createQuestionInput,
@@ -15,9 +16,12 @@ export const createQuestions = createServerFn({ method: "POST" })
 	.inputValidator(questionsBatchSchema)
 	.handler(async ({ data }) => {
 		const { slug } = data;
-
+		const session = await getSession();
+		if (!session) {
+			throw notFound();
+		}
 		const currentPoll = await db.query.poll.findFirst({
-			where: eq(poll.slug, slug),
+			where: and(eq(poll.slug, slug), eq(poll.userId, session?.user.id)),
 		});
 
 		if (!currentPoll) {
@@ -58,7 +62,7 @@ export const createQuestions = createServerFn({ method: "POST" })
 						}),
 					);
 
-					await tx.insert(answer).values(answersToInsert);
+					return await tx.insert(answer).values(answersToInsert);
 				}
 			}
 
@@ -73,8 +77,12 @@ export const saveQuestionsBatch = createServerFn({
 	.handler(async ({ data }) => {
 		const { questions: questionsData, slug } = data;
 
+		const session = await getSession();
+		if (!session) {
+			throw notFound();
+		}
 		const currentPoll = await db.query.poll.findFirst({
-			where: eq(poll.slug, slug),
+			where: and(eq(poll.slug, slug), eq(poll.userId, session?.user.id)),
 		});
 
 		if (!currentPoll) {
@@ -212,10 +220,23 @@ export const saveQuestionsBatch = createServerFn({
 						),
 					);
 
-				// 3. (Opcional) Borrar las preguntas huérfanas y sus respuestas
-				// Si una pregunta solo pertenece a un poll, al desvincularla deberías borrarla
-				await tx.delete(answer).where(inArray(answer.questionId, idsToDelete));
-				await tx.delete(question).where(inArray(question.id, idsToDelete));
+				// 3. Borrar solo preguntas sin vínculos restantes en poll_question
+				const remainingLinks = await tx
+					.select({ questionId: pollQuestions.questionId })
+					.from(pollQuestions)
+					.where(inArray(pollQuestions.questionId, idsToDelete));
+
+				const stillLinkedIds = new Set(
+					remainingLinks.map((r) => r.questionId),
+				);
+				const orphanIds = idsToDelete.filter((id) => !stillLinkedIds.has(id));
+
+				if (orphanIds.length > 0) {
+					await tx
+						.delete(answer)
+						.where(inArray(answer.questionId, orphanIds));
+					await tx.delete(question).where(inArray(question.id, orphanIds));
+				}
 			}
 
 			return { success: true };

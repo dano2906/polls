@@ -66,6 +66,7 @@ export const getUserPolls = createServerFn({ method: "GET" })
 			return res;
 		} catch (error) {
 			console.log("error", error);
+			return [];
 		}
 	});
 
@@ -145,6 +146,7 @@ export const createPoll = createServerFn({ method: "POST" })
 					slug: newPoll.slug,
 				};
 			}
+			throw new Error("Failed to create poll");
 		} catch (error) {
 			console.log("error", error);
 		}
