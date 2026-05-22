@@ -109,7 +109,7 @@ export const createQuestionInput = z
 export const questionsBatchSchema = z
 	.object({
 		questions: z.array(createQuestionInput).describe("Arreglo de preguntas"),
-		pollId: z.string().describe("Identificador de la encuesta"),
+		slug: z.string().describe("Slug de la encuesta"),
 	})
 	.refine((data) => {
 		if (data.questions.length === 0) return false;

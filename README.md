@@ -7,6 +7,8 @@
 [X] Visualizador de la encuesta
 [X] Validarla en tiempo real
 [X] Almacenar las respuestas-usuario
-[!] Evitar que una persona vote mas de una vez por una encuesta
-[] Habilitar la encuesta solo en el lapso correspondiente
+[X] Evitar que una persona vote mas de una vez por una encuesta
+[X] Habilitar la encuesta solo en el lapso correspondiente
 [] Si un usuario edita una encuesta que ya tiene respuestas en vez de editar se crea una nueva con nueva version
+[] Deshabilitar todos los botones del question form si se sta salvando
+[] Validaciones de respuesta correcta o cantidad maxima

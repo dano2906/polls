@@ -42,7 +42,8 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 					answers: values,
 				},
 			});
-		},		onSuccess: async () => {
+		},
+		onSuccess: async () => {
 			setIsFinished(true);
 			toast.success("Tus respuestas fueron validadas y guardadas con éxito.");
 		},
@@ -249,7 +250,5 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 		</div>
 	);
 };
-
-export default PollCompleteForm;
 
 export default PollCompleteForm;

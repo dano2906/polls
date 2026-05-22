@@ -21,12 +21,12 @@ import FormField, { FieldType } from "./form-field";
 import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
-	pollId: string | null;
+	slug: string | null;
 	pollDescription?: string | null;
 	initialData?: NewQuestion[];
 }
 
-const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
+const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 	const isEditing = !!initialData;
 	const router = useRouter();
 	const questionMutation = useMutation({
@@ -67,7 +67,7 @@ const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
 					answers: [{ answerText: "", isCorrect: false }],
 				},
 			],
-			pollId: pollId ?? "",
+			slug,
 		} as NewQuestionBatch,
 		validators: {
 			onSubmit: questionsBatchSchema,
@@ -84,7 +84,7 @@ const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
 				form.handleSubmit();
 			}}
 			className={
-				!pollId && !isEditing ? "opacity-70 cursor-not-allowed" : "opacity-100"
+				!slug && !isEditing ? "opacity-70 cursor-not-allowed" : "opacity-100"
 			}
 		>
 			<form.Subscribe
@@ -95,7 +95,7 @@ const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
 				]}
 				// biome-ignore lint/correctness/noChildrenProp: <explanation>
 				children={([canSubmit]) => (
-					<FieldSet disabled={!pollId && !isEditing} className="space-y-4">
+					<FieldSet disabled={!slug && !isEditing} className="space-y-4">
 						<form.Field name="questions" mode="array">
 							{(field) => (
 								<div className="space-y-4">

@@ -1,8 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { asc, eq } from "drizzle-orm";
-import { answer, poll, pollQuestions, question } from "#/db/schema.ts";
+import { and, asc, eq, sql } from "drizzle-orm";
+import {
+	answer,
+	poll,
+	pollQuestions,
+	question,
+	submission,
+} from "#/db/schema.ts";
 import { generateRandomCode } from "#/lib/utils.ts";
 import {
 	createPollInput,
@@ -123,17 +129,20 @@ export const createPoll = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		try {
 			const newId = randomUUID();
-			const res = await db.insert(poll).values({
-				...data,
-				id: newId,
-				slug:
-					data.slug && data.slug.length === 6
-						? data.slug
-						: generateRandomCode(),
-			});
-			if (res.rowsAffected > 0) {
-				return {
+			const [newPoll] = await db
+				.insert(poll)
+				.values({
+					...data,
 					id: newId,
+					slug:
+						data.slug && data.slug.length === 6
+							? data.slug
+							: generateRandomCode(),
+				})
+				.returning();
+			if (newPoll) {
+				return {
+					slug: newPoll.slug,
 				};
 			}
 		} catch (error) {
@@ -274,4 +283,104 @@ export const updatePoll = createServerFn({ method: "POST" })
 			console.error("Error al actualizar la encuesta:", error);
 			throw error;
 		}
+	});
+
+export const validatePollAccess = createServerFn({ method: "GET" })
+	.inputValidator((data: { userId: string; slug: string }) => data)
+	.handler(async ({ data }) => {
+		const { slug, userId } = data;
+		const now = new Date();
+
+		// 1. Buscar la encuesta por su slug
+		const currentPoll = await db.query.poll.findFirst({
+			where: eq(poll.slug, slug),
+		});
+
+		// ❌ CASO 1: La encuesta no existe
+		if (!currentPoll) {
+			throw notFound();
+		}
+
+		// ❌ CASO 2: Control de Estados (Draft / Archived)
+		if (currentPoll.status === "draft" && currentPoll.userId !== userId) {
+			return {
+				allowed: false,
+				reason: "UNAUTHORIZED",
+				message: "Esta encuesta aún no ha sido publicada.",
+			};
+		}
+
+		if (currentPoll.status === "archived") {
+			return {
+				allowed: false,
+				reason: "ARCHIVED",
+				message: "Esta encuesta ha sido archivada y ya no acepta respuestas.",
+			};
+		}
+
+		// ❌ CASO 3: Plazo de tiempo (¿Ya empezó? ¿Ya terminó?)
+		// Validar si tiene fecha de inicio y si ya pasó
+		if (currentPoll.startDate && now < currentPoll.startDate) {
+			return {
+				allowed: false,
+				reason: "NOT_STARTED",
+				message: `Esta encuesta comenzará el ${currentPoll.startDate.toLocaleString("es")}.`,
+			};
+		}
+
+		// Validar si tiene fecha de fin y si ya expiró
+		if (currentPoll.endDate && now > currentPoll.endDate) {
+			return {
+				allowed: false,
+				reason: "EXPIRED",
+				message: "El plazo para responder esta encuesta ha finalizado.",
+			};
+		}
+
+		// ❌ CASO 4: El usuario ya respondió (Duplicados)
+		// Gracias a tu índice único en `user_poll_unique_idx`, podemos estar seguros de esto
+		const existingSubmission = await db.query.submission.findFirst({
+			where: and(
+				eq(submission.pollId, currentPoll.id),
+				eq(submission.userId, userId),
+			),
+		});
+
+		if (existingSubmission) {
+			return {
+				allowed: false,
+				reason: "ALREADY_SUBMITTED",
+				message:
+					"Ya has completado esta encuesta. No se permiten múltiples respuestas.",
+				submissionId: existingSubmission.id, // Útil si quieres redirigirlo a sus respuestas
+			};
+		}
+
+		// ❌ CASO 5: Límite de respuestas globales (Metadata)
+		// Revisamos el campo json 'metadata' que definiste en tu esquema
+		if (currentPoll.metadata?.limitResponses) {
+			// Contamos cuántas respuestas totales tiene la encuesta
+			const totalSubmissions = await db
+				.select({ count: sql<number>`count(*)` })
+				.from(submission)
+				.where(eq(submission.pollId, currentPoll.id));
+
+			const count = totalSubmissions[0]?.count ?? 0;
+
+			if (count >= currentPoll.metadata.limitResponses) {
+				return {
+					allowed: false,
+					reason: "CAP_REACHED",
+					message:
+						"Esta encuesta ha alcanzado el límite máximo de respuestas permitidas.",
+				};
+			}
+		}
+
+		//  SI PASA TODAS LAS VALIDACIONES
+		return {
+			allowed: true,
+			pollId: currentPoll.id,
+			pollName: currentPoll.name,
+		};
 	});

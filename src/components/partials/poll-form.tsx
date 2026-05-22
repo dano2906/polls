@@ -43,7 +43,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 		},
 		onSuccess: async (data) => {
 			if (onCreatePoll && !isEditing) {
-				onCreatePoll((data as { id: string }).id);
+				onCreatePoll((data as { slug: string }).slug);
 			}
 			router.invalidate();
 			toast.success(isEditing ? "Encuesta actualizada" : "Encuesta creada");
