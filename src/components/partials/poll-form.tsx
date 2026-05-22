@@ -11,7 +11,6 @@ import { Button } from "../ui/button";
 import { LoadingSwap } from "../ui/loading-swap";
 import { ChangePollStatus } from "./change-poll-status";
 import FormField, { FieldType } from "./form-field";
-import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
 	userId: string;

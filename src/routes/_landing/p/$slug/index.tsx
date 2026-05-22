@@ -1,7 +1,8 @@
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
+import { getPollDetails } from "#/actions/poll";
 import PollCompleteForm from "#/components/partials/poll-complete-form";
 
-export const Route = createFileRoute("/_landing/p/$slug")({
+export const Route = createFileRoute("/_landing/p/$slug/")({
 	component: RouteComponent,
 	beforeLoad: async ({ context, location }) => {
 		try {
@@ -19,12 +20,21 @@ export const Route = createFileRoute("/_landing/p/$slug")({
 			});
 		}
 	},
+	loader: async ({ params }) => {
+		return await getPollDetails({
+			data: {
+				slug: params.slug,
+			},
+		});
+	},
 });
 
 function RouteComponent() {
+	const data = Route.useLoaderData();
+	const { slug } = Route.useParams();
 	return (
 		<div>
-			<PollCompleteForm />
+			<PollCompleteForm pollData={data} slug={slug} />
 		</div>
 	);
 }

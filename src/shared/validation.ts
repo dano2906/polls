@@ -120,9 +120,19 @@ export const generateQuestionsSchema = z.object({
 	pollDescription: z.string().optional().nullable(),
 	context: z.string().min(32).max(500),
 });
+
+const submitionAnswerInput = z.record(
+	z.uuid({ message: "La clave debe ser un UUID válido" }),
+	z.union([z.uuid(), z.array(z.uuid())]),
+);
+
+export const completePollInput = z.object({
+	pollId: z.uuid(),
+	answers: submitionAnswerInput,
+});
+
 export const selectPollOutput = createSelectSchema(poll);
 export const selectQuestionOutput = createSelectSchema(question);
 
 export const selectAnswerOutput = createSelectSchema(answer);
-export const createSubmissionInput = createInsertSchema(submission);
 export const selectSubmissionOutput = createSelectSchema(submission);
