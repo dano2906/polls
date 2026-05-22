@@ -33,14 +33,16 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 	const completePollMutation = useMutation({
 		mutationKey: ["complete", slug],
 		mutationFn: async (values: Record<string, Array<string> | string>) => {
+			if (pollData.questions.length === 0) {
+				throw new Error("Poll has no questions");
+			}
 			return submitPollAnswers({
 				data: {
 					pollId: pollData.questions[0].pollId,
 					answers: values,
 				},
 			});
-		},
-		onSuccess: async () => {
+		},		onSuccess: async () => {
 			setIsFinished(true);
 			toast.success("Tus respuestas fueron validadas y guardadas con éxito.");
 		},
@@ -247,5 +249,7 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 		</div>
 	);
 };
+
+export default PollCompleteForm;
 
 export default PollCompleteForm;

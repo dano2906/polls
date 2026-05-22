@@ -42,7 +42,7 @@ interface Props {
 	field_type: FieldType | `${FieldType}`; // Permite tanto el Enum como strings literales
 	label: string;
 	input_classes?: ClassValue;
-	requried?: boolean;
+	required?: boolean;
 	disabled?: boolean;
 	placeholder?: string;
 	options?: {
@@ -213,7 +213,7 @@ const RenderField = ({
 };
 
 const FormField = (props: Props) => {
-	const { field, field_type, label, input_classes, requried = false } = props;
+	const { field, field_type, label, input_classes, required = false } = props;
 
 	// Extraemos la renderización de errores repetitiva en una pequeña constante scannable
 	const renderError = !field.state.meta.isValid && (
@@ -230,7 +230,7 @@ const FormField = (props: Props) => {
 				<div className="flex items-center justify-start gap-2">
 					<RenderField {...props} />
 					<FieldLabel htmlFor={field.name}>
-						{label} {requried && <span className="text-destructive">*</span>}
+						{label} {required && <span className="text-destructive">*</span>}
 					</FieldLabel>
 				</div>
 				{renderError}
@@ -241,7 +241,7 @@ const FormField = (props: Props) => {
 	return (
 		<Field className={cn([input_classes, "-space-y-0.5"])}>
 			<FieldLabel htmlFor={field.name}>
-				{label} {requried && <span className="text-destructive">*</span>}
+				{label} {required && <span className="text-destructive">*</span>}
 			</FieldLabel>
 			<RenderField {...props} />
 			{renderError}

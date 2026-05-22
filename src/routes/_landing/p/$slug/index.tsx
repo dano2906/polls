@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_landing/p/$slug/")({
 			if (!context.auth?.session) {
 				throw redirect({
 					to: "/",
-					search: location.pathname,
+					search: { from: location.pathname },
 				});
 			}
 		} catch (error) {

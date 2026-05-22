@@ -121,14 +121,14 @@ export const generateQuestionsSchema = z.object({
 	context: z.string().min(32).max(500),
 });
 
-const submitionAnswerInput = z.record(
+const submissionAnswerInput = z.record(
 	z.uuid({ message: "La clave debe ser un UUID válido" }),
 	z.union([z.uuid(), z.array(z.uuid())]),
 );
 
 export const completePollInput = z.object({
 	pollId: z.uuid(),
-	answers: submitionAnswerInput,
+	answers: submissionAnswerInput,
 });
 
 export const selectPollOutput = createSelectSchema(poll);

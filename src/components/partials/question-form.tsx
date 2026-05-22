@@ -114,7 +114,7 @@ const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
 															field={subField}
 															field_type={FieldType.INPUT_TEXT}
 															label="Texto de la pregunta"
-															requried
+															required
 															input_classes="col-span-2"
 														/>
 													)}
@@ -126,7 +126,7 @@ const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
 															field={subField}
 															field_type={FieldType.SELECT}
 															label="Tipo de pregunta"
-															requried
+															required
 															options={[
 																{
 																	label: "Respuesta simple",
@@ -193,7 +193,7 @@ const QuestionForm = ({ pollId, initialData, pollDescription }: Props) => {
 																				field={answerSubField}
 																				field_type={FieldType.INPUT_TEXT}
 																				label="Texto de la respuesta"
-																				requried
+																				required
 																			/>
 																		)}
 																	</form.Field>
