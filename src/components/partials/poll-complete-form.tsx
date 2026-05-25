@@ -1,4 +1,4 @@
-import { useForm } from "@tanstack/react-form-start";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Save } from "lucide-react";
@@ -131,7 +131,7 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 													<FormField
 														field={field}
 														field_type={FieldType.RADIO}
-														label={q.questionText || "Selecciona una opción"}
+														label="" // Question text already shown in h6 above
 														options={q.answers.map((ans) => ({
 															value: ans.id,
 															label: ans.answerText,
@@ -142,10 +142,11 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 										case "multiple_choice": {
 											const selectedCount =
 												(field.state.value as string[])?.length || 0;
-											const max = q.maxSelections as number;
+											const max = q.maxSelections ?? 0;
+											const hasMaxLimit = max > 1;
 											return (
 												<li className="space-y-2 list-none">
-													{max > 1 && (
+													{hasMaxLimit > 1 && (
 														<div className="flex items-center gap-2 mb-2">
 															<Badge
 																variant={
@@ -176,6 +177,7 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 																// Si quieres deshabilitar los que no están marcados cuando llega al tope:
 																disabled={
 																	selectedCount >= max &&
+																	hasMaxLimit &&
 																	!(
 																		(field.state.value as string[]) || []
 																	).includes(ans.id)
@@ -193,6 +195,7 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 																			// Validación extra: No dejar agregar más si ya llegó al máximo
 																			if (
 																				!isChecked &&
+																				hasMaxLimit &&
 																				currentArr.length >= max
 																			)
 																				return;

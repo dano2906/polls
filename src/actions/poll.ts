@@ -180,6 +180,7 @@ export const createPoll = createServerFn({ method: "POST" })
 			throw new Error("Failed to create poll");
 		} catch (error) {
 			console.log("error", error);
+			throw error;
 		}
 	});
 

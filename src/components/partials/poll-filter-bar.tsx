@@ -28,8 +28,7 @@ interface Filter {
 }
 
 export function PollFilterBar({ showStateSelector = false, from }: Props) {
-	const search = useSearch({ from }) as any;
-
+	const search = useSearch({ from }) as Filter;
 	const navigate = useNavigate();
 
 	// Valores por defecto si no existen en la URL

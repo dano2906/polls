@@ -35,7 +35,6 @@ export const Route = createFileRoute("/_landing/p/$slug/")({
 			if (isRedirect(error)) throw error;
 			throw redirect({
 				to: "/",
-				search: { redirect: location.href },
 			});
 		}
 	},
