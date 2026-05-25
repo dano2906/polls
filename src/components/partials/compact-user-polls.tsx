@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
 import { use } from "react";
-import type { getListedUserPolls } from "#/actions/poll";
-import { Button, buttonVariants } from "../ui/button";
+import type { getCompactUserPolls } from "#/actions/poll";
+import { Accordion } from "../ui/accordion";
+import { buttonVariants } from "../ui/button";
 import {
 	Empty,
 	EmptyContent,
@@ -12,13 +13,13 @@ import {
 	EmptyTitle,
 } from "../ui/empty";
 import { Skeleton } from "../ui/skeleton";
-import PollCardDashoardList from "./poll-card-dashboard-list";
+import PollCardDashboardCompact from "./poll-card-dashboard-compact";
 
 interface Props {
-	dataPromise: ReturnType<typeof getListedUserPolls>;
+	dataPromise: ReturnType<typeof getCompactUserPolls>;
 }
 
-export const ListUserPolls = ({ dataPromise }: Props) => {
+export const CompactUserPolls = ({ dataPromise }: Props) => {
 	const polls = use(dataPromise);
 
 	if (!polls) {
@@ -58,12 +59,11 @@ export const ListUserPolls = ({ dataPromise }: Props) => {
 			</Empty>
 		);
 	}
-
 	return (
-		<ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 group">
-			{polls.map((poll) => {
-				return <PollCardDashoardList poll={poll} key={poll.slug} />;
+		<div className="w-full space-y-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+			{Object.entries(polls).map(([id, group]) => {
+				return <PollCardDashboardCompact key={id} pollGroup={group} />;
 			})}
-		</ul>
+		</div>
 	);
 };

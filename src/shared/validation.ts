@@ -89,6 +89,7 @@ export const createQuestionInput = z
 			.describe("Campo para saber si la pregunta tiene respuestas correctas."),
 		maxSelections: z
 			.number()
+			.min(1)
 			.default(1)
 			.optional()
 			.describe("Cantidad máxima de selecciones posibles."),
@@ -175,6 +176,7 @@ export const pollsSearchFiltershSchema = z.object({
 		.default("all")
 		.optional(),
 	error: z.string().optional().catch(undefined),
+	view: z.enum(["compact", "list"]).default("compact"),
 });
 export const pollsSearchFilterWithUserSchema = pollsSearchFiltershSchema.extend(
 	{

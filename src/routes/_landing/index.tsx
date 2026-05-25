@@ -69,7 +69,7 @@ function Home() {
 	}
 
 	return (
-		<div className="space-y-8 bg-background p-8 text-foreground">
+		<div className="w-full space-y-8 bg-background p-8 text-foreground">
 			<PollFilterBar from={"/_landing/"} />
 
 			{data && <ListPublishedPolls data={data} />}
