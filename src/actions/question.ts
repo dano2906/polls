@@ -1,8 +1,10 @@
+import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "#/db";
-import { answer, pollQuestions, question } from "#/db/schema";
+import { answer, poll, pollQuestions, question } from "#/db/schema";
+import { getSession } from "#/lib/auth-functions";
 import { openrouter } from "#/lib/openrouter";
 import {
 	createQuestionInput,
@@ -13,6 +15,19 @@ import {
 export const createQuestions = createServerFn({ method: "POST" })
 	.inputValidator(questionsBatchSchema)
 	.handler(async ({ data }) => {
+		const { slug } = data;
+		const session = await getSession();
+		if (!session) {
+			throw notFound();
+		}
+		const currentPoll = await db.query.poll.findFirst({
+			where: and(eq(poll.slug, slug), eq(poll.userId, session?.user.id)),
+		});
+
+		if (!currentPoll) {
+			throw notFound();
+		}
+
 		await db.transaction(async (tx) => {
 			for (const [index, qData] of data.questions.entries()) {
 				// 1. Insertar la Pregunta (una por una para obtener su ID)
@@ -31,7 +46,7 @@ export const createQuestions = createServerFn({ method: "POST" })
 
 				// 2. Vincular con la Encuesta (Tabla pivot/relación)
 				await tx.insert(pollQuestions).values({
-					pollId: data.pollId,
+					pollId: currentPoll.id,
 					questionId,
 					order: index + 1,
 				});
@@ -47,7 +62,7 @@ export const createQuestions = createServerFn({ method: "POST" })
 						}),
 					);
 
-					await tx.insert(answer).values(answersToInsert);
+					return await tx.insert(answer).values(answersToInsert);
 				}
 			}
 
@@ -60,7 +75,20 @@ export const saveQuestionsBatch = createServerFn({
 })
 	.inputValidator(questionsBatchSchema)
 	.handler(async ({ data }) => {
-		const { questions: questionsData, pollId } = data;
+		const { questions: questionsData, slug } = data;
+
+		const session = await getSession();
+		if (!session) {
+			throw notFound();
+		}
+		const currentPoll = await db.query.poll.findFirst({
+			where: and(eq(poll.slug, slug), eq(poll.userId, session?.user.id)),
+		});
+
+		if (!currentPoll) {
+			throw notFound();
+		}
+
 		return await db.transaction(async (tx) => {
 			// 1. Rastrear IDs para limpieza posterior (Deletions)
 			const currentQuestionIds: string[] = [];
@@ -105,7 +133,7 @@ export const saveQuestionsBatch = createServerFn({
 					.from(pollQuestions)
 					.where(
 						and(
-							eq(pollQuestions.pollId, pollId),
+							eq(pollQuestions.pollId, currentPoll.id),
 							eq(pollQuestions.questionId, qId),
 						),
 					);
@@ -116,13 +144,13 @@ export const saveQuestionsBatch = createServerFn({
 						.set({ order: i })
 						.where(
 							and(
-								eq(pollQuestions.pollId, pollId),
+								eq(pollQuestions.pollId, currentPoll.id),
 								eq(pollQuestions.questionId, qId),
 							),
 						);
 				} else {
 					await tx.insert(pollQuestions).values({
-						pollId,
+						pollId: currentPoll.id,
 						questionId: qId,
 						order: i,
 					});
@@ -174,7 +202,7 @@ export const saveQuestionsBatch = createServerFn({
 				.from(pollQuestions)
 				.where(
 					and(
-						eq(pollQuestions.pollId, pollId),
+						eq(pollQuestions.pollId, currentPoll.id),
 						notInArray(pollQuestions.questionId, currentQuestionIds),
 					),
 				);
@@ -187,15 +215,28 @@ export const saveQuestionsBatch = createServerFn({
 					.delete(pollQuestions)
 					.where(
 						and(
-							eq(pollQuestions.pollId, pollId),
+							eq(pollQuestions.pollId, currentPoll.id),
 							inArray(pollQuestions.questionId, idsToDelete),
 						),
 					);
 
-				// 3. (Opcional) Borrar las preguntas huérfanas y sus respuestas
-				// Si una pregunta solo pertenece a un poll, al desvincularla deberías borrarla
-				await tx.delete(answer).where(inArray(answer.questionId, idsToDelete));
-				await tx.delete(question).where(inArray(question.id, idsToDelete));
+				// 3. Borrar solo preguntas sin vínculos restantes en poll_question
+				const remainingLinks = await tx
+					.select({ questionId: pollQuestions.questionId })
+					.from(pollQuestions)
+					.where(inArray(pollQuestions.questionId, idsToDelete));
+
+				const stillLinkedIds = new Set(
+					remainingLinks.map((r) => r.questionId),
+				);
+				const orphanIds = idsToDelete.filter((id) => !stillLinkedIds.has(id));
+
+				if (orphanIds.length > 0) {
+					await tx
+						.delete(answer)
+						.where(inArray(answer.questionId, orphanIds));
+					await tx.delete(question).where(inArray(question.id, orphanIds));
+				}
 			}
 
 			return { success: true };

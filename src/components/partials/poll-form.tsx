@@ -11,7 +11,6 @@ import { Button } from "../ui/button";
 import { LoadingSwap } from "../ui/loading-swap";
 import { ChangePollStatus } from "./change-poll-status";
 import FormField, { FieldType } from "./form-field";
-import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
 	userId: string;
@@ -44,7 +43,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 		},
 		onSuccess: async (data) => {
 			if (onCreatePoll && !isEditing) {
-				onCreatePoll((data as { id: string }).id);
+				onCreatePoll((data as { slug: string }).slug);
 			}
 			router.invalidate();
 			toast.success(isEditing ? "Encuesta actualizada" : "Encuesta creada");

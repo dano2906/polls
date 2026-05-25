@@ -19,7 +19,9 @@ const buttonVariants = cva(
 				ghost:
 					"hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
 				ghostContext:
-					"hover:bg-muted hover:text-accent-foreground dark:hover:bg-muted/50 items-center justify-start",
+					"hover:bg-muted hover:text-accent-foreground dark:hover:bg-muted/50 items-center justify-center",
+				ghostDestructive:
+					"hover:bg-destructive/20 hover:text-destructive dark:hover:bg-destructive/10 items-center justify-center",
 				link: "text-primary underline-offset-4 hover:underline",
 			},
 			size: {

@@ -1,10 +1,5 @@
-import {
-	createFileRoute,
-	redirect,
-	useRouteContext,
-} from "@tanstack/react-router";
+import { createFileRoute, useRouteContext } from "@tanstack/react-router";
 import { getPollDetails } from "#/actions/poll";
-import { checkUserSubmissionFn } from "#/actions/user";
 import PageHeading from "#/components/partials/page-heading";
 import PollForm from "#/components/partials/poll-form";
 import QuestionForm from "#/components/partials/question-form";
@@ -12,16 +7,6 @@ import type { NewQuestion } from "#/shared/types";
 
 export const Route = createFileRoute("/_protected/poll/update/$slug")({
 	component: RouteComponent,
-	beforeLoad: async ({ params }) => {
-		const { hasResponded } = await checkUserSubmissionFn({ data: params.slug });
-
-		if (hasResponded) {
-			throw redirect({
-				to: "/",
-				replace: true,
-			});
-		}
-	},
 	loader: async (ctx) => {
 		const { slug } = ctx.params;
 		return await getPollDetails({ data: { slug } });
@@ -44,7 +29,7 @@ function RouteComponent() {
 			/>
 			<QuestionForm
 				initialData={questions as NewQuestion[]}
-				pollId={questions && questions.length > 0 ? questions[0].pollId : null}
+				slug={slug}
 				pollDescription={initialData.description}
 			/>
 		</div>

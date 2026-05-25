@@ -10,12 +10,12 @@ export const Route = createFileRoute("/_protected/poll/new")({
 
 function RouteComponent() {
 	const { auth } = useRouteContext({ from: "/_protected" });
-	const [pollId, setPollId] = useState<string | null>(null);
+	const [slug, setSlug] = useState<string | null>(null);
 	return (
 		<div className="p-2 block space-y-4">
 			<PageHeading>Crear encuesta</PageHeading>
-			<PollForm userId={auth?.user.id as string} onCreatePoll={setPollId} />
-			<QuestionForm pollId={pollId} />
+			<PollForm userId={auth?.user.id as string} onCreatePoll={setSlug} />
+			<QuestionForm slug={slug} />
 		</div>
 	);
 }

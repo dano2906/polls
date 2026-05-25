@@ -109,7 +109,7 @@ export const createQuestionInput = z
 export const questionsBatchSchema = z
 	.object({
 		questions: z.array(createQuestionInput).describe("Arreglo de preguntas"),
-		pollId: z.string().describe("Identificador de la encuesta"),
+		slug: z.string().describe("Slug de la encuesta"),
 	})
 	.refine((data) => {
 		if (data.questions.length === 0) return false;
@@ -120,9 +120,33 @@ export const generateQuestionsSchema = z.object({
 	pollDescription: z.string().optional().nullable(),
 	context: z.string().min(32).max(500),
 });
+
+const submissionAnswerInput = z.record(
+	z.uuid({ message: "La clave debe ser un UUID válido" }),
+	z.union([z.uuid(), z.array(z.uuid())]),
+);
+
+export const completePollInput = z.object({
+	pollId: z.uuid(),
+	answers: submissionAnswerInput,
+});
+
+export const pollsSearchFiltershSchema = z.object({
+	q: z.string().optional().default(""),
+	status: z
+		.enum(["all", "draft", "published", "archived"])
+		.default("all")
+		.optional(),
+	error: z.string().optional().catch(undefined),
+});
+export const pollsSearchFilterWithUserSchema = pollsSearchFiltershSchema.extend(
+	{
+		userId: z.string(),
+	},
+);
+
 export const selectPollOutput = createSelectSchema(poll);
 export const selectQuestionOutput = createSelectSchema(question);
 
 export const selectAnswerOutput = createSelectSchema(answer);
-export const createSubmissionInput = createInsertSchema(submission);
 export const selectSubmissionOutput = createSelectSchema(submission);
