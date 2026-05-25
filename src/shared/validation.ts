@@ -131,6 +131,20 @@ export const completePollInput = z.object({
 	answers: submissionAnswerInput,
 });
 
+export const pollsSearchFiltershSchema = z.object({
+	q: z.string().optional().default(""),
+	status: z
+		.enum(["all", "draft", "published", "archived"])
+		.default("all")
+		.optional(),
+	error: z.string().optional().catch(undefined),
+});
+export const pollsSearchFilterWithUserSchema = pollsSearchFiltershSchema.extend(
+	{
+		userId: z.string(),
+	},
+);
+
 export const selectPollOutput = createSelectSchema(poll);
 export const selectQuestionOutput = createSelectSchema(question);
 

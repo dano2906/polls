@@ -1,5 +1,15 @@
+import { RefreshCcw } from "lucide-react";
 import { use } from "react";
 import type { getUserPolls } from "#/actions/poll";
+import { Button } from "../ui/button";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "../ui/empty";
 import { Skeleton } from "../ui/skeleton";
 import PollCardDashoard from "./poll-card-dashboard";
 
@@ -17,6 +27,24 @@ export const ListUserPolls = ({ dataPromise }: Props) => {
 					return <Skeleton key={el} />;
 				})}
 			</ul>
+		);
+	}
+
+	if (polls.length === 0) {
+		return (
+			<Empty className="border border-dashed">
+				<EmptyHeader>
+					<EmptyMedia variant="icon">
+						<RefreshCcw />
+					</EmptyMedia>
+					<EmptyTitle>
+						No se encuentran resultados que coincidan con los filtros.
+					</EmptyTitle>
+					<EmptyDescription>
+						Modifique los filtros e inténtelo nuevamente.
+					</EmptyDescription>
+				</EmptyHeader>
+			</Empty>
 		);
 	}
 

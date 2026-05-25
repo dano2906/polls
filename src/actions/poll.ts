@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, like, or, sql } from "drizzle-orm";
 import {
 	answer,
 	poll,
@@ -14,13 +14,30 @@ import {
 	createPollInput,
 	editPollInput,
 	forkPollInput,
+	pollsSearchFiltershSchema,
+	pollsSearchFilterWithUserSchema,
 } from "#/shared/validation.ts";
 import { db } from "@/db";
 
-export const getPublishedPolls = createServerFn({ method: "GET" }).handler(
-	async () => {
+export const getPublishedPolls = createServerFn({ method: "GET" })
+	.inputValidator(pollsSearchFiltershSchema)
+	.handler(async ({ data }) => {
+		const { q } = data;
 		const res = await db.query.poll.findMany({
-			where: (poll, { eq }) => eq(poll.status, "published"),
+			where: (table, { and, or, eq, like }) => {
+				const conditions = [];
+				conditions.push(eq(table.status, "published"));
+				if (q && q.trim() !== "") {
+					const searchTerm = `%${q}%`;
+					conditions.push(
+						or(
+							like(table.name, searchTerm),
+							like(table.description, searchTerm),
+						),
+					);
+				}
+				return conditions.length > 0 ? and(...conditions) : undefined;
+			},
 			columns: {
 				description: true,
 				endDate: true,
@@ -42,13 +59,27 @@ export const getPublishedPolls = createServerFn({ method: "GET" }).handler(
 		});
 		if (!res || res.length === 0) return [];
 		return res;
-	},
-);
+	});
 
 export const getUserPolls = createServerFn({ method: "GET" })
-	.inputValidator((data: { userId: string }) => data)
+	.inputValidator(pollsSearchFilterWithUserSchema)
 	.handler(async ({ data }) => {
+		const { userId, q, status } = data;
+
 		try {
+			const conditions = [];
+			conditions.push(eq(poll.userId, userId));
+			if (status && status !== "all") {
+				conditions.push(eq(poll.status, status));
+			}
+
+			if (q && q.trim() !== "") {
+				const searchTerm = `%${q.trim()}%`;
+				conditions.push(
+					or(like(poll.name, searchTerm), like(poll.description, searchTerm)),
+				);
+			}
+
 			const res = await db
 				.select({
 					name: poll.name,
@@ -60,12 +91,12 @@ export const getUserPolls = createServerFn({ method: "GET" })
 					version: poll.version,
 				})
 				.from(poll)
-				.where(eq(poll.userId, data.userId))
+				.where(and(...conditions))
 				.orderBy(asc(poll.startDate));
-			if (!res || res.length === 0) return [];
-			return res;
+
+			return res ?? [];
 		} catch (error) {
-			console.log("error", error);
+			console.log("Error al obtener encuestas del usuario:", error);
 			return [];
 		}
 	});
