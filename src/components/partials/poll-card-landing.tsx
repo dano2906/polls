@@ -59,8 +59,8 @@ const PollCardLanding = ({ poll }: Props) => {
 							)}
 						</Badge>
 					</CardContent>
-					<CardFooter className="justify-end">
-						<CardAction className="space-x-2">
+					<CardFooter>
+						<CardAction className="w-full flex items-center justify-end gap-2">
 							<PollQrPopover
 								slug={poll.slug as string}
 								buttonType="ghost"
@@ -68,7 +68,7 @@ const PollCardLanding = ({ poll }: Props) => {
 							/>
 							<CopyClipboardPoll
 								slug={poll.slug as string}
-								buttonType="ghost"
+								buttonType="ghostContext"
 								label={false}
 							/>
 							<GoToPollLink slug={poll.slug} />

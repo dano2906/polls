@@ -1,6 +1,7 @@
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { createPollPublicURL } from "#/actions/app";
+import { cn } from "#/lib/utils";
 import { Button } from "../ui/button";
 
 interface Props {
@@ -31,6 +32,7 @@ const CopyClipboardPoll = ({
 			variant={buttonType}
 			size={label ? "default" : "icon-sm"}
 			onClick={handleCopy}
+			className={cn(label && "w-full flex items-center justify-start gap-2")}
 		>
 			{copied ? (
 				<>

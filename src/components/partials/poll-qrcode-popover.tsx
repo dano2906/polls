@@ -2,6 +2,7 @@ import { Check, Copy, Download, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { createPollPublicURL } from "#/actions/app";
+import { cn } from "#/lib/utils";
 import { Button } from "../ui/button";
 import {
 	Popover,
@@ -60,7 +61,13 @@ const PollQrPopover = ({
 	return (
 		<Popover>
 			<PopoverTrigger asChild>
-				<Button variant={buttonType} size={label ? "default" : "icon-sm"}>
+				<Button
+					variant={buttonType}
+					size={label ? "default" : "icon-sm"}
+					className={cn(
+						label && "w-full flex items-center justify-start gap-2",
+					)}
+				>
 					<QrCode />
 					{label && "Mostrar código QR"}
 				</Button>

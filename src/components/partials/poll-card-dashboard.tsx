@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Pencil } from "lucide-react";
+import { cn } from "#/lib/utils";
 import type { Poll } from "#/shared/types";
 import { Badge } from "../ui/badge";
 import { buttonVariants } from "../ui/button";
@@ -73,7 +74,7 @@ const PollCardDashoard = ({ poll }: Props) => {
 					</CardFooter>
 				</Card>
 			</ContextMenuTrigger>
-			<ContextMenuContent className="flex flex-col">
+			<ContextMenuContent className="grid w-auto">
 				<ContextMenuItem asChild>
 					<Link
 						to="/poll/update/$slug"
@@ -81,9 +82,12 @@ const PollCardDashoard = ({ poll }: Props) => {
 							slug: poll.slug as string,
 						}}
 						preload={false}
-						className={buttonVariants({
-							variant: "ghostContext",
-						})}
+						className={cn(
+							buttonVariants({
+								variant: "ghostContext",
+							}),
+							"w-full flex items-center justify-start",
+						)}
 					>
 						<Pencil />
 						Editar encuesta

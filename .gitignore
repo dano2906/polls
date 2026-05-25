@@ -12,6 +12,6 @@ dist-ssr
 .vercel
 __unconfig*
 todos.json
-
+local.db
 .vercel
 .env*.local

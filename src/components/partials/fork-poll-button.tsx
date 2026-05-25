@@ -31,11 +31,12 @@ const ForkVersionButton = ({ slug, version }: Props) => {
 	return (
 		<Button
 			variant={"ghostContext"}
+			className="w-full flex items-center justify-start px-2.5"
 			onClick={() => forkPollMutation.mutateAsync()}
 		>
 			<LoadingSwap
 				isLoading={forkPollMutation.isPending}
-				className="flex items-center gap-2"
+				className="flex items-center gap-2 w-full"
 			>
 				<ListTree />
 				Crear nueva versión (v

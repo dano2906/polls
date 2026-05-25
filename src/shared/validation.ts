@@ -1,4 +1,4 @@
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { answer, poll, question, submission } from "#/db/schema";
 
@@ -11,7 +11,7 @@ export const createPollInput = z
 		slug: z.string().optional(),
 		startDate: z.date(),
 		endDate: z.date().optional(),
-		description: z.string().max(200).optional(),
+		description: z.string().max(500).optional(),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 		userId: z.string(),
 	})
@@ -44,7 +44,7 @@ export const editPollInput = z
 			.max(200, { message: "Debe tener máximo 32 caracteres" }),
 		startDate: z.date(),
 		endDate: z.date().optional(),
-		description: z.string().max(200).optional(),
+		description: z.string().max(500).optional(),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 		userId: z.string(),
 	})

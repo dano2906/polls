@@ -12,3 +12,4 @@
 [] Si un usuario edita una encuesta que ya tiene respuestas en vez de editar se crea una nueva con nueva version
 [] Deshabilitar todos los botones del question form si se sta salvando
 [] Validaciones de respuesta correcta o cantidad maxima
+[] Pagina de visualizar resultados

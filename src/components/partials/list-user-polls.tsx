@@ -1,7 +1,8 @@
+import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
 import { use } from "react";
 import type { getUserPolls } from "#/actions/poll";
-import { Button } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
 import {
 	Empty,
 	EmptyContent,
@@ -43,6 +44,16 @@ export const ListUserPolls = ({ dataPromise }: Props) => {
 					<EmptyDescription>
 						Modifique los filtros e inténtelo nuevamente.
 					</EmptyDescription>
+					<EmptyContent>
+						<Link
+							to="/poll/new"
+							className={buttonVariants({
+								variant: "secondary",
+							})}
+						>
+							Crear encuesta
+						</Link>
+					</EmptyContent>
 				</EmptyHeader>
 			</Empty>
 		);
