@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, eq, like, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
 import {
 	answer,
 	poll,
@@ -61,7 +61,7 @@ export const getPublishedPolls = createServerFn({ method: "GET" })
 		return res;
 	});
 
-export const getUserPolls = createServerFn({ method: "GET" })
+export const getListedUserPolls = createServerFn({ method: "GET" })
 	.inputValidator(pollsSearchFilterWithUserSchema)
 	.handler(async ({ data }) => {
 		const { userId, q, status } = data;
@@ -95,6 +95,68 @@ export const getUserPolls = createServerFn({ method: "GET" })
 				.orderBy(asc(poll.startDate));
 
 			return res ?? [];
+		} catch (error) {
+			console.log("Error al obtener encuestas del usuario:", error);
+			return [];
+		}
+	});
+
+export const getCompactUserPolls = createServerFn({ method: "GET" })
+	.inputValidator(pollsSearchFilterWithUserSchema)
+	.handler(async ({ data }) => {
+		const { userId, q, status } = data;
+
+		try {
+			const conditions = [];
+			conditions.push(eq(poll.userId, userId));
+
+			if (status && status !== "all") {
+				conditions.push(eq(poll.status, status));
+			}
+
+			if (q && q.trim() !== "") {
+				const searchTerm = `%${q.trim()}%`;
+				conditions.push(
+					or(like(poll.name, searchTerm), like(poll.description, searchTerm)),
+				);
+			}
+
+			// 1. Ejecutamos la consulta aplicando tus filtros
+			const res = await db
+				.select({
+					id: poll.id,
+					rootId: poll.rootId,
+					name: poll.name,
+					description: poll.description,
+					slug: poll.slug,
+					startDate: poll.startDate,
+					endDate: poll.endDate,
+					status: poll.status,
+					version: poll.version,
+					createdAt: poll.createdAt,
+				})
+				.from(poll)
+				.where(and(...conditions))
+				.orderBy(
+					sql`COALESCE(${poll.rootId}, ${poll.id})`,
+					desc(poll.createdAt),
+				);
+
+			const groupedPolls = res.reduce(
+				(acc, currentPoll) => {
+					const groupKey = currentPoll.rootId ?? currentPoll.id;
+
+					if (!acc[groupKey]) {
+						acc[groupKey] = [];
+					}
+
+					acc[groupKey].push(currentPoll);
+					return acc;
+				},
+				{} as Record<string, typeof res>,
+			);
+
+			return groupedPolls;
 		} catch (error) {
 			console.log("Error al obtener encuestas del usuario:", error);
 			return [];
@@ -233,7 +295,7 @@ export const forkPoll = createServerFn({ method: "POST" })
 						endDate: originalPoll.endDate
 							? new Date(originalPoll.endDate)
 							: null,
-						rootId: originalPoll.id,
+						rootId: originalPoll.rootId ?? originalPoll.id,
 					})
 					.returning({ id: poll.id });
 
