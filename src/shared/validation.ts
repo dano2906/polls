@@ -63,7 +63,7 @@ export const createAnswerInput = z.object({
 	id: z.string().nullable().optional(),
 	answerText: z
 		.string()
-		.min(1, { message: "Este campo es requerido" })
+		.min(1)
 		.max(500, { message: "Debe tener máximo 500 caracteres" })
 		.describe("Enunciado de la respuesta."),
 	isCorrect: z
@@ -81,6 +81,7 @@ export const createQuestionInput = z
 			.describe("Tipo de la pregunta."),
 		questionText: z
 			.string()
+			.min(1)
 			.max(500)
 			.describe("El enunciado o pregunta clara."),
 		hasCorrectAnswers: z
@@ -97,23 +98,59 @@ export const createQuestionInput = z
 			.describe("Campo para saber si la pregunta es de respuesta obligatoria."),
 		answers: z.array(createAnswerInput).describe("Arreglo de respuestas"),
 	})
-	.refine((data) => {
+	.superRefine((data, ctx) => {
+		// --- CASO 1: Validación de selecciones para single_choice ---
 		if (
 			data.type === "single_choice" &&
 			data.maxSelections &&
 			data.maxSelections > 1
-		)
-			return false;
-		else return true;
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["maxSelections"],
+				message:
+					"Si la pregunta es de respuesta simple, la cantidad máxima de selecciones no puede ser mayor a 1.",
+			});
+		}
+
+		const correctAnswersCount = data.answers.filter(
+			(answer) => answer.isCorrect,
+		).length;
+
+		// --- CASO 2: Tiene respuestas correctas activado ---
+		if (data.hasCorrectAnswers && correctAnswersCount === 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["answers"],
+				message:
+					"El check de respuestas correctas está marcado, por lo que al menos una respuesta debe ser marcada como correcta.",
+			});
+		}
+
+		// --- CASO 3: NO tiene respuestas correctas activado ---
+		if (!data.hasCorrectAnswers && correctAnswersCount > 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["answers"],
+				message:
+					"El check de respuestas correctas NO está marcado, por lo que ninguna respuesta debe ser correcta.",
+			});
+		}
 	});
 export const questionsBatchSchema = z
 	.object({
 		questions: z.array(createQuestionInput).describe("Arreglo de preguntas"),
 		slug: z.string().describe("Slug de la encuesta"),
 	})
-	.refine((data) => {
-		if (data.questions.length === 0) return false;
-		return true;
+	.superRefine((data, ctx) => {
+		// Validación del lote: Evitar arreglos vacíos con un mensaje personalizado
+		if (!data.questions || data.questions.length === 0) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["questions"],
+				message: "La encuesta debe contener al menos una pregunta.",
+			});
+		}
 	});
 export const generateQuestionsSchema = z.object({
 	lang: z.enum(["spanish", "english"]),

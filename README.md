@@ -10,5 +10,6 @@
 [X] Evitar que una persona vote mas de una vez por una encuesta
 [X] Habilitar la encuesta solo en el lapso correspondiente
 [X] Si un usuario edita una encuesta que ya tiene respuestas en vez de editar se crea una nueva con nueva version
-[] Validaciones de respuesta correcta o cantidad maxima
+[X] Validaciones de respuesta correcta o cantidad maxima
+[] Crear vistas compactas o listadas
 [] Pagina de visualizar resultados

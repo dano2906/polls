@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-import { useForm } from "@tanstack/react-form-start";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { Plus, Save, Trash } from "lucide-react";
@@ -70,7 +70,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 			slug,
 		} as NewQuestionBatch,
 		validators: {
-			onSubmit: questionsBatchSchema,
+			onChange: questionsBatchSchema,
 		},
 		onSubmit: async ({ value }) => {
 			await questionMutation.mutateAsync(value);
@@ -93,8 +93,8 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 					state.isSubmitting,
 					state.errors,
 				]}
-				// biome-ignore lint/correctness/noChildrenProp: <explanation>
-				children={([canSubmit]) => (
+			>
+				{([canSubmit, _isSubmitting]) => (
 					<FieldSet disabled={!slug && !isEditing} className="space-y-4">
 						<form.Field name="questions" mode="array">
 							{(field) => (
@@ -177,6 +177,13 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 												>
 													{(answersField) => (
 														<div className="w-full col-span-2 p-2 border border-border border-dashed grid grid-cols-1 md:grid-cols-2 gap-2">
+															{answersField.state.meta.errors.length > 0 && (
+																<div className="col-span-2 p-2 bg-destructive/10 text-destructive text-xs rounded font-semibold">
+																	{answersField.state.meta.errors
+																		.map((err) => err?.message)
+																		.join(", ")}
+																</div>
+															)}
 															{answersField.state.value.map((_, ai) => (
 																<div
 																	key={`${i}-${ai}`}
@@ -317,7 +324,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 						</form.Field>
 					</FieldSet>
 				)}
-			/>
+			</form.Subscribe>
 		</form>
 	);
 };
