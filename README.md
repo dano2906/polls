@@ -9,7 +9,6 @@
 [X] Almacenar las respuestas-usuario
 [X] Evitar que una persona vote mas de una vez por una encuesta
 [X] Habilitar la encuesta solo en el lapso correspondiente
-[] Si un usuario edita una encuesta que ya tiene respuestas en vez de editar se crea una nueva con nueva version
-[] Deshabilitar todos los botones del question form si se sta salvando
+[X] Si un usuario edita una encuesta que ya tiene respuestas en vez de editar se crea una nueva con nueva version
 [] Validaciones de respuesta correcta o cantidad maxima
 [] Pagina de visualizar resultados

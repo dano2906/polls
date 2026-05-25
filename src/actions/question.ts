@@ -3,9 +3,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "#/db";
-import { answer, poll, pollQuestions, question } from "#/db/schema";
+import { answer, poll, pollQuestions, question, submission } from "#/db/schema";
 import { getSession } from "#/lib/auth-functions";
 import { openrouter } from "#/lib/openrouter";
+import { generateRandomCode } from "#/lib/utils";
 import {
 	createQuestionInput,
 	generateQuestionsSchema,
@@ -90,6 +91,44 @@ export const saveQuestionsBatch = createServerFn({
 		}
 
 		return await db.transaction(async (tx) => {
+			const existingSubmissions = await tx
+				.select({ id: submission.id })
+				.from(submission)
+				.where(eq(submission.pollId, currentPoll.id))
+				.limit(1);
+			const hasResponses = existingSubmissions.length > 0;
+
+			let targetPollId = currentPoll.id;
+			const isNewVersion = hasResponses;
+			let activeSlug = slug;
+
+			if (isNewVersion) {
+				const newPollId = crypto.randomUUID();
+				await tx
+					.update(poll)
+					.set({
+						status: "archived",
+						updatedAt: new Date(),
+					})
+					.where(eq(poll.id, currentPoll.id));
+				const newSlug = generateRandomCode();
+				await tx.insert(poll).values({
+					id: newPollId,
+					userId: currentPoll.userId,
+					rootId: currentPoll.rootId || currentPoll.id,
+					name: currentPoll.name,
+					description: currentPoll.description,
+					slug: newSlug,
+					status: "published",
+					version: (currentPoll.version ?? 1) + 1,
+					metadata: currentPoll.metadata,
+					startDate: currentPoll.startDate,
+					endDate: currentPoll.endDate,
+				});
+				targetPollId = newPollId;
+				activeSlug = slug;
+			}
+
 			// 1. Rastrear IDs para limpieza posterior (Deletions)
 			const currentQuestionIds: string[] = [];
 
@@ -98,7 +137,7 @@ export const saveQuestionsBatch = createServerFn({
 				let qId = qData.id;
 
 				// --- FLUJO DE PREGUNTA ---
-				if (qId) {
+				if (qId && !isNewVersion) {
 					// Actualizar pregunta existente
 					await tx
 						.update(question)
@@ -126,31 +165,39 @@ export const saveQuestionsBatch = createServerFn({
 				}
 				currentQuestionIds.push(qId);
 
-				// --- FLUJO DE TABLA INTERMEDIA (pollQuestions) ---
-				// Aseguramos el vínculo y actualizamos el orden
-				const [existingLink] = await tx
-					.select()
-					.from(pollQuestions)
-					.where(
-						and(
-							eq(pollQuestions.pollId, currentPoll.id),
-							eq(pollQuestions.questionId, qId),
-						),
-					);
-
-				if (existingLink) {
-					await tx
-						.update(pollQuestions)
-						.set({ order: i })
+				// --- VÍNCULO EN TABLA INTERMEDIA (pollQuestions) ---
+				if (!isNewVersion) {
+					const [existingLink] = await tx
+						.select()
+						.from(pollQuestions)
 						.where(
 							and(
-								eq(pollQuestions.pollId, currentPoll.id),
+								eq(pollQuestions.pollId, targetPollId),
 								eq(pollQuestions.questionId, qId),
 							),
 						);
+
+					if (existingLink) {
+						await tx
+							.update(pollQuestions)
+							.set({ order: i })
+							.where(
+								and(
+									eq(pollQuestions.pollId, targetPollId),
+									eq(pollQuestions.questionId, qId),
+								),
+							);
+					} else {
+						await tx.insert(pollQuestions).values({
+							pollId: targetPollId,
+							questionId: qId,
+							order: i,
+						});
+					}
 				} else {
+					// Si es una nueva versión, vinculamos directo la nueva pregunta al nuevo pollId
 					await tx.insert(pollQuestions).values({
-						pollId: currentPoll.id,
+						pollId: targetPollId,
 						questionId: qId,
 						order: i,
 					});
@@ -160,7 +207,9 @@ export const saveQuestionsBatch = createServerFn({
 				const currentAnswerIds: string[] = [];
 				for (let j = 0; j < qData.answers.length; j++) {
 					const aData = qData.answers[j];
-					if (aData.id) {
+
+					if (aData.id && !isNewVersion) {
+						// Actualizar respuesta existente en caliente
 						await tx
 							.update(answer)
 							.set({
@@ -169,8 +218,10 @@ export const saveQuestionsBatch = createServerFn({
 								order: j,
 							})
 							.where(eq(answer.id, aData.id));
+
 						currentAnswerIds.push(aData.id);
 					} else {
+						// Nueva respuesta (o clonación limpia por nueva versión)
 						const [newA] = await tx
 							.insert(answer)
 							.values({
@@ -180,66 +231,74 @@ export const saveQuestionsBatch = createServerFn({
 								order: j,
 							})
 							.returning({ id: answer.id });
+
 						currentAnswerIds.push(newA.id);
 					}
 				}
 
-				// Limpiar respuestas eliminadas de esta pregunta
-				await tx
-					.delete(answer)
-					.where(
-						and(
-							eq(answer.questionId, qId),
-							notInArray(answer.id, currentAnswerIds),
-						),
-					);
+				// Limpiar opciones eliminadas de la pregunta (Solo si NO es una nueva versión)
+				if (!isNewVersion) {
+					await tx
+						.delete(answer)
+						.where(
+							and(
+								eq(answer.questionId, qId),
+								notInArray(answer.id, currentAnswerIds),
+							),
+						);
+				}
 			}
 
 			// --- LIMPIEZA FINAL DE PREGUNTAS ---
 			// 1. Buscamos qué preguntas estaban vinculadas a este poll pero ya no están en el batch
-			const linksToDelete = await tx
-				.select({ qId: pollQuestions.questionId })
-				.from(pollQuestions)
-				.where(
-					and(
-						eq(pollQuestions.pollId, currentPoll.id),
-						notInArray(pollQuestions.questionId, currentQuestionIds),
-					),
-				);
-
-			const idsToDelete = linksToDelete.map((l) => l.qId);
-
-			if (idsToDelete.length > 0) {
-				// 2. Borrar los vínculos en la tabla intermedia
-				await tx
-					.delete(pollQuestions)
+			if (!isNewVersion) {
+				const linksToDelete = await tx
+					.select({ qId: pollQuestions.questionId })
+					.from(pollQuestions)
 					.where(
 						and(
-							eq(pollQuestions.pollId, currentPoll.id),
-							inArray(pollQuestions.questionId, idsToDelete),
+							eq(pollQuestions.pollId, targetPollId),
+							notInArray(pollQuestions.questionId, currentQuestionIds),
 						),
 					);
 
-				// 3. Borrar solo preguntas sin vínculos restantes en poll_question
-				const remainingLinks = await tx
-					.select({ questionId: pollQuestions.questionId })
-					.from(pollQuestions)
-					.where(inArray(pollQuestions.questionId, idsToDelete));
+				const idsToDelete = linksToDelete.map((l) => l.qId);
 
-				const stillLinkedIds = new Set(
-					remainingLinks.map((r) => r.questionId),
-				);
-				const orphanIds = idsToDelete.filter((id) => !stillLinkedIds.has(id));
-
-				if (orphanIds.length > 0) {
+				if (idsToDelete.length > 0) {
 					await tx
-						.delete(answer)
-						.where(inArray(answer.questionId, orphanIds));
-					await tx.delete(question).where(inArray(question.id, orphanIds));
+						.delete(pollQuestions)
+						.where(
+							and(
+								eq(pollQuestions.pollId, targetPollId),
+								inArray(pollQuestions.questionId, idsToDelete),
+							),
+						);
+
+					const remainingLinks = await tx
+						.select({ questionId: pollQuestions.questionId })
+						.from(pollQuestions)
+						.where(inArray(pollQuestions.questionId, idsToDelete));
+
+					const stillLinkedIds = new Set(
+						remainingLinks.map((r) => r.questionId),
+					);
+					const orphanIds = idsToDelete.filter((id) => !stillLinkedIds.has(id));
+
+					if (orphanIds.length > 0) {
+						await tx
+							.delete(answer)
+							.where(inArray(answer.questionId, orphanIds));
+						await tx.delete(question).where(inArray(question.id, orphanIds));
+					}
 				}
 			}
 
-			return { success: true };
+			return {
+				success: true,
+				versioned: isNewVersion,
+				pollId: targetPollId,
+				slug: activeSlug,
+			};
 		});
 	});
 
