@@ -8,6 +8,7 @@ import {
 	pollQuestions,
 	question,
 	submission,
+	userAnswer,
 } from "#/db/schema.ts";
 import { generateRandomCode } from "#/lib/utils.ts";
 import {
@@ -478,5 +479,97 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			allowed: true,
 			pollId: currentPoll.id,
 			pollName: currentPoll.name,
+		};
+	});
+
+export const getUserPollResults = createServerFn({ method: "GET" })
+	.inputValidator((data: { userId: string; slug: string }) => data)
+	.handler(async ({ data }) => {
+		const { slug, userId } = data;
+
+		const currentPoll = await db
+			.select({ id: poll.id, name: poll.name, description: poll.description })
+			.from(poll)
+			.where(eq(poll.slug, slug))
+			.get();
+
+		if (!currentPoll) {
+			throw notFound();
+		}
+
+		const rawRows = await db
+			.select({
+				questionId: question.id,
+				questionText: question.questionText,
+				type: question.type,
+				order: pollQuestions.order,
+				userAnswerId: userAnswer.id,
+				selectedAnswerId: userAnswer.answerId,
+				textResponse: userAnswer.textResponse,
+				answerText: answer.answerText,
+				isCorrect: answer.isCorrect,
+			})
+			.from(pollQuestions)
+			.where(eq(pollQuestions.pollId, currentPoll.id))
+			.innerJoin(question, eq(pollQuestions.questionId, question.id))
+			.leftJoin(
+				submission,
+				and(
+					eq(submission.pollId, currentPoll.id),
+					eq(submission.userId, userId),
+				),
+			)
+			.leftJoin(
+				userAnswer,
+				and(
+					eq(userAnswer.submissionId, submission.id),
+					eq(userAnswer.questionId, question.id),
+				),
+			)
+			.leftJoin(answer, eq(userAnswer.answerId, answer.id))
+			.orderBy(pollQuestions.order);
+
+		const questionsMap = new Map<
+			string,
+			{
+				id: string;
+				questionText: string;
+				type: "single_choice" | "multiple_choice";
+				order: number | null;
+				textResponse: string | null;
+				selectedAnswers: {
+					answerId: string;
+					answerText: string | null;
+					isCorrect: boolean | null;
+				}[];
+			}
+		>();
+
+		for (const row of rawRows) {
+			if (!questionsMap.has(row.questionId)) {
+				questionsMap.set(row.questionId, {
+					id: row.questionId,
+					questionText: row.questionText,
+					type: row.type,
+					order: row.order,
+					selectedAnswers: [],
+					textResponse: row.textResponse,
+				});
+			}
+
+			const currentQuestion = questionsMap.get(row.questionId);
+
+			if (row.selectedAnswerId) {
+				currentQuestion?.selectedAnswers.push({
+					answerId: row.selectedAnswerId,
+					answerText: row.answerText,
+					isCorrect: row.isCorrect,
+				});
+			}
+		}
+
+		return {
+			poll: currentPoll,
+			results: Array.from(questionsMap.values()),
 		};
 	});

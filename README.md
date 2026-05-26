@@ -11,5 +11,8 @@
 [X] Habilitar la encuesta solo en el lapso correspondiente
 [X] Si un usuario edita una encuesta que ya tiene respuestas en vez de editar se crea una nueva con nueva version
 [X] Validaciones de respuesta correcta o cantidad maxima
-[] Crear vistas compactas o listadas
-[] Pagina de visualizar resultados
+[X] Crear vistas compactas o listadas
+[X] Pagina de visualizar resultados
+[] Refactorizar el layout
+[] Refactorizar el diseno de la base de datos
+[] Implementar el reorder de las preguntas
