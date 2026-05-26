@@ -4,40 +4,35 @@ import {
 	Outlet,
 	redirect,
 } from "@tanstack/react-router";
-import type { User } from "better-auth";
-import DashboardAside from "#/components/partials/dashboard-aside.tsx";
+import AuthHeader from "#/components/partials/auth-header";
 
 export const Route = createFileRoute("/_protected")({
 	component: RouteComponent,
-	beforeLoad: async ({ context, location }) => {
+	beforeLoad: async ({ context }) => {
 		try {
 			if (!context.auth?.session) {
 				throw redirect({
 					to: "/",
-					search: location.pathname,
 				});
 			}
 		} catch (error) {
-			// Re-throw redirects (they're intentional, not errors)
 			if (isRedirect(error)) throw error;
-
-			// Auth check failed (network error, etc.) - redirect to login
 			throw redirect({
 				to: "/",
-				search: { redirect: location.href },
 			});
 		}
 	},
 });
 
 function RouteComponent() {
-	const { auth } = Route.useRouteContext();
 	return (
-		<div className="bg-background text-foreground relative w-full min-h-screen">
-			<main className="w-full max-w-md sm:max-lg md:max-w-xl xl:max-w-5xl mx-auto py-6 px-2">
+		<div className="bg-background text-foreground relative w-full min-h-screen max-w-md sm:max-lg md:max-w-xl xl:max-w-5xl mx-auto py-6 px-2">
+			<header className="w-full flex items-center justify-end p-2">
+				<AuthHeader />
+			</header>
+			<main>
 				<Outlet />
 			</main>
-			<DashboardAside user={auth?.user as User} />
 		</div>
 	);
 }

@@ -49,7 +49,7 @@ function RouteComponent() {
 	};
 
 	return (
-		<div className="space-y-2 p-8 bg-background text-foreground">
+		<div className="space-y-2 p-2 bg-background text-foreground">
 			<h2 className="text-4xl font-sgc font-semibold text-primary tracking-wider pb-3">
 				Mis encuestas
 			</h2>

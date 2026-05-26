@@ -13,8 +13,18 @@ const ThemeToggle = () => {
 		router.invalidate();
 	}
 	return (
-		<Button aria-label="Toggle theme" onClick={toggleTheme}>
-			{theme === "dark" ? <Moon /> : theme === "light" ? <Sun /> : <Monitor />}
+		<Button
+			aria-label="Toggle theme"
+			onClick={toggleTheme}
+			variant={"secondary"}
+			className="w-full flex items-center justify-start gap-2 p-0"
+		>
+			{theme === "dark" ? <Sun /> : theme === "light" ? <Moon /> : <Monitor />}
+			{theme === "dark"
+				? "Tema claro"
+				: theme === "light"
+					? "Tema oscuro"
+					: "Tema predeterminado"}
 		</Button>
 	);
 };

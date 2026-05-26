@@ -13,6 +13,6 @@
 [X] Validaciones de respuesta correcta o cantidad maxima
 [X] Crear vistas compactas o listadas
 [X] Pagina de visualizar resultados
-[] Refactorizar el layout
+[X] Refactorizar el layout
 [] Refactorizar el diseno de la base de datos
 [] Implementar el reorder de las preguntas
