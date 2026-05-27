@@ -10,7 +10,9 @@ import {
 	submission,
 	userAnswer,
 } from "#/db/schema.ts";
+import { getSession } from "#/lib/auth-functions";
 import { generateRandomCode } from "#/lib/utils.ts";
+import type { QuestionType } from "#/shared/types";
 import {
 	createPollInput,
 	editPollInput,
@@ -534,7 +536,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			{
 				id: string;
 				questionText: string;
-				type: "single_choice" | "multiple_choice";
+				type: QuestionType;
 				order: number | null;
 				textResponse: string | null;
 				selectedAnswers: {
@@ -572,4 +574,33 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			poll: currentPoll,
 			results: Array.from(questionsMap.values()),
 		};
+	});
+
+export const deletePollBySlug = createServerFn({ method: "POST" })
+	.inputValidator((data: { slug: string }) => data)
+	.handler(async ({ data }) => {
+		const session = await getSession();
+
+		if (!session) {
+			throw new Error("UNAUTHORIZED");
+		}
+
+		try {
+			const deletedPoll = await db
+				.delete(poll)
+				.where(and(eq(poll.slug, data.slug), eq(poll.userId, session.user.id)))
+				.returning({ id: poll.id, name: poll.name });
+
+			if (deletedPoll.length === 0) {
+				throw notFound();
+			}
+
+			return {
+				success: true,
+				message: `Encuesta "${deletedPoll[0].name}" eliminada correctamente.`,
+			};
+		} catch (error) {
+			console.error("Error al eliminar la encuesta:", error);
+			throw new Error("No se pudo eliminar la encuesta.");
+		}
 	});

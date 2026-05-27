@@ -5,7 +5,6 @@ import type {
 	createAnswerInput,
 	createPollInput,
 	createQuestionInput,
-	createSubmissionInput,
 	questionsBatchSchema,
 	selectAnswerOutput,
 	selectPollOutput,
@@ -24,7 +23,6 @@ export type Answer = z.infer<typeof selectAnswerOutput>;
 export type NewAswer = z.infer<typeof createAnswerInput>;
 
 export type Submission = z.infer<typeof selectSubmissionOutput>;
-export type NewSubmission = z.infer<typeof createSubmissionInput>;
 export type UserAnswer = InferSelectModel<typeof userAnswer>;
 
 export enum Statuses {
@@ -37,3 +35,13 @@ export type GeneratePoll = {
 	context: string;
 	lang?: "spanish" | "english";
 };
+
+export const QUESTION_TYPES = [
+	"single_choice",
+	"multiple_choice",
+	"open_answer",
+	"ranking",
+	"rating",
+] as const;
+
+export type QuestionType = (typeof QUESTION_TYPES)[number];

@@ -1,6 +1,6 @@
 import { Input } from "#/components/ui/input.tsx"
 import { cn } from "#/lib/utils.ts"
-import { type ComponentProps } from "react"
+import type { ComponentProps } from "react"
 
 export function NumberInput({
   onChange,

@@ -6,6 +6,7 @@ import {
 	text,
 	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import { QUESTION_TYPES } from "../shared/types";
 
 export const user = sqliteTable("user", {
 	id: text("id").primaryKey(),
@@ -129,7 +130,9 @@ export const question = sqliteTable("question", {
 	id: text("id")
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
-	type: text("type", { enum: ["single_choice", "multiple_choice"] }).notNull(),
+	type: text("type", {
+		enum: QUESTION_TYPES,
+	}).notNull(),
 	questionText: text("question_text").notNull(),
 	hasCorrectAnswers: integer("has_correct_answers", {
 		mode: "boolean",
@@ -141,12 +144,17 @@ export const question = sqliteTable("question", {
 	createdAt: integer("created_at", { mode: "timestamp" }).default(
 		sql`CURRENT_TIMESTAMP`,
 	),
+	metadata: text("metadata", { mode: "json" }).$type<{
+		minRating?: number;
+		maxRating?: number;
+		placeholder?: string;
+	}>(),
 });
 
 export const pollQuestions = sqliteTable("poll_question", {
 	pollId: text("poll_id")
 		.notNull()
-		.references(() => poll.id),
+		.references(() => poll.id, { onDelete: "cascade" }),
 	questionId: text("question_id")
 		.notNull()
 		.references(() => question.id),
@@ -179,7 +187,7 @@ export const submission = sqliteTable(
 			.$defaultFn(() => crypto.randomUUID()),
 		pollId: text("poll_id")
 			.notNull()
-			.references(() => poll.id),
+			.references(() => poll.id, { onDelete: "cascade" }),
 		userId: text("userId")
 			.notNull()
 			.references(() => user.id),
@@ -198,11 +206,12 @@ export const userAnswer = sqliteTable("user_answer", {
 		.$defaultFn(() => crypto.randomUUID()),
 	submissionId: text("submission_id")
 		.notNull()
-		.references(() => submission.id),
+		.references(() => submission.id, { onDelete: "cascade" }),
 	questionId: text("question_id")
 		.notNull()
 		.references(() => question.id),
 	answerId: text("answer_id").references(() => answer.id),
+	sortOrder: integer("sort_order"),
 	textResponse: text("text_response"),
 });
 

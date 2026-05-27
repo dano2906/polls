@@ -57,6 +57,20 @@
       "when": 1779295042802,
       "tag": "0007_nice_the_santerians",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1779900370082,
+      "tag": "0008_greedy_unicorn",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1779901210459,
+      "tag": "0009_brainy_black_cat",
+      "breakpoints": true
     }
   ]
 }

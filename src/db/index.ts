@@ -1,4 +1,3 @@
-import { createClient } from "@libsql/client";
 import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schemas from "./schema";
