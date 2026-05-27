@@ -144,7 +144,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 							type="submit"
 							variant={"default"}
 							onClick={() => form.handleSubmit()}
-							disabled={!canSubmit}
+							disabled={!canSubmit || createPollMutation.isSuccess}
 						>
 							<LoadingSwap
 								isLoading={createPollMutation.isPending}

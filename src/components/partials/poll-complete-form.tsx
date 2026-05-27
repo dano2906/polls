@@ -11,6 +11,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { LoadingSwap } from "../ui/loading-swap";
 import FormField, { FieldType } from "./form-field";
+import { RankingField } from "./ranking-field";
 
 interface Props {
 	pollData: Awaited<ReturnType<typeof getPollDetails>>;
@@ -80,7 +81,7 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 
 	if (isFinished) {
 		return (
-			<div className="p-8 text-center max-w-xl mx-auto">
+			<div className="p-8 text-center w-full">
 				<h2 className="text-2xl font-bold text-success">¡Encuesta enviada!</h2>
 				<p className="mt-2 text-foreground">
 					Tus respuestas fueron validadas y guardadas con éxito.
@@ -97,7 +98,7 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 	}
 
 	return (
-		<div className="max-w-3xl mx-auto p-6 bg-background">
+		<div className="w-full p-6 bg-background">
 			<h2 className="text-3xl font-bold">{pollData.name}</h2>
 			{pollData.description && (
 				<p className="text-foreground mt-2 mb-6">{pollData.description}</p>
@@ -125,6 +126,16 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 							<form.Field name={q.id}>
 								{(field) => {
 									switch (q.type) {
+										case "open_answer":
+											return (
+												<li className="space-y-2 list-none">
+													<FormField
+														field={field}
+														field_type={FieldType.TEXTAREA}
+														label={q.questionText}
+													/>
+												</li>
+											);
 										case "single_choice":
 											return (
 												<li className="space-y-2 list-none">
@@ -146,7 +157,7 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 											const hasMaxLimit = max > 1;
 											return (
 												<li className="space-y-2 list-none">
-													{hasMaxLimit > 1 && (
+													{hasMaxLimit && (
 														<div className="flex items-center gap-2 mb-2">
 															<Badge
 																variant={
@@ -215,6 +226,29 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 												</li>
 											);
 										}
+										case "ranking":
+											return (
+												<div className="space-y-2">
+													<p className="text-xs text-muted-foreground mb-3 italic">
+														Arrastra las opcione para ordenarlas según tu
+														preferencia.
+													</p>
+													<RankingField field={field} answers={q.answers} />
+												</div>
+											);
+										case "rating": {
+											const metadata = q.metadata || {};
+
+											return (
+												<FormField
+													field={field}
+													field_type={FieldType.SLIDER}
+													label=""
+													minRating={metadata.minRating}
+													maxRating={metadata.maxRating}
+												/>
+											);
+										}
 										default:
 											return (
 												<li className="list-none">
@@ -228,27 +262,28 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 					);
 				})}
 
-				{/* BOTÓN DE SUBMIT CON MANEJO DE ESTADOS */}
 				<form.Subscribe
 					selector={(state) => [state.canSubmit, state.isSubmitting]}
-					// biome-ignore lint/correctness/noChildrenProp: <explanation>
-					children={([canSubmit, isSubmitting]) => (
-						<Button
-							type="submit"
-							disabled={!canSubmit || isSubmitting}
-							className="w-full"
-						>
-							<LoadingSwap
-								isLoading={isSubmitting}
-								className="flex items-center gap-2"
+				>
+					{([canSubmit, isSubmitting]) => {
+						return (
+							<Button
+								type="submit"
+								disabled={!canSubmit || isSubmitting}
+								className="w-full"
 							>
-								<Save />
+								<LoadingSwap
+									isLoading={isSubmitting}
+									className="flex items-center gap-2"
+								>
+									<Save />
 
-								{isSubmitting ? "Enviando respuestas..." : "Enviar Encuesta"}
-							</LoadingSwap>
-						</Button>
-					)}
-				/>
+									{isSubmitting ? "Enviando respuestas..." : "Enviar Encuesta"}
+								</LoadingSwap>
+							</Button>
+						);
+					}}
+				</form.Subscribe>
 			</form>
 		</div>
 	);

@@ -1,7 +1,6 @@
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { answer, poll, question, submission } from "#/db/schema";
-import { QUESTION_TYPES } from "./types";
 
 export const createPollInput = z
 	.object({
@@ -216,7 +215,7 @@ export const generateQuestionsSchema = z.object({
 
 const submissionAnswerInput = z.record(
 	z.uuid({ message: "La clave debe ser un UUID válido" }),
-	z.union([z.uuid(), z.array(z.uuid())]),
+	z.union([z.string(), z.array(z.string())]),
 );
 
 export const completePollInput = z.object({

@@ -15,6 +15,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../ui/select";
+import { Slider } from "../ui/slider";
 import { Textarea } from "../ui/textarea";
 
 export enum FieldType {
@@ -26,6 +27,7 @@ export enum FieldType {
 	SELECT = "select",
 	CHECKBOX = "checkbox",
 	RADIO = "radio",
+	SLIDER = "slider",
 }
 
 // 1. Interfaz para definir qué puedes sobreescribir del comportamiento por defecto
@@ -49,6 +51,8 @@ interface Props {
 		value: string;
 		label: string;
 	}[];
+	minRating?: number;
+	maxRating?: number;
 	overrideBindings?: (field: AnyFieldApi) => OverrideBindings;
 }
 
@@ -59,6 +63,8 @@ const RenderField = ({
 	options,
 	disabled = false,
 	overrideBindings,
+	minRating = 1,
+	maxRating = 5,
 }: Omit<Props, "label" | "input_classes">) => {
 	const overrides = overrideBindings ? overrideBindings(field) : {};
 
@@ -191,6 +197,45 @@ const RenderField = ({
 					</SelectContent>
 				</Select>
 			);
+		case "slider": {
+			const currentNumericValue =
+				value !== "" && value !== undefined && value !== null
+					? Number(value)
+					: minRating;
+
+			return (
+				<div className="w-full space-y-2 pt-2">
+					<Slider
+						id={field.name}
+						name={field.name}
+						min={minRating}
+						max={maxRating}
+						step={1}
+						value={[currentNumericValue]}
+						disabled={disabled}
+						onValueChange={(vals) => {
+							const selectedVal = vals[0];
+							if (overrides.onChange) {
+								overrides.onChange(String(selectedVal));
+							} else {
+								field.handleChange(String(selectedVal));
+							}
+						}}
+						onBlur={() =>
+							overrides.onBlur ? overrides.onBlur() : field.handleBlur()
+						}
+					/>
+					<div className="flex justify-between items-center text-xs text-muted-foreground px-1 select-none">
+						<span>Mín: {minRating}</span>
+						<span className="font-bold text-sm text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+							Seleccionado: {currentNumericValue}
+						</span>
+						<span>Máx: {maxRating}</span>
+					</div>
+				</div>
+			);
+		}
+
 		default:
 			return (
 				<Input
