@@ -14,5 +14,6 @@
 [X] Crear vistas compactas o listadas
 [X] Pagina de visualizar resultados
 [X] Refactorizar el layout
-[] Refactorizar el diseno de la base de datos
+[X] Refactorizar el diseno de la base de datos
+[] Implementar eliminar una encuesta con sus preguntas
 [] Implementar el reorder de las preguntas

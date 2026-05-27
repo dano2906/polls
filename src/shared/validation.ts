@@ -1,6 +1,7 @@
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { answer, poll, question, submission } from "#/db/schema";
+import { QUESTION_TYPES } from "./types";
 
 export const createPollInput = z
 	.object({
@@ -73,71 +74,125 @@ export const createAnswerInput = z.object({
 			"Campo para saber si la respuesta es correcta o no. Por defecto es falso y va en dependencia de si la pregunta tiene respuestas correctas o no.",
 		),
 });
-export const createQuestionInput = z
-	.object({
-		id: z.string().nullable().optional(),
-		type: z
-			.enum(["single_choice", "multiple_choice"])
-			.describe("Tipo de la pregunta."),
-		questionText: z
-			.string()
-			.min(1)
-			.max(500)
-			.describe("El enunciado o pregunta clara."),
-		hasCorrectAnswers: z
-			.boolean()
-			.describe("Campo para saber si la pregunta tiene respuestas correctas."),
-		maxSelections: z
-			.number()
-			.min(1)
-			.default(1)
-			.optional()
-			.describe("Cantidad máxima de selecciones posibles."),
-		isRequired: z
-			.boolean()
-			.optional()
-			.describe("Campo para saber si la pregunta es de respuesta obligatoria."),
-		answers: z.array(createAnswerInput).describe("Arreglo de respuestas"),
+// ========================================================
+// 1. ESQUEMAS BASE POR TIPO DE PREGUNTA (Discriminados)
+// ========================================================
+
+const baseQuestionFields = z.object({
+	id: z.string().nullable().optional(),
+	questionText: z.string().min(1).max(500).describe("El enunciado claro."),
+	isRequired: z.boolean().default(true).optional(),
+});
+
+// --- TIPO: Open Answer ---
+const openAnswerSchema = baseQuestionFields.extend({
+	type: z.literal("open_answer"),
+	hasCorrectAnswers: z.literal(false).default(false),
+	maxSelections: z.literal(1).default(1),
+	answers: z.tuple([]).default([]), // Forzamos un array estrictamente vacío
+});
+
+// --- TIPO: Rating (Calificación) ---
+const ratingSchema = baseQuestionFields
+	.extend({
+		type: z.literal("rating"),
+		hasCorrectAnswers: z.literal(false).default(false),
+		maxSelections: z.literal(1).default(1),
+		answers: z.tuple([]).default([]), // Forzamos un array estrictamente vacío
+		minValue: z.number().min(0).max(10).default(1),
+		maxValue: z.number().min(1).max(10).default(5),
+	})
+	.refine((data) => (data.minValue ?? 1) < (data.maxValue ?? 5), {
+		message: "El valor máximo debe ser estrictamente mayor al valor mínimo.",
+		path: ["maxValue"],
+	});
+
+// --- TIPO: Ranking (Ordenamiento) ---
+const rankingSchema = baseQuestionFields.extend({
+	type: z.literal("ranking"),
+	hasCorrectAnswers: z.literal(false).default(false),
+	maxSelections: z.literal(1).default(1),
+	answers: z
+		.array(createAnswerInput)
+		.min(2, "Para ordenar debes añadir al menos 2 opciones."),
+});
+
+// --- TIPOS: Opciones Seleccionables (Single / Multiple) ---
+const choiceQuestionsSchema = baseQuestionFields
+	.extend({
+		type: z.enum(["single_choice", "multiple_choice"]),
+		hasCorrectAnswers: z.boolean().default(false),
+		maxSelections: z.number().min(1).default(1).optional(),
+		answers: z
+			.array(createAnswerInput)
+			.min(2, "Debes añadir al menos 2 opciones de respuesta."),
 	})
 	.superRefine((data, ctx) => {
-		// --- CASO 1: Validación de selecciones para single_choice ---
-		if (
-			data.type === "single_choice" &&
-			data.maxSelections &&
-			data.maxSelections > 1
-		) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["maxSelections"],
-				message:
-					"Si la pregunta es de respuesta simple, la cantidad máxima de selecciones no puede ser mayor a 1.",
-			});
+		const correctAnswersCount = data.answers.filter(
+			(ans) => ans.isCorrect,
+		).length;
+		const totalAnswersCount = data.answers.length;
+
+		// Validación Single Choice
+		if (data.type === "single_choice") {
+			if (data.maxSelections && data.maxSelections > 1) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["maxSelections"],
+					message:
+						"En selección simple, el máximo de selecciones no puede ser mayor a 1.",
+				});
+			}
+			if (data.hasCorrectAnswers && correctAnswersCount > 1) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["answers"],
+					message:
+						"Una pregunta de selección simple no puede tener más de una respuesta correcta.",
+				});
+			}
 		}
 
-		const correctAnswersCount = data.answers.filter(
-			(answer) => answer.isCorrect,
-		).length;
+		// Validación Multiple Choice
+		if (data.type === "multiple_choice" && data.maxSelections) {
+			if (data.maxSelections > totalAnswersCount) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["maxSelections"],
+					message:
+						"El límite máximo no puede superar la cantidad de opciones disponibles.",
+				});
+			}
+		}
 
-		// --- CASO 2: Tiene respuestas correctas activado ---
+		// Validación de banderas de evaluación (Correctas vs Incorrectas)
 		if (data.hasCorrectAnswers && correctAnswersCount === 0) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["answers"],
-				message:
-					"El check de respuestas correctas está marcado, por lo que al menos una respuesta debe ser marcada como correcta.",
+				message: "Se indicó que hay respuestas correctas, marca al menos una.",
 			});
 		}
 
-		// --- CASO 3: NO tiene respuestas correctas activado ---
 		if (!data.hasCorrectAnswers && correctAnswersCount > 0) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["answers"],
 				message:
-					"El check de respuestas correctas NO está marcado, por lo que ninguna respuesta debe ser correcta.",
+					"No se activó la evaluación, ninguna opción debe marcarse como correcta.",
 			});
 		}
 	});
+
+// ========================================================
+// 2. UNION DISCRIMINADA FINAL
+// ========================================================
+export const createQuestionInput = z.discriminatedUnion("type", [
+	openAnswerSchema,
+	ratingSchema,
+	rankingSchema,
+	choiceQuestionsSchema,
+]);
 export const questionsBatchSchema = z
 	.object({
 		questions: z.array(createQuestionInput).describe("Arreglo de preguntas"),

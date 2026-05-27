@@ -5,7 +5,7 @@ import { Save } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
 import { createPoll, updatePoll } from "#/actions/poll";
-import type { NewPollInput, Poll } from "#/shared/types.d.ts";
+import type { NewPollInput, Poll } from "#/shared/types";
 import { createPollInput, editPollInput } from "#/shared/validation.ts";
 import { Button } from "../ui/button";
 import { LoadingSwap } from "../ui/loading-swap";

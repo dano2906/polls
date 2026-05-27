@@ -4,7 +4,7 @@ import {
 	useRouteContext,
 	useRouter,
 } from "@tanstack/react-router";
-import { File, LayoutDashboard, LogOut } from "lucide-react";
+import { File, FilePlus, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "#/components/ui/button";
 import { GithubDark } from "#/components/ui/svgs/githubDark";
 import { GithubLight } from "#/components/ui/svgs/githubLight.tsx";
@@ -98,6 +98,21 @@ export default function AuthHeader() {
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
+						{isProtected && (
+							<DropdownMenuGroup>
+								<DropdownMenuItem asChild>
+									<Link
+										to="/poll/new"
+										className="w-full flex items-center justify-start gap-1"
+										preload={false}
+									>
+										<FilePlus />
+										Crear encuesta
+									</Link>
+								</DropdownMenuItem>
+							</DropdownMenuGroup>
+						)}
+						{isProtected && <DropdownMenuSeparator />}
 						<DropdownMenuGroup>
 							<DropdownMenuItem asChild>
 								<ThemeToggle />

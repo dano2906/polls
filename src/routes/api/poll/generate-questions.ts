@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { generateText, Output, streamText } from "ai";
+import { generateText, Output } from "ai";
 import { openrouter } from "#/lib/openrouter";
 import type { GeneratePoll } from "#/shared/types";
 import { questionsBatchSchema } from "#/shared/validation";

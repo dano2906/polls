@@ -11,6 +11,7 @@ import {
 	userAnswer,
 } from "#/db/schema.ts";
 import { generateRandomCode } from "#/lib/utils.ts";
+import type { QuestionType } from "#/shared/types";
 import {
 	createPollInput,
 	editPollInput,
@@ -534,7 +535,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			{
 				id: string;
 				questionText: string;
-				type: "single_choice" | "multiple_choice";
+				type: QuestionType;
 				order: number | null;
 				textResponse: string | null;
 				selectedAnswers: {

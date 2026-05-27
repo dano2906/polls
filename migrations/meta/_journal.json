@@ -57,6 +57,13 @@
       "when": 1779295042802,
       "tag": "0007_nice_the_santerians",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1779900370082,
+      "tag": "0008_greedy_unicorn",
+      "breakpoints": true
     }
   ]
 }

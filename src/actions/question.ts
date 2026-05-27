@@ -7,12 +7,16 @@ import { answer, poll, pollQuestions, question, submission } from "#/db/schema";
 import { getSession } from "#/lib/auth-functions";
 import { openrouter } from "#/lib/openrouter";
 import { generateRandomCode } from "#/lib/utils";
+import type { QUESTION_TYPES } from "#/shared/types";
 import {
 	createQuestionInput,
 	generateQuestionsSchema,
 	questionsBatchSchema,
 } from "#/shared/validation";
 
+// ==========================================
+// 1. CREATE QUESTIONS (BATCH INSERT INICIAL)
+// ==========================================
 export const createQuestions = createServerFn({ method: "POST" })
 	.inputValidator(questionsBatchSchema)
 	.handler(async ({ data }) => {
@@ -21,49 +25,66 @@ export const createQuestions = createServerFn({ method: "POST" })
 		if (!session) {
 			throw notFound();
 		}
+
 		const currentPoll = await db.query.poll.findFirst({
-			where: and(eq(poll.slug, slug), eq(poll.userId, session?.user.id)),
+			where: and(eq(poll.slug, slug), eq(poll.userId, session.user.id)),
 		});
 
 		if (!currentPoll) {
 			throw notFound();
 		}
 
-		await db.transaction(async (tx) => {
+		return await db.transaction(async (tx) => {
 			for (const [index, qData] of data.questions.entries()) {
-				// 1. Insertar la Pregunta (una por una para obtener su ID)
+				// Extraer de forma segura valores condicionales para evitar errores de tipo
+				const minValue = "minValue" in qData ? qData.minValue : 1;
+				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
+
+				// Insertar Pregunta incluyendo los rangos de calificación de forma segura
 				const [insertedQuestion] = await tx
 					.insert(question)
 					.values({
+						// Si ya existe un ID (en saveQuestionsBatch), lo mapeamos, si no, dejamos que defina el $defaultFn
+						...(qData.id ? { id: qData.id } : {}),
 						questionText: qData.questionText,
-						type: qData.type,
+						// Forzamos el cast al tipo exacto que espera Drizzle para el enum de la tabla
+						type: qData.type as (typeof QUESTION_TYPES)[number],
 						hasCorrectAnswers: qData.hasCorrectAnswers ?? false,
 						maxSelections: qData.maxSelections ?? 1,
-						isRequired: qData.isRequired ?? true,
+						isRequired: qData.isRequired ?? false,
+						// Guardamos los rangos dentro del JSON de metadatos como lo pide tu esquema
+						metadata: JSON.stringify({
+							minRating: minValue,
+							maxRating: maxValue,
+						}) as any,
 					})
 					.returning();
 
 				const questionId = insertedQuestion.id;
 
-				// 2. Vincular con la Encuesta (Tabla pivot/relación)
+				// Vincular con la Encuesta en la tabla intermedia
 				await tx.insert(pollQuestions).values({
 					pollId: currentPoll.id,
 					questionId,
 					order: index + 1,
 				});
 
-				// 3. Insertar todas las respuestas de ESTA pregunta en bloque
-				if (qData.answers && qData.answers.length > 0) {
+				// Evitar colisiones de tipos: Solo procesamos respuestas si existen físicamente en la unión
+				if (
+					"answers" in qData &&
+					Array.isArray(qData.answers) &&
+					qData.answers.length > 0
+				) {
 					const answersToInsert = qData.answers.map(
 						(ans, ans_index: number) => ({
 							questionId,
 							answerText: ans.answerText,
-							isCorrect: ans.isCorrect,
+							isCorrect: ans.isCorrect ?? false,
 							order: ans_index,
 						}),
 					);
 
-					return await tx.insert(answer).values(answersToInsert);
+					await tx.insert(answer).values(answersToInsert);
 				}
 			}
 
@@ -71,6 +92,9 @@ export const createQuestions = createServerFn({ method: "POST" })
 		});
 	});
 
+// ==========================================
+// 2. SAVE QUESTIONS BATCH (UPSERT + VERSIONADO PROFUNDO)
+// ==========================================
 export const saveQuestionsBatch = createServerFn({
 	method: "POST",
 })
@@ -82,8 +106,9 @@ export const saveQuestionsBatch = createServerFn({
 		if (!session) {
 			throw notFound();
 		}
+
 		const currentPoll = await db.query.poll.findFirst({
-			where: and(eq(poll.slug, slug), eq(poll.userId, session?.user.id)),
+			where: and(eq(poll.slug, slug), eq(poll.userId, session.user.id)),
 		});
 
 		if (!currentPoll) {
@@ -91,11 +116,13 @@ export const saveQuestionsBatch = createServerFn({
 		}
 
 		return await db.transaction(async (tx) => {
+			// Verificar si la encuesta ya tiene respuestas asociadas
 			const existingSubmissions = await tx
 				.select({ id: submission.id })
 				.from(submission)
 				.where(eq(submission.pollId, currentPoll.id))
 				.limit(1);
+
 			const hasResponses = existingSubmissions.length > 0;
 
 			let targetPollId = currentPoll.id;
@@ -104,6 +131,8 @@ export const saveQuestionsBatch = createServerFn({
 
 			if (isNewVersion) {
 				const newPollId = crypto.randomUUID();
+
+				// Archivar la encuesta actual manteniendo inalterado su slug original e histórico
 				await tx
 					.update(poll)
 					.set({
@@ -111,7 +140,10 @@ export const saveQuestionsBatch = createServerFn({
 						updatedAt: new Date(),
 					})
 					.where(eq(poll.id, currentPoll.id));
+
+				// Generar nuevo código/slug para la encuesta viva en producción
 				const newSlug = generateRandomCode();
+
 				await tx.insert(poll).values({
 					id: newPollId,
 					userId: currentPoll.userId,
@@ -125,42 +157,57 @@ export const saveQuestionsBatch = createServerFn({
 					startDate: currentPoll.startDate,
 					endDate: currentPoll.endDate,
 				});
+
 				targetPollId = newPollId;
-				activeSlug = slug;
+				activeSlug = newSlug;
 			}
 
-			// 1. Rastrear IDs para limpieza posterior (Deletions)
 			const currentQuestionIds: string[] = [];
 
 			for (let i = 0; i < questionsData.length; i++) {
 				const qData = questionsData[i];
 				let qId = qData.id;
 
-				// --- FLUJO DE PREGUNTA ---
+				// Validación de propiedades seguras en base al discriminador
+				const minValue = "minValue" in qData ? qData.minValue : 1;
+				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
+
+				// --- FLUJO DE TRATAMIENTO DE PREGUNTA ---
 				if (qId && !isNewVersion) {
-					// Actualizar pregunta existente
+					// Actualización en caliente (Mismo Poll ID, sin respuestas previas)
 					await tx
 						.update(question)
 						.set({
-							type: qData.type,
+							type: qData.type as (typeof QUESTION_TYPES)[number],
 							questionText: qData.questionText,
 							hasCorrectAnswers: qData.hasCorrectAnswers,
 							maxSelections: qData.maxSelections,
 							isRequired: qData.isRequired,
+							metadata: JSON.stringify({
+								minRating: minValue,
+								maxRating: maxValue,
+							}) as any,
 						})
 						.where(eq(question.id, qId));
 				} else {
-					// Insertar nueva pregunta
+					// Nueva pregunta O duplicación por versionado (Deep Cloning)
 					const [newQ] = await tx
 						.insert(question)
 						.values({
-							type: qData.type,
 							questionText: qData.questionText,
+							// Mapeamos el tipo al enum de Drizzle
+							type: qData.type as (typeof QUESTION_TYPES)[number],
 							hasCorrectAnswers: qData.hasCorrectAnswers,
 							maxSelections: qData.maxSelections,
 							isRequired: qData.isRequired,
+							// Agrupamos en el objeto JSON de la columna metadata
+							metadata: JSON.stringify({
+								minRating: minValue,
+								maxRating: maxValue,
+							}) as any,
 						})
 						.returning({ id: question.id });
+
 					qId = newQ.id;
 				}
 				currentQuestionIds.push(qId);
@@ -180,7 +227,7 @@ export const saveQuestionsBatch = createServerFn({
 					if (existingLink) {
 						await tx
 							.update(pollQuestions)
-							.set({ order: i })
+							.set({ order: i + 1 })
 							.where(
 								and(
 									eq(pollQuestions.pollId, targetPollId),
@@ -191,66 +238,77 @@ export const saveQuestionsBatch = createServerFn({
 						await tx.insert(pollQuestions).values({
 							pollId: targetPollId,
 							questionId: qId,
-							order: i,
+							order: i + 1,
 						});
 					}
 				} else {
-					// Si es una nueva versión, vinculamos directo la nueva pregunta al nuevo pollId
 					await tx.insert(pollQuestions).values({
 						pollId: targetPollId,
 						questionId: qId,
-						order: i,
+						order: i + 1,
 					});
 				}
 
-				// --- FLUJO DE RESPUESTAS ---
+				// --- FLUJO DE RESPUESTAS / OPCIONES ---
 				const currentAnswerIds: string[] = [];
-				for (let j = 0; j < qData.answers.length; j++) {
-					const aData = qData.answers[j];
 
-					if (aData.id && !isNewVersion) {
-						// Actualizar respuesta existente en caliente
-						await tx
-							.update(answer)
-							.set({
-								answerText: aData.answerText,
-								isCorrect: aData.isCorrect,
-								order: j,
-							})
-							.where(eq(answer.id, aData.id));
+				// Validación defensiva en base a tipos discriminados para el bucle de opciones
+				if (
+					"answers" in qData &&
+					Array.isArray(qData.answers) &&
+					qData.answers.length > 0
+				) {
+					for (let j = 0; j < qData.answers.length; j++) {
+						const aData = qData.answers[j];
 
-						currentAnswerIds.push(aData.id);
-					} else {
-						// Nueva respuesta (o clonación limpia por nueva versión)
-						const [newA] = await tx
-							.insert(answer)
-							.values({
-								questionId: qId,
-								answerText: aData.answerText,
-								isCorrect: aData.isCorrect,
-								order: j,
-							})
-							.returning({ id: answer.id });
+						if (aData.id && !isNewVersion) {
+							await tx
+								.update(answer)
+								.set({
+									answerText: aData.answerText,
+									isCorrect: aData.isCorrect,
+									order: j,
+								})
+								.where(eq(answer.id, aData.id));
 
-						currentAnswerIds.push(newA.id);
+							currentAnswerIds.push(aData.id);
+						} else {
+							const [newA] = await tx
+								.insert(answer)
+								.values({
+									questionId: qId,
+									answerText: aData.answerText,
+									isCorrect: aData.isCorrect ?? false,
+									order: j,
+								})
+								.returning({ id: answer.id });
+
+							currentAnswerIds.push(newA.id);
+						}
 					}
 				}
 
-				// Limpiar opciones eliminadas de la pregunta (Solo si NO es una nueva versión)
-				if (!isNewVersion) {
+				// Limpieza de opciones removidas (Solo mutación "en vivo" y si es tipo con opciones fijas)
+				if (
+					!isNewVersion &&
+					"answers" in qData &&
+					Array.isArray(qData.answers) &&
+					qData.answers.length > 0
+				) {
 					await tx
 						.delete(answer)
 						.where(
 							and(
 								eq(answer.questionId, qId),
-								notInArray(answer.id, currentAnswerIds),
+								currentAnswerIds.length > 0
+									? notInArray(answer.id, currentAnswerIds)
+									: undefined,
 							),
 						);
 				}
 			}
 
-			// --- LIMPIEZA FINAL DE PREGUNTAS ---
-			// 1. Buscamos qué preguntas estaban vinculadas a este poll pero ya no están en el batch
+			// --- LIMPIEZA FINAL DE PREGUNTAS HUÉRFANAS ---
 			if (!isNewVersion) {
 				const linksToDelete = await tx
 					.select({ qId: pollQuestions.questionId })
@@ -258,7 +316,9 @@ export const saveQuestionsBatch = createServerFn({
 					.where(
 						and(
 							eq(pollQuestions.pollId, targetPollId),
-							notInArray(pollQuestions.questionId, currentQuestionIds),
+							currentQuestionIds.length > 0
+								? notInArray(pollQuestions.questionId, currentQuestionIds)
+								: undefined,
 						),
 					);
 

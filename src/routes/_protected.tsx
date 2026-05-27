@@ -3,8 +3,11 @@ import {
 	isRedirect,
 	Outlet,
 	redirect,
+	useRouter,
 } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import AuthHeader from "#/components/partials/auth-header";
+import { Button } from "#/components/ui/button";
 
 export const Route = createFileRoute("/_protected")({
 	component: RouteComponent,
@@ -25,9 +28,13 @@ export const Route = createFileRoute("/_protected")({
 });
 
 function RouteComponent() {
+	const router = useRouter();
 	return (
 		<div className="bg-background text-foreground relative w-full min-h-screen max-w-md sm:max-lg md:max-w-xl xl:max-w-5xl mx-auto py-6 px-2">
-			<header className="w-full flex items-center justify-end p-2">
+			<header className="w-full flex items-center justify-between p-2">
+				<Button variant={"ghost"} onClick={() => router.history.back()}>
+					<ArrowLeft /> Atrás
+				</Button>
 				<AuthHeader />
 			</header>
 			<main>
