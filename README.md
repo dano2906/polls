@@ -15,5 +15,6 @@
 [X] Pagina de visualizar resultados
 [X] Refactorizar el layout
 [X] Refactorizar el diseno de la base de datos
-[] Implementar eliminar una encuesta con sus preguntas
+[X] Implementar eliminar una encuesta con sus preguntas
+[] Implementar el mostrar distintos tipos de pregunta al realizar la encuesta
 [] Implementar el reorder de las preguntas

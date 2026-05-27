@@ -154,7 +154,7 @@ export const question = sqliteTable("question", {
 export const pollQuestions = sqliteTable("poll_question", {
 	pollId: text("poll_id")
 		.notNull()
-		.references(() => poll.id),
+		.references(() => poll.id, { onDelete: "cascade" }),
 	questionId: text("question_id")
 		.notNull()
 		.references(() => question.id),
@@ -187,7 +187,7 @@ export const submission = sqliteTable(
 			.$defaultFn(() => crypto.randomUUID()),
 		pollId: text("poll_id")
 			.notNull()
-			.references(() => poll.id),
+			.references(() => poll.id, { onDelete: "cascade" }),
 		userId: text("userId")
 			.notNull()
 			.references(() => user.id),
@@ -206,7 +206,7 @@ export const userAnswer = sqliteTable("user_answer", {
 		.$defaultFn(() => crypto.randomUUID()),
 	submissionId: text("submission_id")
 		.notNull()
-		.references(() => submission.id),
+		.references(() => submission.id, { onDelete: "cascade" }),
 	questionId: text("question_id")
 		.notNull()
 		.references(() => question.id),

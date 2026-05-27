@@ -20,6 +20,7 @@ import {
 	ContextMenuTrigger,
 } from "../ui/context-menu";
 import CopyClipboardPoll from "./copy-clipboard-poll";
+import DeletePollButton from "./delete-poll-button";
 import ForkVersionButton from "./fork-poll-button";
 import PollQrPopover from "./poll-qrcode-popover";
 
@@ -104,6 +105,9 @@ const PollCardDashoardList = ({ poll }: Props) => {
 				</ContextMenuItem>
 				<ContextMenuItem asChild>
 					<PollQrPopover slug={poll.slug as string} />
+				</ContextMenuItem>
+				<ContextMenuItem asChild>
+					<DeletePollButton slug={poll.slug as string} />
 				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>

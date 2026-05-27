@@ -26,6 +26,7 @@ import {
 	ContextMenuTrigger,
 } from "../ui/context-menu";
 import CopyClipboardPoll from "./copy-clipboard-poll";
+import DeletePollButton from "./delete-poll-button";
 import ForkVersionButton from "./fork-poll-button";
 import PollQrPopover from "./poll-qrcode-popover";
 
@@ -124,9 +125,12 @@ const PollCardDashboardCompact = ({ pollGroup }: Props) => {
 					<ContextMenuItem asChild>
 						<PollQrPopover slug={lastPoll.slug as string} />
 					</ContextMenuItem>
+					<ContextMenuItem asChild>
+						<DeletePollButton slug={lastPoll.slug as string} />
+					</ContextMenuItem>
 				</ContextMenuContent>
 			</ContextMenu>
-			<CardFooter className="px-1">
+			<CardFooter className="px-1 w-full">
 				<Accordion type="single" collapsible className="w-full">
 					{pollGroup.slice(1).map((poll) => {
 						return (
@@ -203,6 +207,9 @@ const PollCardDashboardCompact = ({ pollGroup }: Props) => {
 									</ContextMenuItem>
 									<ContextMenuItem asChild>
 										<PollQrPopover slug={poll.slug as string} />
+									</ContextMenuItem>
+									<ContextMenuItem asChild>
+										<DeletePollButton slug={poll.slug as string} />
 									</ContextMenuItem>
 								</ContextMenuContent>
 							</ContextMenu>
