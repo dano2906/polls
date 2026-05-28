@@ -76,25 +76,24 @@ export default function AuthHeader() {
 								</small>
 							</DropdownMenuLabel>
 							<DropdownMenuItem asChild>
-								{isProtected ? (
-									<Link
-										to="/"
-										className="w-full flex items-center justify-start gap-1"
-										preload={false}
-									>
-										<File />
-										Landing
-									</Link>
-								) : (
-									<Link
-										to="/dashboard"
-										className="w-full flex items-center justify-start gap-1"
-										preload={false}
-									>
-										<LayoutDashboard />
-										Administración
-									</Link>
-								)}
+								<Link
+									to="/"
+									className="w-full flex items-center justify-start gap-1"
+									preload={false}
+								>
+									<File />
+									Inicio
+								</Link>
+							</DropdownMenuItem>
+							<DropdownMenuItem asChild>
+								<Link
+									to="/dashboard"
+									className="w-full flex items-center justify-start gap-1"
+									preload={false}
+								>
+									<LayoutDashboard />
+									Administración
+								</Link>
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />

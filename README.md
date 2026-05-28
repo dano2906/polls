@@ -17,6 +17,7 @@
 [X] Refactorizar el diseno de la base de datos
 [X] Implementar eliminar una encuesta con sus preguntas
 [X] Implementar el mostrar distintos tipos de pregunta al realizar la encuesta
-[] Si la encuesta se creo deshabilitar el boton
+[X] Si la encuesta se creo deshabilitar el boton
 [] Completar pagina de visualizar respuestas
 [] Implementar el reorder de las preguntas
+[] Exportar/importar encuesta como JSON, Excel, CSV o MD

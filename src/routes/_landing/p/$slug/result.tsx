@@ -1,14 +1,14 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { getUserPollResults } from "#/actions/poll";
+import { ResponseRenderer } from "#/components/partials/result-response-renderer";
 import { getSession } from "#/lib/auth-functions";
-import { cn } from "#/lib/utils";
 
 export const Route = createFileRoute("/_landing/p/$slug/result")({
 	component: RouteComponent,
 	loader: async ({ params }) => {
 		const session = await getSession();
 		if (!session) {
-			redirect({
+			throw redirect({
 				to: "/",
 			});
 		}
@@ -23,46 +23,48 @@ export const Route = createFileRoute("/_landing/p/$slug/result")({
 
 function RouteComponent() {
 	const { results, poll } = Route.useLoaderData();
+
 	return (
-		<div className="w-full space-y-2">
-			<h2 className="text-4xl font-sgc font-semibold text-primary tracking-wider pb-3">
-				Respuestas
-			</h2>
-			<h6 className="text-3xl font-sg font-medium text-foreground tracking-wide">
-				{poll.name}
-			</h6>
-			<p className="text-base font-sg font-normale text--muted-foreground tracking-wide">
-				{poll.description}
-			</p>
-			<ul className="bg-muted p-5 space-y-2">
-				{results.map((q) => {
-					return (
-						<li
-							key={q.id}
-							className="w-full font-sg flex flex-col items-start justify-start gap-2"
-						>
-							<span className="text-xl font-medium tracking-wide text-muted-foreground">
-								P{(q.order as number) + 1}. {q.questionText}
+		<div className="w-full max-w-4xl mx-auto space-y-6 py-6 px-4">
+			{/* Cabecera de la Encuesta */}
+			<div className="border-b pb-5 space-y-2">
+				<h2 className="text-sm font-semibold tracking-wider text-primary uppercase">
+					Resumen de Resultados
+				</h2>
+				<h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+					{poll.name}
+				</h1>
+				{poll.description && (
+					<p className="text-base text-muted-foreground max-w-2xl">
+						{poll.description}
+					</p>
+				)}
+			</div>
+
+			{/* Listado de Preguntas */}
+			<div className="space-y-4">
+				{results.map((q, index) => (
+					<div
+						key={q.id}
+						className="bg-card text-card-foreground border rounded-xl p-5 shadow-xs transition-all"
+					>
+						{/* Enunciado de la Pregunta */}
+						<div className="flex items-start gap-3 mb-4">
+							<span className="shrink-0 bg-muted text-muted-foreground text-xs font-bold px-2 py-1 rounded-md mt-0.5">
+								P{index + 1}
 							</span>
-							<div className="ml-6 p-2">
-								{q.selectedAnswers.map((a, i) => {
-									return (
-										<span
-											key={a.answerId}
-											className={cn(
-												"text-base font-normal tracking-wide text-foreground",
-												a.isCorrect && "text-success",
-											)}
-										>
-											R{i + 1}. {a.answerText}
-										</span>
-									);
-								})}
-							</div>
-						</li>
-					);
-				})}
-			</ul>
+							<h3 className="text-lg font-semibold leading-snug text-foreground">
+								{q.questionText}
+							</h3>
+						</div>
+
+						{/* Renderizado condicional según el tipo de componente */}
+						<div className="pl-0 md:pl-8">
+							<ResponseRenderer question={q} />
+						</div>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }

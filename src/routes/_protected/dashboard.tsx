@@ -1,11 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { FilePlus } from "lucide-react";
 import { Suspense } from "react";
 import { getCompactUserPolls, getListedUserPolls } from "#/actions/poll";
 import { CompactUserPolls } from "#/components/partials/compact-user-polls";
 import { ListUserPolls } from "#/components/partials/list-user-polls";
 import { PollFilterBar } from "#/components/partials/poll-filter-bar";
+import { buttonVariants } from "#/components/ui/button";
 import { Spinner } from "#/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { cn } from "#/lib/utils";
 import { pollsSearchFiltershSchema } from "#/shared/validation";
 
 export const Route = createFileRoute("/_protected/dashboard")({
@@ -62,6 +65,19 @@ function RouteComponent() {
 					<PollFilterBar from="/_protected/dashboard" showStateSelector />
 					<TabsTrigger value="list">Listado</TabsTrigger>
 					<TabsTrigger value="compact">Compacto</TabsTrigger>
+					<Link
+						to="/poll/new"
+						className={cn(
+							buttonVariants({
+								variant: "outline",
+								size: "sm",
+							}),
+							"h-7.5",
+						)}
+					>
+						<FilePlus />
+						Crear encuesta
+					</Link>
 				</TabsList>
 				<TabsContent value="list">
 					<Suspense

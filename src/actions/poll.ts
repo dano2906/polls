@@ -12,7 +12,6 @@ import {
 } from "#/db/schema.ts";
 import { getSession } from "#/lib/auth-functions";
 import { generateRandomCode } from "#/lib/utils.ts";
-import type { QuestionType } from "#/shared/types";
 import {
 	createPollInput,
 	editPollInput,
@@ -489,6 +488,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 	.handler(async ({ data }) => {
 		const { slug, userId } = data;
 
+		// 1. Obtener los detalles de la encuesta actual
 		const currentPoll = await db
 			.select({ id: poll.id, name: poll.name, description: poll.description })
 			.from(poll)
@@ -499,6 +499,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			throw notFound();
 		}
 
+		// 2. Consulta unificada trayendo todas las relaciones posibles
 		const rawRows = await db
 			.select({
 				questionId: question.id,
@@ -508,6 +509,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 				userAnswerId: userAnswer.id,
 				selectedAnswerId: userAnswer.answerId,
 				textResponse: userAnswer.textResponse,
+				sortOrder: userAnswer.sortOrder,
 				answerText: answer.answerText,
 				isCorrect: answer.isCorrect,
 			})
@@ -536,13 +538,14 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			{
 				id: string;
 				questionText: string;
-				type: QuestionType;
+				type: string;
 				order: number | null;
 				textResponse: string | null;
 				selectedAnswers: {
 					answerId: string;
 					answerText: string | null;
 					isCorrect: boolean | null;
+					sortOrder?: number | null;
 				}[];
 			}
 		>();
@@ -554,25 +557,36 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 					questionText: row.questionText,
 					type: row.type,
 					order: row.order,
-					selectedAnswers: [],
 					textResponse: row.textResponse,
+					selectedAnswers: [],
 				});
 			}
 
 			const currentQuestion = questionsMap.get(row.questionId);
+			if (!currentQuestion) continue;
 
 			if (row.selectedAnswerId) {
-				currentQuestion?.selectedAnswers.push({
+				currentQuestion.selectedAnswers.push({
 					answerId: row.selectedAnswerId,
 					answerText: row.answerText,
 					isCorrect: row.isCorrect,
+					...(row.type === "ranking" && { userOrder: row.sortOrder }),
 				});
 			}
 		}
 
+		const finalResults = Array.from(questionsMap.values()).map((q) => {
+			if (q.type === "ranking" && q.selectedAnswers.length > 0) {
+				q.selectedAnswers.sort(
+					(a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+				);
+			}
+			return q;
+		});
+
 		return {
 			poll: currentPoll,
-			results: Array.from(questionsMap.values()),
+			results: finalResults,
 		};
 	});
 
