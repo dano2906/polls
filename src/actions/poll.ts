@@ -161,7 +161,7 @@ export const getCompactUserPolls = createServerFn({ method: "GET" })
 			return groupedPolls;
 		} catch (error) {
 			console.log("Error al obtener encuestas del usuario:", error);
-			return [];
+			return {};
 		}
 	});
 
@@ -570,7 +570,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 					answerId: row.selectedAnswerId,
 					answerText: row.answerText,
 					isCorrect: row.isCorrect,
-					...(row.type === "ranking" && { userOrder: row.sortOrder }),
+					...(row.type === "ranking" && { sortOrder: row.sortOrder }),
 				});
 			}
 		}

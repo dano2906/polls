@@ -1,5 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -30,6 +32,7 @@ const typeLabel: Record<QuestionType, string> = {
 
 export function ImportPollZone() {
 	const router = useRouter();
+	const navigate = useNavigate({ from: "/poll/import" });
 	const [isDragActive, setIsDragActive] = useState(false);
 	const [localError, setLocalError] = useState<string | null>(null);
 
@@ -46,13 +49,18 @@ export function ImportPollZone() {
 		mutationFn: async (data: ExportData) => {
 			const result = await importPollAction({ data });
 			if (!result?.success) {
-				toast.error("El servidor no pudo procesar la inserción.");
-				return;
+				throw new Error("El servidor no pudo procesar la inserción.");
 			}
 			return result;
 		},
 		onSuccess: () => {
 			router.invalidate();
+			const timeout = setTimeout(() => {
+				navigate({
+					to: "/dashboard",
+				});
+				clearTimeout(timeout);
+			}, 1000);
 		},
 	});
 
@@ -183,6 +191,31 @@ export function ImportPollZone() {
 									{previewData.description}
 								</p>
 							)}
+							<Badge
+								variant={"secondary"}
+								className="text-xs font-sg font-thin px-0 py-1 gap-1 flex items-center w-fit"
+							>
+								<span className="text-muted-foreground">
+									Disponible desde el{" "}
+									<strong className="text-foreground font-normal">
+										{format(previewData.startDate, "dd/MM/yyyy", {
+											locale: es,
+										})}
+									</strong>
+								</span>
+
+								{previewData.endDate && (
+									<span className="text-muted-foreground">
+										{" "}
+										hasta el{" "}
+										<strong className="text-foreground font-normal">
+											{format(previewData.endDate, "dd/MM/yyyy", {
+												locale: es,
+											})}
+										</strong>
+									</span>
+								)}
+							</Badge>
 						</div>
 
 						<div className="border-t pt-4 space-y-3">
@@ -217,8 +250,15 @@ export function ImportPollZone() {
 										</div>
 									</div>
 
+									{q.type === "rating" && q.metadata && (
+										<span className="bg-background text-muted-foreground tracking-wide font-normal text-xs p-1.5 rounded border flex items-center justify-between">
+											Desde {JSON.parse(q.metadata as string).minRating} hasta{" "}
+											{JSON.parse(q.metadata as string).maxRating}.
+										</span>
+									)}
+
 									{/* Mapeo de Opciones de la Pregunta si las tiene */}
-									{q.answers && q.answers.length > 0 && (
+									{q.answers && q.answers.length >= 0 && (
 										<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
 											{q.answers.map((ans, aIdx) => (
 												<div
@@ -258,16 +298,7 @@ export function ImportPollZone() {
 							variant={"default"}
 						>
 							<LoadingSwap isLoading={isSaving}>
-								{isSaving ? (
-									<>
-										<Loader2 className="h-3.5 w-3.5 animate-spin" />
-										Importando registros...
-									</>
-								) : isSuccess ? (
-									"¡Guardado!"
-								) : (
-									"Confirmar e Importar"
-								)}
+								{isSuccess ? "¡Guardado!" : "Confirmar e Importar"}
 							</LoadingSwap>
 						</Button>
 					</div>
@@ -285,10 +316,7 @@ export function ImportPollZone() {
 			{isSuccess && (
 				<div className="flex items-center gap-3 p-3 text-sm rounded-lg border bg-success/10 border-success/20 text-success dark:text-success/80 animate-in slide-in-from-top-1 duration-200">
 					<CheckCircle2 className="h-4 w-4 shrink-0" />
-					<span>
-						¡Encuesta y reactivos importados con éxito! Actualizando la
-						plataforma...
-					</span>
+					<span>¡La encuesta ha sido importada con éxito!</span>
 				</div>
 			)}
 		</div>

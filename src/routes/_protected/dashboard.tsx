@@ -57,7 +57,7 @@ function RouteComponent() {
 				Mis encuestas
 			</h2>
 			<Tabs
-				defaultValue={search.view}
+				defaultValue={search.view || "compact"}
 				value={search.view || "compact"}
 				onValueChange={(e) => handleTabChange(e as "compact" | "list")}
 			>
@@ -72,7 +72,7 @@ function RouteComponent() {
 								variant: "outline",
 								size: "sm",
 							}),
-							"h-7.5",
+							"h-[30px]",
 						)}
 					>
 						<FilePlus />

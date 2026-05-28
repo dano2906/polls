@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { Download, FileJson, Sheet, Table } from "lucide-react";
+import { toast } from "sonner";
 import { exportPollFn } from "#/actions/app";
 import { getPollDetails } from "#/actions/poll";
 import { type ExportData, ExportFormat } from "#/shared/types";
@@ -72,12 +73,15 @@ const ExportMenuButton = ({ format, slug }: Props) => {
 				poll: exportData,
 			});
 		},
+		onSuccess: () =>
+			toast.success("Su encuesta ha sido exportada exitosamente"),
+		onError: () => toast.error("Ha ocurrido un error exportando la encuesta"),
 	});
 	return (
 		<Button
 			variant={"ghostContext"}
 			className="w-full flex items-center justify-start"
-			onClick={() => exportMutation.mutateAsync()}
+			onClick={() => exportMutation.mutate()}
 		>
 			<LoadingSwap isLoading={exportMutation.isPending}>
 				{renderIcon(format)}

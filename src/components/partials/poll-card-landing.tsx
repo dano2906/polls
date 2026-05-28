@@ -63,7 +63,7 @@ const PollCardLanding = ({ poll }: Props) => {
 						<CardAction className="w-full flex items-center justify-end gap-2">
 							<PollQrPopover
 								slug={poll.slug as string}
-								buttonType="ghost"
+								buttonType="ghostContext"
 								label={false}
 							/>
 							<CopyClipboardPoll

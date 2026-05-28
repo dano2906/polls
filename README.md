@@ -19,5 +19,6 @@
 [X] Implementar el mostrar distintos tipos de pregunta al realizar la encuesta
 [X] Si la encuesta se creo deshabilitar el boton
 [X] Completar pagina de visualizar respuestas
+[X] Exportar/importar encuesta como JSON, Excel, CSV
 [] Implementar el reorder de las preguntas
-[] Exportar/importar encuesta como JSON, Excel, CSV o MD
+[] En csv le resta un dia a las fechas

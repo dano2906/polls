@@ -161,7 +161,6 @@ export const saveQuestionsBatch = createServerFn({
 				targetPollId = newPollId;
 				activeSlug = newSlug;
 			}
-
 			const currentQuestionIds: string[] = [];
 
 			for (let i = 0; i < questionsData.length; i++) {

@@ -73,27 +73,29 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 				<ContextMenuItem asChild>
 					<DeletePollButton slug={poll.slug as string} />
 				</ContextMenuItem>
-				<ContextMenuSub>
-					<ContextMenuSubTrigger
-						className={buttonVariants({
-							variant: "ghostContext",
-						})}
-					>
-						<Sheet />
-						Exportar
-					</ContextMenuSubTrigger>
-					<ContextMenuSubContent>
-						<ContextMenuGroup>
-							{Object.values(ExportFormat).map((f) => {
-								return (
-									<ContextMenuItem key={f} asChild>
-										<ExportMenuButton format={f} slug={poll.slug as string} />
-									</ContextMenuItem>
-								);
+				{poll.slug && (
+					<ContextMenuSub>
+						<ContextMenuSubTrigger
+							className={buttonVariants({
+								variant: "ghostContext",
 							})}
-						</ContextMenuGroup>
-					</ContextMenuSubContent>
-				</ContextMenuSub>
+						>
+							<Sheet />
+							Exportar
+						</ContextMenuSubTrigger>
+						<ContextMenuSubContent>
+							<ContextMenuGroup>
+								{Object.values(ExportFormat).map((f) => {
+									return (
+										<ContextMenuItem key={f} asChild>
+											<ExportMenuButton format={f} slug={poll.slug as string} />
+										</ContextMenuItem>
+									);
+								})}
+							</ContextMenuGroup>
+						</ContextMenuSubContent>
+					</ContextMenuSub>
+				)}
 			</ContextMenuContent>
 		</ContextMenu>
 	);

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
 import { use } from "react";
 import type { getListedUserPolls } from "#/actions/poll";
-import { Button, buttonVariants } from "../ui/button";
+import { buttonVariants } from "../ui/button";
 import {
 	Empty,
 	EmptyContent,
@@ -12,7 +12,7 @@ import {
 	EmptyTitle,
 } from "../ui/empty";
 import { Skeleton } from "../ui/skeleton";
-import PollCardDashoardList from "./poll-card-dashboard-list";
+import PollCardDashboardList from "./poll-card-dashboard-list";
 
 interface Props {
 	dataPromise: ReturnType<typeof getListedUserPolls>;
@@ -62,7 +62,7 @@ export const ListUserPolls = ({ dataPromise }: Props) => {
 	return (
 		<ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 group">
 			{polls.map((poll) => {
-				return <PollCardDashoardList poll={poll} key={poll.slug} />;
+				return <PollCardDashboardList poll={poll} key={poll.slug} />;
 			})}
 		</ul>
 	);

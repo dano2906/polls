@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
 import { use } from "react";
 import type { getCompactUserPolls } from "#/actions/poll";
-import { Accordion } from "../ui/accordion";
 import { buttonVariants } from "../ui/button";
 import {
 	Empty,
@@ -26,13 +25,13 @@ export const CompactUserPolls = ({ dataPromise }: Props) => {
 		return (
 			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
 				{Array.from({ length: 6 }, (_, index) => index + 1).map((el) => {
-					return <Skeleton key={el} />;
+					return <Skeleton key={el} className="h-32 w-full" />;
 				})}
 			</ul>
 		);
 	}
 
-	if (polls.length === 0) {
+	if (Object.keys(polls).length === 0) {
 		return (
 			<Empty className="border border-dashed">
 				<EmptyHeader>
