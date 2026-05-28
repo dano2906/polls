@@ -1,15 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import { Pencil } from "lucide-react";
+import { Pencil, Sheet } from "lucide-react";
 import { cn } from "#/lib/utils";
+import { ExportFormat } from "#/shared/types";
 import { buttonVariants } from "../ui/button";
 import {
 	ContextMenu,
 	ContextMenuContent,
+	ContextMenuGroup,
 	ContextMenuItem,
+	ContextMenuSub,
+	ContextMenuSubContent,
+	ContextMenuSubTrigger,
 	ContextMenuTrigger,
 } from "../ui/context-menu";
 import CopyClipboardPoll from "./copy-clipboard-poll";
 import DeletePollButton from "./delete-poll-button";
+import ExportMenuButton from "./export-menu-button";
 import ForkVersionButton from "./fork-poll-button";
 import PollQrPopover from "./poll-qrcode-popover";
 
@@ -67,6 +73,27 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 				<ContextMenuItem asChild>
 					<DeletePollButton slug={poll.slug as string} />
 				</ContextMenuItem>
+				<ContextMenuSub>
+					<ContextMenuSubTrigger
+						className={buttonVariants({
+							variant: "ghostContext",
+						})}
+					>
+						<Sheet />
+						Exportar
+					</ContextMenuSubTrigger>
+					<ContextMenuSubContent>
+						<ContextMenuGroup>
+							{Object.values(ExportFormat).map((f) => {
+								return (
+									<ContextMenuItem key={f} asChild>
+										<ExportMenuButton format={f} slug={poll.slug as string} />
+									</ContextMenuItem>
+								);
+							})}
+						</ContextMenuGroup>
+					</ContextMenuSubContent>
+				</ContextMenuSub>
 			</ContextMenuContent>
 		</ContextMenu>
 	);

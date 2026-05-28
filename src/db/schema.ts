@@ -147,7 +147,6 @@ export const question = sqliteTable("question", {
 	metadata: text("metadata", { mode: "json" }).$type<{
 		minRating?: number;
 		maxRating?: number;
-		placeholder?: string;
 	}>(),
 });
 

@@ -16,6 +16,7 @@ import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dash
 import { Route as ApiPollGenerateQuestionsRouteImport } from './routes/api/poll/generate-questions'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
+import { Route as ProtectedPollImportRouteImport } from './routes/_protected/poll/import'
 import { Route as LandingPSlugIndexRouteImport } from './routes/_landing/p/$slug/index'
 import { Route as ProtectedPollUpdateSlugRouteImport } from './routes/_protected/poll/update.$slug'
 import { Route as LandingPSlugResultRouteImport } from './routes/_landing/p/$slug/result'
@@ -54,6 +55,11 @@ const ProtectedPollNewRoute = ProtectedPollNewRouteImport.update({
   path: '/poll/new',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedPollImportRoute = ProtectedPollImportRouteImport.update({
+  id: '/poll/import',
+  path: '/poll/import',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const LandingPSlugIndexRoute = LandingPSlugIndexRouteImport.update({
   id: '/p/$slug/',
   path: '/p/$slug/',
@@ -73,6 +79,7 @@ const LandingPSlugResultRoute = LandingPSlugResultRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof LandingIndexRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof LandingIndexRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedRouteWithChildren
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_landing/': typeof LandingIndexRoute
+  '/_protected/poll/import': typeof ProtectedPollImportRoute
   '/_protected/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/poll/import'
     | '/poll/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard'
+    | '/poll/import'
     | '/poll/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/_protected/dashboard'
     | '/_landing/'
+    | '/_protected/poll/import'
     | '/_protected/poll/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPollNewRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/poll/import': {
+      id: '/_protected/poll/import'
+      path: '/poll/import'
+      fullPath: '/poll/import'
+      preLoaderRoute: typeof ProtectedPollImportRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_landing/p/$slug/': {
       id: '/_landing/p/$slug/'
       path: '/p/$slug'
@@ -237,12 +256,14 @@ const LandingRouteWithChildren =
 
 interface ProtectedRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
+  ProtectedPollImportRoute: typeof ProtectedPollImportRoute
   ProtectedPollNewRoute: typeof ProtectedPollNewRoute
   ProtectedPollUpdateSlugRoute: typeof ProtectedPollUpdateSlugRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
+  ProtectedPollImportRoute: ProtectedPollImportRoute,
   ProtectedPollNewRoute: ProtectedPollNewRoute,
   ProtectedPollUpdateSlugRoute: ProtectedPollUpdateSlugRoute,
 }

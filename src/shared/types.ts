@@ -45,3 +45,32 @@ export const QUESTION_TYPES = [
 ] as const;
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
+
+export interface ExportData {
+	name: string;
+	description: string | null;
+	startDate: Date;
+	endDate: Date | null;
+	questions: {
+		questionText: string;
+		type: QuestionType;
+		hasCorrectAnswers: boolean | null;
+		maxSelections: number | null;
+		order: number | null;
+		isRequired: boolean | null;
+		metadata: {
+			minRating?: number;
+			maxRating?: number;
+		};
+		answers: {
+			answerText: string | null;
+			isCorrect: boolean | null;
+		}[];
+	}[];
+}
+
+export enum ExportFormat {
+	EXCEL = "excel",
+	JSON = "json",
+	CSV = "csv",
+}

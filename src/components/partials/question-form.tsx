@@ -2,11 +2,11 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { Plus, Save, Trash } from "lucide-react";
+import { Download, Plus, Save, Trash } from "lucide-react";
 import { toast } from "sonner";
 import type z from "zod";
 import { createQuestions, saveQuestionsBatch } from "#/actions/question";
-import type { NewQuestion } from "#/shared/types";
+import { ExportFormat, type NewQuestion } from "#/shared/types";
 import { questionsBatchSchema } from "#/shared/validation";
 import { Button } from "../ui/button";
 import {
@@ -16,9 +16,17 @@ import {
 	CardFooter,
 	CardTitle,
 } from "../ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { FieldSet } from "../ui/field";
 import { LoadingSwap } from "../ui/loading-swap";
-import { Slider } from "../ui/slider"; // Asegúrate de tener este componente en tus primitivos
+import { Slider } from "../ui/slider";
+import ExportMenuButton from "./export-menu-button";
 import FormField, { FieldType } from "./form-field";
 import GenerateQuestionsButton from "./generate-questions-button";
 
@@ -468,6 +476,28 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 
 									{/* ACCIONES DEL FORMULARIO GENERAL */}
 									<div className="w-full flex items-center justify-end gap-2 pt-4">
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button variant="secondary">
+													<Download />
+													Exportar
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent>
+												<DropdownMenuGroup>
+													{Object.values(ExportFormat).map((f) => {
+														return (
+															<DropdownMenuItem key={f} asChild>
+																<ExportMenuButton
+																	format={f}
+																	slug={slug as string}
+																/>
+															</DropdownMenuItem>
+														);
+													})}
+												</DropdownMenuGroup>
+											</DropdownMenuContent>
+										</DropdownMenu>
 										<GenerateQuestionsButton
 											pollDescription={pollDescription}
 											addQuestion={field.pushValue}

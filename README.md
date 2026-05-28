@@ -18,6 +18,6 @@
 [X] Implementar eliminar una encuesta con sus preguntas
 [X] Implementar el mostrar distintos tipos de pregunta al realizar la encuesta
 [X] Si la encuesta se creo deshabilitar el boton
-[] Completar pagina de visualizar respuestas
+[X] Completar pagina de visualizar respuestas
 [] Implementar el reorder de las preguntas
 [] Exportar/importar encuesta como JSON, Excel, CSV o MD

@@ -4,12 +4,13 @@ import {
 	useRouteContext,
 	useRouter,
 } from "@tanstack/react-router";
-import { File, FilePlus, LayoutDashboard, LogOut } from "lucide-react";
-import { Button } from "#/components/ui/button";
+import { File, FilePlus, Import, LayoutDashboard, LogOut } from "lucide-react";
+import { Button, buttonVariants } from "#/components/ui/button";
 import { GithubDark } from "#/components/ui/svgs/githubDark";
 import { GithubLight } from "#/components/ui/svgs/githubLight.tsx";
 import { Google } from "#/components/ui/svgs/google";
 import { authClient } from "#/lib/auth-client";
+import { cn } from "#/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
 	DropdownMenu,
@@ -109,8 +110,19 @@ export default function AuthHeader() {
 										Crear encuesta
 									</Link>
 								</DropdownMenuItem>
+								<DropdownMenuItem asChild>
+									<Link
+										to="/poll/import"
+										preload={false}
+										className="w-full flex items-center justify-start gap-1"
+									>
+										<Import />
+										Importar encuesta
+									</Link>
+								</DropdownMenuItem>
 							</DropdownMenuGroup>
 						)}
+
 						{isProtected && <DropdownMenuSeparator />}
 						<DropdownMenuGroup>
 							<DropdownMenuItem asChild>
