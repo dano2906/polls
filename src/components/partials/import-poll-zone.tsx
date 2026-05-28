@@ -7,12 +7,10 @@ import {
 	CheckCircle2,
 	FileText,
 	ListPlus,
-	Loader2,
 	Trash2,
 	Upload,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { importPollAction } from "#/actions/app";
 import type { ExportData, QuestionType } from "#/shared/types";
 import { parsePollFile } from "@/lib/export";
@@ -258,7 +256,7 @@ export function ImportPollZone() {
 									)}
 
 									{/* Mapeo de Opciones de la Pregunta si las tiene */}
-									{q.answers && q.answers.length >= 0 && (
+									{q.answers && q.answers.length > 0 && (
 										<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
 											{q.answers.map((ans, aIdx) => (
 												<div

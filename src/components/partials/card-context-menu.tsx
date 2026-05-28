@@ -70,9 +70,6 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 				<ContextMenuItem asChild>
 					<PollQrPopover slug={poll.slug as string} />
 				</ContextMenuItem>
-				<ContextMenuItem asChild>
-					<DeletePollButton slug={poll.slug as string} />
-				</ContextMenuItem>
 				{poll.slug && (
 					<ContextMenuSub>
 						<ContextMenuSubTrigger
@@ -96,6 +93,9 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 						</ContextMenuSubContent>
 					</ContextMenuSub>
 				)}
+				<ContextMenuItem asChild>
+					<DeletePollButton slug={poll.slug as string} />
+				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>
 	);
