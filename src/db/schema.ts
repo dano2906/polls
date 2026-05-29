@@ -141,6 +141,8 @@ export const question = sqliteTable("question", {
 	isRequired: integer("is_required", { mode: "boolean" })
 		.default(false)
 		.notNull(),
+	imageUrl: text("image_url"),
+	imagePublicId: text("image_public_id"),
 	createdAt: integer("created_at", { mode: "timestamp" }).default(
 		sql`CURRENT_TIMESTAMP`,
 	),
@@ -172,6 +174,8 @@ export const answer = sqliteTable("answer", {
 		.default(false)
 		.notNull(),
 	order: integer("order").default(0),
+	imageUrl: text("image_url"),
+	imagePublicId: text("image_public_id"),
 	metadata: text("metadata", { mode: "json" }),
 	createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(
 		() => new Date(),

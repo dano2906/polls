@@ -1,11 +1,15 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { Download, Plus, Save, Trash } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import type z from "zod";
+import { deleteImagesFromCloudinary } from "#/actions/cloudinary";
 import { createQuestions, saveQuestionsBatch } from "#/actions/question";
+import { uploadToCloudinary } from "#/lib/utils";
 import { ExportFormat, type NewQuestion } from "#/shared/types";
 import { questionsBatchSchema } from "#/shared/validation";
 import { Button } from "../ui/button";
@@ -28,6 +32,7 @@ import { LoadingSwap } from "../ui/loading-swap";
 import { Slider } from "../ui/slider";
 import ExportMenuButton from "./export-menu-button";
 import FormField, { FieldType } from "./form-field";
+import { QuestionImageUploader } from "./form-image-uploader";
 import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
@@ -41,6 +46,7 @@ type QuestionBatchInput = z.infer<typeof questionsBatchSchema>;
 const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 	const isEditing = !!initialData;
 	const router = useRouter();
+	const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 	const questionMutation = useMutation({
 		mutationKey: [isEditing ? "update" : "create", "question"],
 		mutationFn: async (values: QuestionBatchInput) => {
@@ -70,6 +76,8 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 								id: q.id,
 								questionText: q.questionText ?? "",
 								isRequired: q.isRequired ?? true,
+								imageUrl: q.imageUrl ?? null,
+								imagePublicId: q.imagePublicId ?? null,
 							};
 
 							if (q.type === "open_answer" || q.type === "rating") {
@@ -108,6 +116,8 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 								hasCorrectAnswers: false,
 								isRequired: true,
 								maxSelections: 1,
+								imageUrl: null,
+								imagePublicId: null,
 								answers: [{ answerText: "", isCorrect: false }],
 							},
 						],
@@ -116,33 +126,105 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 			onChange: questionsBatchSchema,
 		},
 		onSubmit: async ({ value }) => {
-			const cleanedValues = {
-				...value,
-				questions: value.questions.map((q) => {
-					if (q.type === "open_answer" || q.type === "rating") {
-						return {
-							...q,
-							type: q.type,
-							answers: [] as [],
-							hasCorrectAnswers: false as const,
-							maxSelections: 1 as const,
-						};
-					}
-					if (q.type !== "multiple_choice") {
-						return {
-							...q,
-							type: q.type,
-							maxSelections: 1 as const,
-						};
-					}
-					return {
-						...q,
-						type: q.type,
-					};
-				}) as QuestionBatchInput["questions"],
-			};
+			toast.loading("Guardando cambios y procesando imágenes...", {
+				id: "save-questions",
+			});
 
-			await questionMutation.mutateAsync(cleanedValues);
+			try {
+				// 1. Subir imágenes nuevas (reutilizando la lógica de Promise.all del paso anterior)
+				const cleanedQuestions = await Promise.all(
+					value.questions.map(async (q: any) => {
+						let imageUrl = q.imageUrl ?? null;
+						let imagePublicId = q.imagePublicId ?? null;
+
+						// Subir imagen si existe un archivo local
+						if (q._localFile instanceof File) {
+							try {
+								const uploaded = await uploadToCloudinary(q._localFile);
+								imageUrl = uploaded.url;
+								imagePublicId = uploaded.publicId;
+							} catch (error) {
+								throw new Error("Error al subir una nueva imagen.");
+							}
+						}
+
+						// Base común compartida por TODAS las preguntas
+						const baseCleaned = {
+							id: q.id || undefined, // Evitamos pasar null si Zod espera string | undefined
+							questionText: q.questionText,
+							isRequired: !!q.isRequired,
+							imageUrl,
+							imagePublicId,
+						};
+
+						// 💡 DEVOLVER ESTRUCTURAS ESTRICTAS SEGÚN EL TIPO (Satisface la Unión de Zod)
+						if (q.type === "open_answer") {
+							return {
+								...baseCleaned,
+								type: "open_answer" as const,
+								hasCorrectAnswers: false as const,
+								maxSelections: 1 as const,
+								answers: [] as [],
+							};
+						}
+
+						if (q.type === "rating") {
+							return {
+								...baseCleaned,
+								type: "rating" as const,
+								hasCorrectAnswers: false as const,
+								maxSelections: 1 as const,
+								answers: [] as [],
+								// Aseguramos que minValue y maxValue vengan como números o tengan fallback
+								minValue: Number(q.minValue ?? 1),
+								maxValue: Number(q.maxValue ?? 5),
+							};
+						}
+
+						// Para opciones de selección ("single_choice", "multiple_choice", etc.)
+						return {
+							...baseCleaned,
+							type: q.type,
+							// 💡 Aquí estaba el fallo principal: Faltaba inyectar estas propiedades explícitamente en el objeto base
+							hasCorrectAnswers: q.hasCorrectAnswers ?? false,
+							maxSelections:
+								q.type === "multiple_choice" ? Number(q.maxSelections ?? 1) : 1,
+							answers:
+								q.answers?.map((a: any) => ({
+									id: a.id || undefined,
+									answerText: a.answerText ?? "",
+									isCorrect: !!a.isCorrect,
+									imageUrl: a.imageUrl ?? null,
+									imagePublicId: a.imagePublicId ?? null,
+								})) || [],
+						};
+					}),
+				);
+
+				const cleanedValues = {
+					slug: value.slug,
+					questions: cleanedQuestions,
+				};
+
+				// 2. Guardar en Base de Datos (Esto ya ejecutará tus Server Functions con soporte de imágenes)
+				await questionMutation.mutateAsync(cleanedValues);
+
+				// 3. 🆕 SÓLO SI LA BD RESPONDE OK: Ejecutamos la limpieza física en Cloudinary
+				if (imagesToDelete.length > 0) {
+					await deleteImagesFromCloudinary({
+						data: {
+							publicIds: imagesToDelete,
+						},
+					});
+					setImagesToDelete([]); // Vaciamos el recolector tras el éxito
+				}
+
+				toast.dismiss("save-questions");
+				// El router.invalidate() de tu mutation se encargará de refrescar la UI
+			} catch (error: any) {
+				toast.dismiss("save-questions");
+				toast.error(error.message || "Hubo un fallo al procesar los archivos.");
+			}
 		},
 	});
 
@@ -190,7 +272,53 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 														/>
 													)}
 												</form.Field>
+												<form.Field name={`questions[${i}]._localFile` as any}>
+													{(subField) => (
+														<div>
+															<QuestionImageUploader
+																currentImageUrl={form.getFieldValue(
+																	`questions[${i}].imageUrl`,
+																)}
+																onFileSelected={(file) =>
+																	subField.handleChange(file as any)
+																}
+															/>
 
+															{/* 🆕 Botón para remover la imagen existente en modo edición */}
+															{form.getFieldValue(
+																`questions[${i}].imagePublicId`,
+															) && (
+																<button
+																	type="button"
+																	className="text-xs text-destructive underline mt-1"
+																	onClick={() => {
+																		const pid = form.getFieldValue(
+																			`questions[${i}].imagePublicId`,
+																		);
+																		if (pid) {
+																			// 1. Lo mandamos a la lista de ejecución para el submit
+																			setImagesToDelete((prev) => [
+																				...prev,
+																				pid,
+																			]);
+																			// 2. Limpiamos los campos en el estado del formulario
+																			form.setFieldValue(
+																				`questions[${i}].imageUrl`,
+																				null,
+																			);
+																			form.setFieldValue(
+																				`questions[${i}].imagePublicId`,
+																				null,
+																			);
+																		}
+																	}}
+																>
+																	Eliminar imagen actual
+																</button>
+															)}
+														</div>
+													)}
+												</form.Field>
 												{/* SELECTOR DE TIPO DE PREGUNTA */}
 												<form.Field name={`questions[${i}].type`}>
 													{(typeField) => (

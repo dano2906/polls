@@ -36,23 +36,24 @@ export const createQuestions = createServerFn({ method: "POST" })
 
 		return await db.transaction(async (tx) => {
 			for (const [index, qData] of data.questions.entries()) {
-				// Extraer de forma segura valores condicionales para evitar errores de tipo
 				const minValue = "minValue" in qData ? qData.minValue : 1;
 				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
 
-				// Insertar Pregunta incluyendo los rangos de calificación de forma segura
+				// Insertar Pregunta incluyendo URLs de imágenes de forma segura
 				const [insertedQuestion] = await tx
 					.insert(question)
 					.values({
-						// Si ya existe un ID (en saveQuestionsBatch), lo mapeamos, si no, dejamos que defina el $defaultFn
 						...(qData.id ? { id: qData.id } : {}),
 						questionText: qData.questionText,
-						// Forzamos el cast al tipo exacto que espera Drizzle para el enum de la tabla
 						type: qData.type as (typeof QUESTION_TYPES)[number],
 						hasCorrectAnswers: qData.hasCorrectAnswers ?? false,
 						maxSelections: qData.maxSelections ?? 1,
 						isRequired: qData.isRequired ?? false,
-						// Guardamos los rangos dentro del JSON de metadatos como lo pide tu esquema
+
+						// 🆕 GUARDAR IMAGEN DE LA PREGUNTA
+						imageUrl: qData.imageUrl ?? null,
+						imagePublicId: qData.imagePublicId ?? null,
+
 						metadata: JSON.stringify({
 							minRating: minValue,
 							maxRating: maxValue,
@@ -62,14 +63,12 @@ export const createQuestions = createServerFn({ method: "POST" })
 
 				const questionId = insertedQuestion.id;
 
-				// Vincular con la Encuesta en la tabla intermedia
 				await tx.insert(pollQuestions).values({
 					pollId: currentPoll.id,
 					questionId,
 					order: index + 1,
 				});
 
-				// Evitar colisiones de tipos: Solo procesamos respuestas si existen físicamente en la unión
 				if (
 					"answers" in qData &&
 					Array.isArray(qData.answers) &&
@@ -81,6 +80,10 @@ export const createQuestions = createServerFn({ method: "POST" })
 							answerText: ans.answerText,
 							isCorrect: ans.isCorrect ?? false,
 							order: ans_index,
+
+							// 🆕 GUARDAR IMAGEN DE LA RESPUESTA
+							imageUrl: ans.imageUrl ?? null,
+							imagePublicId: ans.imagePublicId ?? null,
 						}),
 					);
 
@@ -94,7 +97,6 @@ export const createQuestions = createServerFn({ method: "POST" })
 
 // ==========================================
 // 2. SAVE QUESTIONS BATCH (UPSERT + VERSIONADO PROFUNDO)
-// ==========================================
 export const saveQuestionsBatch = createServerFn({
 	method: "POST",
 })
@@ -116,7 +118,6 @@ export const saveQuestionsBatch = createServerFn({
 		}
 
 		return await db.transaction(async (tx) => {
-			// Verificar si la encuesta ya tiene respuestas asociadas
 			const existingSubmissions = await tx
 				.select({ id: submission.id })
 				.from(submission)
@@ -132,7 +133,6 @@ export const saveQuestionsBatch = createServerFn({
 			if (isNewVersion) {
 				const newPollId = crypto.randomUUID();
 
-				// Archivar la encuesta actual manteniendo inalterado su slug original e histórico
 				await tx
 					.update(poll)
 					.set({
@@ -141,7 +141,6 @@ export const saveQuestionsBatch = createServerFn({
 					})
 					.where(eq(poll.id, currentPoll.id));
 
-				// Generar nuevo código/slug para la encuesta viva en producción
 				const newSlug = generateRandomCode();
 
 				await tx.insert(poll).values({
@@ -167,13 +166,12 @@ export const saveQuestionsBatch = createServerFn({
 				const qData = questionsData[i];
 				let qId = qData.id;
 
-				// Validación de propiedades seguras en base al discriminador
 				const minValue = "minValue" in qData ? qData.minValue : 1;
 				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
 
 				// --- FLUJO DE TRATAMIENTO DE PREGUNTA ---
 				if (qId && !isNewVersion) {
-					// Actualización en caliente (Mismo Poll ID, sin respuestas previas)
+					// Actualización en caliente
 					await tx
 						.update(question)
 						.set({
@@ -182,6 +180,11 @@ export const saveQuestionsBatch = createServerFn({
 							hasCorrectAnswers: qData.hasCorrectAnswers,
 							maxSelections: qData.maxSelections,
 							isRequired: qData.isRequired,
+
+							// 🆕 ACTUALIZAR IMAGEN DE LA PREGUNTA
+							imageUrl: qData.imageUrl ?? null,
+							imagePublicId: qData.imagePublicId ?? null,
+
 							metadata: JSON.stringify({
 								minRating: minValue,
 								maxRating: maxValue,
@@ -194,12 +197,15 @@ export const saveQuestionsBatch = createServerFn({
 						.insert(question)
 						.values({
 							questionText: qData.questionText,
-							// Mapeamos el tipo al enum de Drizzle
 							type: qData.type as (typeof QUESTION_TYPES)[number],
 							hasCorrectAnswers: qData.hasCorrectAnswers,
 							maxSelections: qData.maxSelections,
 							isRequired: qData.isRequired,
-							// Agrupamos en el objeto JSON de la columna metadata
+
+							// 🆕 COPIAR O INSERTAR IMAGEN DE LA PREGUNTA
+							imageUrl: qData.imageUrl ?? null,
+							imagePublicId: qData.imagePublicId ?? null,
+
 							metadata: JSON.stringify({
 								minRating: minValue,
 								maxRating: maxValue,
@@ -251,7 +257,6 @@ export const saveQuestionsBatch = createServerFn({
 				// --- FLUJO DE RESPUESTAS / OPCIONES ---
 				const currentAnswerIds: string[] = [];
 
-				// Validación defensiva en base a tipos discriminados para el bucle de opciones
 				if (
 					"answers" in qData &&
 					Array.isArray(qData.answers) &&
@@ -261,17 +266,23 @@ export const saveQuestionsBatch = createServerFn({
 						const aData = qData.answers[j];
 
 						if (aData.id && !isNewVersion) {
+							// Actualizar respuesta existente
 							await tx
 								.update(answer)
 								.set({
 									answerText: aData.answerText,
 									isCorrect: aData.isCorrect,
 									order: j,
+
+									// 🆕 ACTUALIZAR IMAGEN DE LA RESPUESTA
+									imageUrl: aData.imageUrl ?? null,
+									imagePublicId: aData.imagePublicId ?? null,
 								})
 								.where(eq(answer.id, aData.id));
 
 							currentAnswerIds.push(aData.id);
 						} else {
+							// Insertar nueva o clonar por versión
 							const [newA] = await tx
 								.insert(answer)
 								.values({
@@ -279,6 +290,10 @@ export const saveQuestionsBatch = createServerFn({
 									answerText: aData.answerText,
 									isCorrect: aData.isCorrect ?? false,
 									order: j,
+
+									// 🆕 INSERTAR IMAGEN DE LA RESPUESTA
+									imageUrl: aData.imageUrl ?? null,
+									imagePublicId: aData.imagePublicId ?? null,
 								})
 								.returning({ id: answer.id });
 
@@ -287,7 +302,7 @@ export const saveQuestionsBatch = createServerFn({
 					}
 				}
 
-				// Limpieza de opciones removidas (Solo mutación "en vivo" y si es tipo con opciones fijas)
+				// Limpieza de opciones removidas
 				if (
 					!isNewVersion &&
 					"answers" in qData &&

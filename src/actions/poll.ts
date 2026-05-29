@@ -198,16 +198,22 @@ export const getPollDetails = createServerFn({ method: "GET" })
 				},
 			},
 		});
+
 		if (!poll) {
 			throw notFound();
 		}
+
 		const questions = poll.pollQuestions.map((item) => {
 			return {
 				order: item.order,
 				pollId: item.pollId,
 				...item.question,
+				// Al esparcir item.question ya incluye:
+				// imageUrl: item.question.imageUrl,
+				// imagePublicId: item.question.imagePublicId
 			};
 		});
+
 		return {
 			name: poll.name,
 			description: poll.description,

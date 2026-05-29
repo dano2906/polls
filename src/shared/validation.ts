@@ -72,15 +72,16 @@ export const createAnswerInput = z.object({
 		.describe(
 			"Campo para saber si la respuesta es correcta o no. Por defecto es falso y va en dependencia de si la pregunta tiene respuestas correctas o no.",
 		),
+	imageUrl: z.string().url("Debe ser una URL válida").nullable().optional(),
+	imagePublicId: z.string().nullable().optional(),
 });
-// ========================================================
-// 1. ESQUEMAS BASE POR TIPO DE PREGUNTA (Discriminados)
-// ========================================================
 
 const baseQuestionFields = z.object({
 	id: z.string().nullable().optional(),
 	questionText: z.string().min(1).max(500).describe("El enunciado claro."),
 	isRequired: z.boolean().default(true).optional(),
+	imageUrl: z.string().url("Debe ser una URL válida").nullable().optional(),
+	imagePublicId: z.string().nullable().optional(),
 });
 
 // --- TIPO: Open Answer ---
