@@ -20,5 +20,18 @@
 [X] Si la encuesta se creo deshabilitar el boton
 [X] Completar pagina de visualizar respuestas
 [X] Exportar/importar encuesta como JSON, Excel, CSV
-[] Implementar el reorder de las preguntas
-[] En csv le resta un dia a las fechas
+[X] Implementar la subida de imagenes a las preguntas y respuestas
+[] Agregar preguntas de:
+
+- fecha simple o rango
+- Multiple dropdown
+- Distribucion de puntos
+- Escala de likert
+- Videos y audios
+  [] Implementar el reorder de las preguntas
+  [] En csv le resta un dia a las fechas
+  [] Agregar encuestas con contrasena
+  [] Funcionalidades de admin
+  [] Multi idioma
+  [] Multi tema
+  [] Gestion de equipos y colaboracion

@@ -80,7 +80,7 @@ const baseQuestionFields = z.object({
 	id: z.string().nullable().optional(),
 	questionText: z.string().min(1).max(500).describe("El enunciado claro."),
 	isRequired: z.boolean().default(true).optional(),
-	imageUrl: z.string().url("Debe ser una URL válida").nullable().optional(),
+	imageUrl: z.url("Debe ser una URL válida").nullable().optional(),
 	imagePublicId: z.string().nullable().optional(),
 });
 

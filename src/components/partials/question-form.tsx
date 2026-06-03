@@ -32,7 +32,7 @@ import { LoadingSwap } from "../ui/loading-swap";
 import { Slider } from "../ui/slider";
 import ExportMenuButton from "./export-menu-button";
 import FormField, { FieldType } from "./form-field";
-import { QuestionImageUploader } from "./form-image-uploader";
+import ImageUploader from "./form-image-uploader";
 import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
@@ -106,6 +106,8 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 										id: a.id,
 										answerText: a.answerText ?? "",
 										isCorrect: a.isCorrect ?? false,
+										imageUrl: a.imageUrl ?? null,
+										imagePublicId: a.imagePublicId ?? null,
 									})) || [],
 							};
 						})
@@ -131,33 +133,31 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 			});
 
 			try {
-				// 1. Subir imágenes nuevas (reutilizando la lógica de Promise.all del paso anterior)
+				// 1. Subir imágenes nuevas de preguntas Y respuestas
 				const cleanedQuestions = await Promise.all(
 					value.questions.map(async (q: any) => {
 						let imageUrl = q.imageUrl ?? null;
 						let imagePublicId = q.imagePublicId ?? null;
 
-						// Subir imagen si existe un archivo local
+						// Subir imagen de la PREGUNTA si existe archivo local
 						if (q._localFile instanceof File) {
 							try {
 								const uploaded = await uploadToCloudinary(q._localFile);
 								imageUrl = uploaded.url;
 								imagePublicId = uploaded.publicId;
 							} catch (error) {
-								throw new Error("Error al subir una nueva imagen.");
+								throw new Error("Error al subir una nueva imagen de pregunta.");
 							}
 						}
 
-						// Base común compartida por TODAS las preguntas
 						const baseCleaned = {
-							id: q.id || undefined, // Evitamos pasar null si Zod espera string | undefined
+							id: q.id || undefined,
 							questionText: q.questionText,
 							isRequired: !!q.isRequired,
 							imageUrl,
 							imagePublicId,
 						};
 
-						// 💡 DEVOLVER ESTRUCTURAS ESTRICTAS SEGÚN EL TIPO (Satisface la Unión de Zod)
 						if (q.type === "open_answer") {
 							return {
 								...baseCleaned,
@@ -175,28 +175,45 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 								hasCorrectAnswers: false as const,
 								maxSelections: 1 as const,
 								answers: [] as [],
-								// Aseguramos que minValue y maxValue vengan como números o tengan fallback
 								minValue: Number(q.minValue ?? 1),
 								maxValue: Number(q.maxValue ?? 5),
 							};
 						}
 
-						// Para opciones de selección ("single_choice", "multiple_choice", etc.)
-						return {
-							...baseCleaned,
-							type: q.type,
-							// 💡 Aquí estaba el fallo principal: Faltaba inyectar estas propiedades explícitamente en el objeto base
-							hasCorrectAnswers: q.hasCorrectAnswers ?? false,
-							maxSelections:
-								q.type === "multiple_choice" ? Number(q.maxSelections ?? 1) : 1,
-							answers:
-								q.answers?.map((a: any) => ({
+						// 🆕 Procesar las imágenes de las RESPUESTAS en paralelo
+						const cleanedAnswers = await Promise.all(
+							(q.answers || []).map(async (a: any) => {
+								let ansImageUrl = a.imageUrl ?? null;
+								let ansImagePublicId = a.imagePublicId ?? null;
+
+								// Subir imagen de la RESPUESTA si existe archivo local
+								if (a._localFile instanceof File) {
+									try {
+										const uploaded = await uploadToCloudinary(a._localFile);
+										ansImageUrl = uploaded.url;
+										ansImagePublicId = uploaded.publicId;
+									} catch (error) {
+										throw new Error("Error al subir una imagen de respuesta.");
+									}
+								}
+
+								return {
 									id: a.id || undefined,
 									answerText: a.answerText ?? "",
 									isCorrect: !!a.isCorrect,
-									imageUrl: a.imageUrl ?? null,
-									imagePublicId: a.imagePublicId ?? null,
-								})) || [],
+									imageUrl: ansImageUrl,
+									imagePublicId: ansImagePublicId,
+								};
+							}),
+						);
+
+						return {
+							...baseCleaned,
+							type: q.type,
+							hasCorrectAnswers: q.hasCorrectAnswers ?? false,
+							maxSelections:
+								q.type === "multiple_choice" ? Number(q.maxSelections ?? 1) : 1,
+							answers: cleanedAnswers,
 						};
 					}),
 				);
@@ -206,21 +223,20 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 					questions: cleanedQuestions,
 				};
 
-				// 2. Guardar en Base de Datos (Esto ya ejecutará tus Server Functions con soporte de imágenes)
+				// 2. Guardar en Base de Datos
 				await questionMutation.mutateAsync(cleanedValues);
 
-				// 3. 🆕 SÓLO SI LA BD RESPONDE OK: Ejecutamos la limpieza física en Cloudinary
+				// 3. Limpieza física en Cloudinary (Borra tanto de preguntas como de respuestas acumuladas)
 				if (imagesToDelete.length > 0) {
 					await deleteImagesFromCloudinary({
 						data: {
 							publicIds: imagesToDelete,
 						},
 					});
-					setImagesToDelete([]); // Vaciamos el recolector tras el éxito
+					setImagesToDelete([]);
 				}
 
 				toast.dismiss("save-questions");
-				// El router.invalidate() de tu mutation se encargará de refrescar la UI
 			} catch (error: any) {
 				toast.dismiss("save-questions");
 				toast.error(error.message || "Hubo un fallo al procesar los archivos.");
@@ -274,48 +290,37 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 												</form.Field>
 												<form.Field name={`questions[${i}]._localFile` as any}>
 													{(subField) => (
-														<div>
-															<QuestionImageUploader
+														<div className="w-full">
+															<ImageUploader
 																currentImageUrl={form.getFieldValue(
 																	`questions[${i}].imageUrl`,
+																)}
+																currentPublicId={form.getFieldValue(
+																	`questions[${i}].imagePublicId`,
 																)}
 																onFileSelected={(file) =>
 																	subField.handleChange(file as any)
 																}
-															/>
+																onImageRemoved={() => {
+																	const pid = form.getFieldValue(
+																		`questions[${i}].imagePublicId`,
+																	);
+																	if (pid) {
+																		// Encolamos el publicId para borrarlo de Cloudinary al hacer submit exitoso
+																		setImagesToDelete((prev) => [...prev, pid]);
+																	}
 
-															{/* 🆕 Botón para remover la imagen existente en modo edición */}
-															{form.getFieldValue(
-																`questions[${i}].imagePublicId`,
-															) && (
-																<button
-																	type="button"
-																	className="text-xs text-destructive underline mt-1"
-																	onClick={() => {
-																		const pid = form.getFieldValue(
-																			`questions[${i}].imagePublicId`,
-																		);
-																		if (pid) {
-																			// 1. Lo mandamos a la lista de ejecución para el submit
-																			setImagesToDelete((prev) => [
-																				...prev,
-																				pid,
-																			]);
-																			// 2. Limpiamos los campos en el estado del formulario
-																			form.setFieldValue(
-																				`questions[${i}].imageUrl`,
-																				null,
-																			);
-																			form.setFieldValue(
-																				`questions[${i}].imagePublicId`,
-																				null,
-																			);
-																		}
-																	}}
-																>
-																	Eliminar imagen actual
-																</button>
-															)}
+																	// Limpiamos los campos correspondientes dentro del estado del formulario
+																	form.setFieldValue(
+																		`questions[${i}].imageUrl`,
+																		null,
+																	);
+																	form.setFieldValue(
+																		`questions[${i}].imagePublicId`,
+																		null,
+																	);
+																}}
+															/>
 														</div>
 													)}
 												</form.Field>
@@ -511,6 +516,54 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																									label="Texto de la opción"
 																									required
 																								/>
+																							)}
+																						</form.Field>
+																						<form.Field
+																							name={
+																								`questions[${i}].answers[${ai}]._localFile` as any
+																							}
+																						>
+																							{(subField) => (
+																								<div className="w-full">
+																									<ImageUploader
+																										currentImageUrl={form.getFieldValue(
+																											`questions[${i}].answers[${ai}].imageUrl`,
+																										)}
+																										currentPublicId={form.getFieldValue(
+																											`questions[${i}].answers[${ai}].imagePublicId`,
+																										)}
+																										onFileSelected={(file) =>
+																											subField.handleChange(
+																												file as any,
+																											)
+																										}
+																										onImageRemoved={() => {
+																											const pid =
+																												form.getFieldValue(
+																													`questions[${i}].answers[${ai}].imagePublicId`,
+																												);
+																											if (pid) {
+																												// Encolamos el publicId para borrarlo al hacer submit exitoso
+																												setImagesToDelete(
+																													(prev) => [
+																														...prev,
+																														pid,
+																													],
+																												);
+																											}
+
+																											// Limpiamos los campos en el estado del formulario de manera unificada
+																											form.setFieldValue(
+																												`questions[${i}].answers[${ai}].imageUrl`,
+																												null,
+																											);
+																											form.setFieldValue(
+																												`questions[${i}].answers[${ai}].imagePublicId`,
+																												null,
+																											);
+																										}}
+																									/>
+																								</div>
 																							)}
 																						</form.Field>
 
