@@ -184,6 +184,68 @@ const choiceQuestionsSchema = baseQuestionFields
 		}
 	});
 
+export const dateSingleQuestionSchema = baseQuestionFields
+	.extend({
+		type: z.literal("date_single"),
+		hasCorrectAnswers: z.literal(false).default(false),
+		maxSelections: z.literal(1).default(1),
+		answers: z.tuple([]).default([]), // Forzamos un array estrictamente vacío
+		// Parámetros opcionales si el creador quiere poner límites (YYYY-MM-DD)
+		minDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido (debe ser YYYY-MM-DD)")
+			.nullable()
+			.optional(),
+		maxDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido (debe ser YYYY-MM-DD)")
+			.nullable()
+			.optional(),
+	})
+	.refine(
+		(data) => {
+			if (data.minDate && data.maxDate) {
+				return new Date(data.minDate) <= new Date(data.maxDate);
+			}
+			return true;
+		},
+		{
+			message: "La fecha máxima no puede ser anterior a la fecha mínima.",
+			path: ["maxDate"],
+		},
+	);
+
+// --- TIPO: Date Range (Rango de Fechas) ---
+export const dateRangeQuestionSchema = baseQuestionFields
+	.extend({
+		type: z.literal("date_range"),
+		hasCorrectAnswers: z.literal(false).default(false),
+		maxSelections: z.literal(1).default(1),
+		answers: z.tuple([]).default([]),
+		minDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido (debe ser YYYY-MM-DD)")
+			.nullable()
+			.optional(),
+		maxDate: z
+			.string()
+			.regex(/^\d{4}-\d{2}-\d{2}$/, "Formato inválido (debe ser YYYY-MM-DD)")
+			.nullable()
+			.optional(),
+	})
+	.refine(
+		(data) => {
+			if (data.minDate && data.maxDate) {
+				return new Date(data.minDate) <= new Date(data.maxDate);
+			}
+			return true;
+		},
+		{
+			message: "La fecha máxima permisible no puede ser anterior a la mínima.",
+			path: ["maxDate"],
+		},
+	);
+
 // ========================================================
 // 2. UNION DISCRIMINADA FINAL
 // ========================================================
@@ -192,6 +254,8 @@ export const createQuestionInput = z.discriminatedUnion("type", [
 	ratingSchema,
 	rankingSchema,
 	choiceQuestionsSchema,
+	dateSingleQuestionSchema,
+	dateRangeQuestionSchema,
 ]);
 export const questionsBatchSchema = z
 	.object({

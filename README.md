@@ -23,7 +23,6 @@
 [X] Implementar la subida de imagenes a las preguntas y respuestas
 [] Agregar preguntas de:
 
-- fecha simple o rango
 - Multiple dropdown
 - Distribucion de puntos
 - Escala de likert

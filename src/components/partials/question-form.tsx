@@ -8,9 +8,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type z from "zod";
 import { deleteImagesFromCloudinary } from "#/actions/cloudinary";
+import type { getPollDetails } from "#/actions/poll";
 import { createQuestions, saveQuestionsBatch } from "#/actions/question";
 import { uploadToCloudinary } from "#/lib/utils";
-import { ExportFormat, type NewQuestion } from "#/shared/types";
+import { ExportFormat, type QuestionMetadata } from "#/shared/types";
 import { questionsBatchSchema } from "#/shared/validation";
 import { Button } from "../ui/button";
 import {
@@ -38,10 +39,41 @@ import GenerateQuestionsButton from "./generate-questions-button";
 interface Props {
 	slug: string | null;
 	pollDescription?: string | null;
-	initialData?: NewQuestion[];
+	initialData?: Awaited<ReturnType<typeof getPollDetails>>["questions"];
 }
 
 type QuestionBatchInput = z.infer<typeof questionsBatchSchema>;
+
+const OPTION_TYPES = [
+	{
+		label: "Selección simple",
+		value: "single_choice",
+	},
+	{
+		label: "Selección múltiple",
+		value: "multiple_choice",
+	},
+	{
+		label: "Respuesta abierta",
+		value: "open_answer",
+	},
+	{
+		label: "Ordenamiento / Ranking",
+		value: "ranking",
+	},
+	{
+		label: "Escala de valoración / Calificación",
+		value: "rating",
+	},
+	{
+		label: "Fecha simple",
+		value: "date_single",
+	},
+	{
+		label: "Fecha rango",
+		value: "date_range",
+	},
+];
 
 const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 	const isEditing = !!initialData;
@@ -72,6 +104,17 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 			questions:
 				initialData && initialData.length > 0
 					? initialData.map((q) => {
+							let meta: QuestionMetadata = {};
+							if (q.metadata) {
+								try {
+									meta =
+										typeof q.metadata === "string"
+											? JSON.parse(q.metadata)
+											: q.metadata;
+								} catch (e) {
+									console.error("Error parseando metadata de la pregunta:", e);
+								}
+							}
 							const base = {
 								id: q.id,
 								questionText: q.questionText ?? "",
@@ -80,7 +123,12 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 								imagePublicId: q.imagePublicId ?? null,
 							};
 
-							if (q.type === "open_answer" || q.type === "rating") {
+							if (
+								q.type === "open_answer" ||
+								q.type === "rating" ||
+								q.type === "date_single" ||
+								q.type === "date_range"
+							) {
 								return {
 									...base,
 									type: q.type,
@@ -89,8 +137,14 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 									answers: [] as [],
 									...(q.type === "rating"
 										? {
-												minValue: q.minValue ?? 1,
-												maxValue: q.maxValue ?? 5,
+												minValue: meta.minRating ?? 1,
+												maxValue: meta.maxRating ?? 5,
+											}
+										: {}),
+									...(q.type === "date_single" || q.type === "date_range"
+										? {
+												minDate: meta.minDate ?? null,
+												maxDate: meta.maxDate ?? null,
 											}
 										: {}),
 								};
@@ -131,7 +185,6 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 			toast.loading("Guardando cambios y procesando imágenes...", {
 				id: "save-questions",
 			});
-
 			try {
 				// 1. Subir imágenes nuevas de preguntas Y respuestas
 				const cleanedQuestions = await Promise.all(
@@ -145,7 +198,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 								const uploaded = await uploadToCloudinary(q._localFile);
 								imageUrl = uploaded.url;
 								imagePublicId = uploaded.publicId;
-							} catch (error) {
+							} catch {
 								throw new Error("Error al subir una nueva imagen de pregunta.");
 							}
 						}
@@ -180,6 +233,18 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 							};
 						}
 
+						if (q.type === "date_single" || q.type === "date_range") {
+							return {
+								...baseCleaned,
+								type: q.type,
+								hasCorrectAnswers: false as const,
+								maxSelections: 1 as const,
+								answers: [] as [],
+								minDate: q.minDate || null,
+								maxDate: q.maxDate || null,
+							};
+						}
+
 						// 🆕 Procesar las imágenes de las RESPUESTAS en paralelo
 						const cleanedAnswers = await Promise.all(
 							(q.answers || []).map(async (a: any) => {
@@ -192,7 +257,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 										const uploaded = await uploadToCloudinary(a._localFile);
 										ansImageUrl = uploaded.url;
 										ansImagePublicId = uploaded.publicId;
-									} catch (error) {
+									} catch {
 										throw new Error("Error al subir una imagen de respuesta.");
 									}
 								}
@@ -290,7 +355,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 												</form.Field>
 												<form.Field name={`questions[${i}]._localFile` as any}>
 													{(subField) => (
-														<div className="w-full">
+														<div className="w-full col-span-2">
 															<ImageUploader
 																currentImageUrl={form.getFieldValue(
 																	`questions[${i}].imageUrl`,
@@ -333,29 +398,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																field_type={FieldType.SELECT}
 																label="Tipo de pregunta"
 																required
-																options={[
-																	{
-																		label: "Selección simple",
-																		value: "single_choice",
-																	},
-																	{
-																		label: "Selección múltiple",
-																		value: "multiple_choice",
-																	},
-																	{
-																		label: "Respuesta abierta",
-																		value: "open_answer",
-																	},
-																	{
-																		label: "Ordenamiento / Ranking",
-																		value: "ranking",
-																	},
-																	{
-																		label:
-																			"Escala de valoración / Calificación",
-																		value: "rating",
-																	},
-																]}
+																options={OPTION_TYPES}
 															/>
 
 															{/* CONFIGURACIONES DINÁMICAS DEPENDIENDO DEL TIPO */}
@@ -374,6 +417,38 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																		/>
 																	)}
 																</form.Field>
+															)}
+
+															{["date_single", "date_range"].includes(
+																typeField.state.value,
+															) && (
+																<div className="grid grid-cols-2 gap-4 col-span-2">
+																	<form.Field name={`questions[${i}].minDate`}>
+																		{(configSubField) => (
+																			<FormField
+																				field={configSubField}
+																				field_type={
+																					FieldType.DATE_SINGLE || "date"
+																				}
+																				label="Fecha mínima permitida (Opcional)"
+																				input_classes="w-full"
+																			/>
+																		)}
+																	</form.Field>
+
+																	<form.Field name={`questions[${i}].maxDate`}>
+																		{(configSubField) => (
+																			<FormField
+																				field={configSubField}
+																				field_type={
+																					FieldType.DATE_SINGLE || "date"
+																				}
+																				label="Fecha máxima permitida (Opcional)"
+																				input_classes="w-full"
+																			/>
+																		)}
+																	</form.Field>
+																</div>
 															)}
 
 															{/* ¿Contiene respuesta correcta?: Solo aplica a selección */}

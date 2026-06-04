@@ -42,9 +42,18 @@ export const QUESTION_TYPES = [
 	"open_answer",
 	"ranking",
 	"rating",
+	"date_single",
+	"date_range",
 ] as const;
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
+
+export interface QuestionMetadata {
+	minRating?: number;
+	maxRating?: number;
+	minDate?: string | null;
+	maxDate?: string | null;
+}
 
 export interface ExportData {
 	name: string;

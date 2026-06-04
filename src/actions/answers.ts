@@ -28,15 +28,12 @@ export const submitPollAnswers = createServerFn()
 			throw new Error("Poll is not accepting submissions");
 		}
 
-		// 💡 PASO CLAVE: Buscamos las preguntas asociadas a este formulario en la DB.
-		// Esto nos permite conocer el 'type' real de cada pregunta sin depender de lo que envíe el cliente.
 		const targetQuestionIds = Object.keys(answers);
 		const pollQuestionsData = await db
 			.select({ id: question.id, type: question.type })
 			.from(question)
 			.where(inArray(question.id, targetQuestionIds));
 
-		// Lo convertimos en un mapa de acceso rápido { [id]: "rating" | "open_answer" | etc }
 		const questionTypesMap = new Map(
 			pollQuestionsData.map((q) => [q.id, q.type]),
 		);
@@ -53,9 +50,9 @@ export const submitPollAnswers = createServerFn()
 
 			const answersToInsert = Object.entries(answers).flatMap(
 				([questionId, value]): (typeof userAnswer.$inferInsert)[] => {
-					// 💡 SOLUCIÓN: Tipamos el retorno de cada iteración
 					const qType = questionTypesMap.get(questionId);
 
+					// Validación de valores vacíos
 					if (
 						value === undefined ||
 						value === null ||
@@ -76,7 +73,7 @@ export const submitPollAnswers = createServerFn()
 					}
 
 					// --- CASO B: SELECCIÓN MÚLTIPLE ---
-					if (Array.isArray(value)) {
+					if (qType === "multiple_choice" && Array.isArray(value)) {
 						return value.map((aId) => ({
 							submissionId: newSubmission.id,
 							questionId: questionId,
@@ -86,14 +83,33 @@ export const submitPollAnswers = createServerFn()
 						}));
 					}
 
-					// --- CASO C: TEXTO LIBRE O CALIFICACIÓN ---
-					if (qType === "open_answer" || qType === "rating") {
+					// --- 🆕 CASO E: RANGO DE FECHAS (date_range) ---
+					if (qType === "date_range" && typeof value === "string") {
 						return [
 							{
 								submissionId: newSubmission.id,
 								questionId: questionId,
 								answerId: null,
-								textResponse: String(value),
+								// Guardamos el string plano directamente: "2026-06-09/2026-06-25"
+								textResponse: value,
+								sortOrder: null,
+							},
+						];
+					}
+
+					// --- CASO C: TEXTO LIBRE, CALIFICACIÓN O FECHA ÚNICA ---
+					// 💡 Añadimos "date_single" y "date" aquí porque se guardan como un string simple directo
+					if (
+						qType === "open_answer" ||
+						qType === "rating" ||
+						qType === "date_single"
+					) {
+						return [
+							{
+								submissionId: newSubmission.id,
+								questionId: questionId,
+								answerId: null,
+								textResponse: String(value), // Guarda la fecha ISO string o YYYY-MM-DD directamente
 								sortOrder: null,
 							},
 						];

@@ -1,6 +1,9 @@
+import { format, isValid, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
 import {
 	ArrowUpDown,
 	BarChart3,
+	CalendarIcon,
 	CheckCircle2,
 	HelpCircle,
 	MessageSquare,
@@ -130,6 +133,60 @@ export function ResponseRenderer({ question }: Props) {
 					})}
 				</div>
 			);
+
+		case "date_single": {
+			const parsedDate = textResponse ? parseISO(textResponse) : null;
+			const isValidDate = parsedDate && isValid(parsedDate);
+
+			return (
+				<div className="w-full flex items-center gap-3 p-2 bg-muted/30 border rounded-lg">
+					<CalendarIcon className="h-4 w-4 text-primary" />
+					<span className="text-sm font-medium text-foreground">
+						{isValidDate ? (
+							format(parsedDate, "PPP", { locale: es })
+						) : (
+							<span className="text-muted-foreground italic">
+								No respondida.
+							</span>
+						)}
+					</span>
+				</div>
+			);
+		}
+
+		// --- 🆕 CASO DE RANGO DE FECHAS (date_range) ---
+		case "date_range": {
+			let dateDisplay = (
+				<span className="text-muted-foreground italic">No respondida.</span>
+			);
+
+			if (textResponse?.includes("/")) {
+				const [startStr, endStr] = textResponse.split("/");
+				const start = startStr?.trim() ? parseISO(startStr) : null;
+				const end = endStr?.trim() ? parseISO(endStr) : null;
+
+				if (start && isValid(start) && end && isValid(end)) {
+					dateDisplay = (
+						<span className="text-sm font-medium text-foreground">
+							{format(start, "LLL dd, yyyy", { locale: es })} -{" "}
+							{format(end, "LLL dd, yyyy", { locale: es })}
+						</span>
+					);
+				}
+			}
+
+			return (
+				<div className="w-full flex items-center gap-3 p-2 bg-muted/30 border rounded-lg ">
+					<CalendarIcon className="h-4 w-4 text-primary shrink-0" />
+					<div className="flex flex-col gap-0.5">
+						<span className="text-xs text-muted-foreground">
+							Período seleccionado:
+						</span>
+						{dateDisplay}
+					</div>
+				</div>
+			);
+		}
 
 		// --- CASO DEFECTO ---
 		default:

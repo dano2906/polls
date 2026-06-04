@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { submitPollAnswers } from "#/actions/answers";
 import type { getPollDetails } from "#/actions/poll";
 import { createDynamicResponseSchema } from "#/lib/utils";
+import type { QuestionMetadata } from "#/shared/types";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { LoadingSwap } from "../ui/loading-swap";
@@ -114,7 +115,17 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 			>
 				{pollData.questions.map((pq, index: number) => {
 					const q = pq;
-
+					let metadata: QuestionMetadata = {};
+					if (q.metadata) {
+						try {
+							metadata =
+								typeof q.metadata === "string"
+									? JSON.parse(q.metadata)
+									: q.metadata;
+						} catch (e) {
+							console.error("Error parseando metadata en el render:", e);
+						}
+					}
 					return (
 						<ol key={q.id} className="p-3 rounded-xs bg-muted/50 space-y-3">
 							<h6 className="text-lg font-medium text-muted-foreground">
@@ -249,6 +260,31 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 												/>
 											);
 										}
+										case "date_single":
+											return (
+												<li className="space-y-2 list-none">
+													<FormField
+														field={field}
+														field_type={FieldType.DATE_SINGLE}
+														label=""
+														minDate={metadata.minDate}
+														maxDate={metadata.maxDate}
+													/>
+												</li>
+											);
+
+										case "date_range":
+											return (
+												<li className="space-y-2 list-none">
+													<FormField
+														field={field}
+														field_type={FieldType.DATE_RANGE}
+														label=""
+														minDate={metadata.minDate}
+														maxDate={metadata.maxDate}
+													/>
+												</li>
+											);
 										default:
 											return (
 												<li className="list-none">

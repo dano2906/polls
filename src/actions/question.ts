@@ -39,7 +39,9 @@ export const createQuestions = createServerFn({ method: "POST" })
 				const minValue = "minValue" in qData ? qData.minValue : 1;
 				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
 
-				// Insertar Pregunta incluyendo URLs de imágenes de forma segura
+				const minDateValue = "minDate" in qData ? qData.minDate : null;
+				const maxDateValue = "maxDate" in qData ? qData.maxDate : null;
+
 				const [insertedQuestion] = await tx
 					.insert(question)
 					.values({
@@ -49,14 +51,13 @@ export const createQuestions = createServerFn({ method: "POST" })
 						hasCorrectAnswers: qData.hasCorrectAnswers ?? false,
 						maxSelections: qData.maxSelections ?? 1,
 						isRequired: qData.isRequired ?? false,
-
-						// 🆕 GUARDAR IMAGEN DE LA PREGUNTA
 						imageUrl: qData.imageUrl ?? null,
 						imagePublicId: qData.imagePublicId ?? null,
-
 						metadata: JSON.stringify({
 							minRating: minValue,
 							maxRating: maxValue,
+							minDate: minDateValue,
+							maxDate: maxDateValue,
 						}) as any,
 					})
 					.returning();
@@ -80,8 +81,6 @@ export const createQuestions = createServerFn({ method: "POST" })
 							answerText: ans.answerText,
 							isCorrect: ans.isCorrect ?? false,
 							order: ans_index,
-
-							// 🆕 GUARDAR IMAGEN DE LA RESPUESTA
 							imageUrl: ans.imageUrl ?? null,
 							imagePublicId: ans.imagePublicId ?? null,
 						}),
@@ -95,8 +94,9 @@ export const createQuestions = createServerFn({ method: "POST" })
 		});
 	});
 
-// ==========================================
+// =======================================================
 // 2. SAVE QUESTIONS BATCH (UPSERT + VERSIONADO PROFUNDO)
+// =======================================================
 export const saveQuestionsBatch = createServerFn({
 	method: "POST",
 })
@@ -160,6 +160,7 @@ export const saveQuestionsBatch = createServerFn({
 				targetPollId = newPollId;
 				activeSlug = newSlug;
 			}
+
 			const currentQuestionIds: string[] = [];
 
 			for (let i = 0; i < questionsData.length; i++) {
@@ -169,9 +170,12 @@ export const saveQuestionsBatch = createServerFn({
 				const minValue = "minValue" in qData ? qData.minValue : 1;
 				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
 
+				const minDateValue = "minDate" in qData ? qData.minDate : null;
+				const maxDateValue = "maxDate" in qData ? qData.maxDate : null;
+
 				// --- FLUJO DE TRATAMIENTO DE PREGUNTA ---
 				if (qId && !isNewVersion) {
-					// Actualización en caliente
+					// Actualización en caliente (Mismo Formulario, sin respuestas aún)
 					await tx
 						.update(question)
 						.set({
@@ -180,19 +184,19 @@ export const saveQuestionsBatch = createServerFn({
 							hasCorrectAnswers: qData.hasCorrectAnswers,
 							maxSelections: qData.maxSelections,
 							isRequired: qData.isRequired,
-
-							// 🆕 ACTUALIZAR IMAGEN DE LA PREGUNTA
 							imageUrl: qData.imageUrl ?? null,
 							imagePublicId: qData.imagePublicId ?? null,
-
 							metadata: JSON.stringify({
 								minRating: minValue,
 								maxRating: maxValue,
+								minDate: minDateValue,
+								maxDate: maxDateValue,
 							}) as any,
 						})
 						.where(eq(question.id, qId));
 				} else {
-					// Nueva pregunta O duplicación por versionado (Deep Cloning)
+					// ✅ CORREGIDO: Nueva pregunta o clonación profunda por nueva versión.
+					// Se elimina el .where() erróneo y se añade .returning() para capturar el ID generado.
 					const [newQ] = await tx
 						.insert(question)
 						.values({
@@ -201,17 +205,16 @@ export const saveQuestionsBatch = createServerFn({
 							hasCorrectAnswers: qData.hasCorrectAnswers,
 							maxSelections: qData.maxSelections,
 							isRequired: qData.isRequired,
-
-							// 🆕 COPIAR O INSERTAR IMAGEN DE LA PREGUNTA
 							imageUrl: qData.imageUrl ?? null,
 							imagePublicId: qData.imagePublicId ?? null,
-
 							metadata: JSON.stringify({
 								minRating: minValue,
 								maxRating: maxValue,
+								minDate: minDateValue,
+								maxDate: maxDateValue,
 							}) as any,
 						})
-						.returning({ id: question.id });
+						.returning();
 
 					qId = newQ.id;
 				}
@@ -266,15 +269,13 @@ export const saveQuestionsBatch = createServerFn({
 						const aData = qData.answers[j];
 
 						if (aData.id && !isNewVersion) {
-							// Actualizar respuesta existente
+							// Actualizar respuesta existente en caliente
 							await tx
 								.update(answer)
 								.set({
 									answerText: aData.answerText,
 									isCorrect: aData.isCorrect,
 									order: j,
-
-									// 🆕 ACTUALIZAR IMAGEN DE LA RESPUESTA
 									imageUrl: aData.imageUrl ?? null,
 									imagePublicId: aData.imagePublicId ?? null,
 								})
@@ -282,7 +283,7 @@ export const saveQuestionsBatch = createServerFn({
 
 							currentAnswerIds.push(aData.id);
 						} else {
-							// Insertar nueva o clonar por versión
+							// Insertar nueva opción o clonarla para la nueva versión del cuestionario
 							const [newA] = await tx
 								.insert(answer)
 								.values({
@@ -290,8 +291,6 @@ export const saveQuestionsBatch = createServerFn({
 									answerText: aData.answerText,
 									isCorrect: aData.isCorrect ?? false,
 									order: j,
-
-									// 🆕 INSERTAR IMAGEN DE LA RESPUESTA
 									imageUrl: aData.imageUrl ?? null,
 									imagePublicId: aData.imagePublicId ?? null,
 								})
@@ -302,7 +301,7 @@ export const saveQuestionsBatch = createServerFn({
 					}
 				}
 
-				// Limpieza de opciones removidas
+				// Limpieza de opciones removidas en caliente
 				if (
 					!isNewVersion &&
 					"answers" in qData &&
