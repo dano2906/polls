@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import AuthHeader from "#/components/partials/auth-header";
+import AuthHeader from "@/common/components/partials/auth-header";
 
 export const Route = createFileRoute("/_landing")({
 	component: RouteComponent,

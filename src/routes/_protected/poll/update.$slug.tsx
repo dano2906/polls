@@ -1,8 +1,8 @@
 import { createFileRoute, useRouteContext } from "@tanstack/react-router";
-import { getPollDetails } from "#/actions/poll";
-import PageHeading from "#/components/partials/page-heading";
-import PollForm from "#/components/partials/poll-form";
-import QuestionForm from "#/components/partials/question-form";
+import PageHeading from "@/common/components/partials/page-heading";
+import { getPollDetails } from "@/poll/actions/poll";
+import PollForm from "@/poll/components/poll-form";
+import QuestionForm from "@/question/components/question-form";
 
 export const Route = createFileRoute("/_protected/poll/update/$slug")({
 	component: RouteComponent,

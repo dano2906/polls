@@ -1,0 +1,717 @@
+import { randomUUID } from "node:crypto";
+import { notFound, redirect } from "@tanstack/react-router";
+import { createClientOnlyFn, createServerFn } from "@tanstack/react-start";
+import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
+import { db } from "@/common/db";
+import {
+	answer,
+	poll,
+	pollQuestions,
+	question,
+	submission,
+	userAnswer,
+} from "@/common/db/schema";
+import { getSession } from "@/common/lib/auth-functions";
+import { exportPoll } from "@/common/lib/export";
+import { ExportFormat } from "@/common/shared/types";
+import { generateRandomCode } from "../lib/utils";
+import {
+	createPollInput,
+	editPollInput,
+	forkPollInput,
+	pollsSearchFiltershSchema,
+	pollsSearchFilterWithUserSchema,
+} from "../lib/validation";
+import type { ExportData } from "../shared/types";
+
+export const createPollPublicURL = createClientOnlyFn(async (slug: string) => {
+	return await navigator.clipboard.writeText(
+		`${import.meta.env.VITE_PUBLIC_APP_URL}/p/${slug}`,
+	);
+});
+
+export const exportPollFn = createClientOnlyFn(
+	async ({
+		format = ExportFormat.JSON,
+		filename = "Encuesta",
+		poll,
+	}: {
+		format: ExportFormat;
+		filename: string;
+		poll: ExportData;
+	}) => {
+		switch (format) {
+			case "csv":
+				exportPoll.csv(poll, filename);
+				break;
+			case "json":
+				exportPoll.json(poll, filename);
+				break;
+			case "excel":
+				exportPoll.excel(poll, filename);
+				break;
+			default:
+				break;
+		}
+	},
+);
+
+export const getPublishedPolls = createServerFn({ method: "GET" })
+	.validator(pollsSearchFiltershSchema)
+	.handler(async ({ data }) => {
+		const { q } = data;
+		const res = await db.query.poll.findMany({
+			where: (table, { and, or, eq, like }) => {
+				const conditions = [];
+				conditions.push(eq(table.status, "published"));
+				if (q && q.trim() !== "") {
+					const searchTerm = `%${q}%`;
+					conditions.push(
+						or(
+							like(table.name, searchTerm),
+							like(table.description, searchTerm),
+						),
+					);
+				}
+				return conditions.length > 0 ? and(...conditions) : undefined;
+			},
+			columns: {
+				description: true,
+				endDate: true,
+				name: true,
+				startDate: true,
+				version: true,
+				slug: true,
+			},
+			with: {
+				user: {
+					columns: {
+						name: true,
+						email: true,
+						image: true,
+					},
+				},
+			},
+			orderBy: asc(poll.startDate),
+		});
+		if (!res || res.length === 0) return [];
+		return res;
+	});
+
+export const getListedUserPolls = createServerFn({ method: "GET" })
+	.validator(pollsSearchFilterWithUserSchema)
+	.handler(async ({ data }) => {
+		const { userId, q, status } = data;
+
+		try {
+			const conditions = [];
+			conditions.push(eq(poll.userId, userId));
+			if (status && status !== "all") {
+				conditions.push(eq(poll.status, status));
+			}
+
+			if (q && q.trim() !== "") {
+				const searchTerm = `%${q.trim()}%`;
+				conditions.push(
+					or(like(poll.name, searchTerm), like(poll.description, searchTerm)),
+				);
+			}
+
+			const res = await db
+				.select({
+					name: poll.name,
+					description: poll.description,
+					slug: poll.slug,
+					startDate: poll.startDate,
+					endDate: poll.endDate,
+					status: poll.status,
+					version: poll.version,
+				})
+				.from(poll)
+				.where(and(...conditions))
+				.orderBy(asc(poll.startDate));
+
+			return res ?? [];
+		} catch (error) {
+			console.log("Error al obtener encuestas del usuario:", error);
+			return [];
+		}
+	});
+
+export const getCompactUserPolls = createServerFn({ method: "GET" })
+	.validator(pollsSearchFilterWithUserSchema)
+	.handler(async ({ data }) => {
+		const { userId, q, status } = data;
+
+		try {
+			const conditions = [];
+			conditions.push(eq(poll.userId, userId));
+
+			if (status && status !== "all") {
+				conditions.push(eq(poll.status, status));
+			}
+
+			if (q && q.trim() !== "") {
+				const searchTerm = `%${q.trim()}%`;
+				conditions.push(
+					or(like(poll.name, searchTerm), like(poll.description, searchTerm)),
+				);
+			}
+
+			// 1. Ejecutamos la consulta aplicando tus filtros
+			const res = await db
+				.select({
+					id: poll.id,
+					rootId: poll.rootId,
+					name: poll.name,
+					description: poll.description,
+					slug: poll.slug,
+					startDate: poll.startDate,
+					endDate: poll.endDate,
+					status: poll.status,
+					version: poll.version,
+					createdAt: poll.createdAt,
+				})
+				.from(poll)
+				.where(and(...conditions))
+				.orderBy(
+					sql`COALESCE(${poll.rootId}, ${poll.id})`,
+					desc(poll.createdAt),
+				);
+
+			const groupedPolls = res.reduce(
+				(acc, currentPoll) => {
+					const groupKey = currentPoll.rootId ?? currentPoll.id;
+
+					if (!acc[groupKey]) {
+						acc[groupKey] = [];
+					}
+
+					acc[groupKey].push(currentPoll);
+					return acc;
+				},
+				{} as Record<string, typeof res>,
+			);
+
+			return groupedPolls;
+		} catch (error) {
+			console.log("Error al obtener encuestas del usuario:", error);
+			return {};
+		}
+	});
+
+export const getPollDetails = createServerFn({ method: "GET" })
+	.validator((data: { slug: string }) => data)
+	.handler(async ({ data }) => {
+		const poll = await db.query.poll.findFirst({
+			where: (poll, { eq }) => eq(poll.slug, data.slug),
+			columns: {
+				description: true,
+				endDate: true,
+				name: true,
+				startDate: true,
+				status: true,
+				version: true,
+			},
+			with: {
+				pollQuestions: {
+					columns: {
+						order: true,
+						pollId: true,
+					},
+					with: {
+						question: {
+							with: {
+								answers: {
+									columns: {
+										metadata: false,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		if (!poll) {
+			throw notFound();
+		}
+
+		const questions = poll.pollQuestions.map((item) => {
+			return {
+				order: item.order,
+				pollId: item.pollId,
+				...item.question,
+				// Al esparcir item.question ya incluye:
+				// imageUrl: item.question.imageUrl,
+				// imagePublicId: item.question.imagePublicId
+			};
+		});
+
+		return {
+			name: poll.name,
+			description: poll.description,
+			startDate: poll.startDate,
+			endDate: poll.endDate,
+			status: poll.status,
+			version: poll.version,
+			metadata: undefined,
+			questions,
+		};
+	});
+
+export const createPoll = createServerFn({ method: "POST" })
+	.validator(createPollInput)
+	.handler(async ({ data }) => {
+		try {
+			const newId = randomUUID();
+			const [newPoll] = await db
+				.insert(poll)
+				.values({
+					...data,
+					id: newId,
+					slug:
+						data.slug && data.slug.length === 6
+							? data.slug
+							: generateRandomCode(),
+				})
+				.returning();
+			if (newPoll) {
+				return {
+					slug: newPoll.slug,
+				};
+			}
+			throw new Error("Failed to create poll");
+		} catch (error) {
+			console.log("error", error);
+			throw error;
+		}
+	});
+
+export const forkPoll = createServerFn({ method: "POST" })
+	.validator(forkPollInput)
+	.handler(async ({ data }) => {
+		const { pollSlug } = data;
+
+		try {
+			// Iniciamos una transacción para asegurar la atomicidad
+			const result = await db.transaction(async (tx) => {
+				// 1. Obtener la encuesta original con todas sus preguntas y respuestas
+				const originalPoll = await tx.query.poll.findFirst({
+					where: eq(poll.slug, pollSlug),
+					with: {
+						pollQuestions: {
+							with: {
+								question: {
+									with: {
+										answers: true,
+									},
+								},
+							},
+						},
+					},
+				});
+
+				if (!originalPoll) {
+					throw notFound({
+						throw: true,
+					});
+				}
+
+				// 2. Calcular la nueva versión y el nuevo slug único
+				const nextVersion = (originalPoll.version ?? 1) + 1;
+				const nextSlug = generateRandomCode();
+
+				// 3. Insertar la nueva encuesta clonada
+				const [insertedPoll] = await tx
+					.insert(poll)
+					.values({
+						userId: originalPoll.userId,
+						name: `${originalPoll.name}`,
+						description: originalPoll.description,
+						slug: nextSlug,
+						status: "draft",
+						version: nextVersion,
+						metadata: originalPoll.metadata,
+						startDate: new Date(originalPoll.startDate),
+						endDate: originalPoll.endDate
+							? new Date(originalPoll.endDate)
+							: null,
+						rootId: originalPoll.rootId ?? originalPoll.id,
+					})
+					.returning({ id: poll.id });
+
+				const newPollId = insertedPoll.id;
+
+				// 4. Iterar sobre las preguntas para duplicarlas
+				for (const pq of originalPoll.pollQuestions) {
+					const origQuestion = pq.question;
+
+					// Insertar la nueva pregunta
+					const [insertedQuestion] = await tx
+						.insert(question)
+						.values({
+							type: origQuestion.type,
+							questionText: origQuestion.questionText,
+							hasCorrectAnswers: origQuestion.hasCorrectAnswers,
+							maxSelections: origQuestion.maxSelections,
+							isRequired: origQuestion.isRequired,
+						})
+						.returning({ id: question.id });
+
+					const newQuestionId = insertedQuestion.id;
+
+					// Crear la relación en la tabla intermedia de la nueva encuesta
+					await tx.insert(pollQuestions).values({
+						pollId: newPollId,
+						questionId: newQuestionId,
+						order: pq.order,
+					});
+
+					// 5. Si la pregunta tiene respuestas, duplicarlas en lote
+					if (origQuestion.answers && origQuestion.answers.length > 0) {
+						const newAnswers = origQuestion.answers.map((ans) => ({
+							questionId: newQuestionId,
+							answerText: ans.answerText,
+							isCorrect: ans.isCorrect,
+							order: ans.order,
+							metadata: ans.metadata,
+						}));
+
+						await tx.insert(answer).values(newAnswers);
+					}
+				}
+
+				// Retornamos el ID de la nueva encuesta clonada
+				return { success: true, newPollId };
+			});
+
+			return result;
+		} catch (error) {
+			console.error("Error al duplicar la encuesta:", error);
+			throw new Error("No se pudo duplicar la encuesta");
+		}
+	});
+
+export const updatePoll = createServerFn({ method: "POST" })
+	.validator(({ slug, values }) => ({
+		slug,
+		updatedData: editPollInput.parse(values),
+	}))
+	.handler(async ({ data }) => {
+		try {
+			if (!data.slug) {
+				throw new Error("El slug es necesario para identificar la encuesta");
+			}
+			const res = await db
+				.update(poll)
+				.set({
+					...data.updatedData,
+					updatedAt: new Date(),
+				})
+				.where(eq(poll.slug, data.slug));
+
+			if (res) {
+				return {
+					success: true,
+					slug: data.slug,
+				};
+			}
+		} catch (error) {
+			console.error("Error al actualizar la encuesta:", error);
+			throw error;
+		}
+	});
+
+export const validatePollAccess = createServerFn({ method: "GET" })
+	.validator((data: { userId: string; slug: string }) => data)
+	.handler(async ({ data }) => {
+		const { slug, userId } = data;
+		const now = new Date();
+
+		// 1. Buscar la encuesta por su slug
+		const currentPoll = await db.query.poll.findFirst({
+			where: eq(poll.slug, slug),
+		});
+
+		// ❌ CASO 1: La encuesta no existe
+		if (!currentPoll) {
+			throw notFound();
+		}
+
+		// ❌ CASO 2: Control de Estados (Draft / Archived)
+		if (currentPoll.status === "draft" && currentPoll.userId !== userId) {
+			return {
+				allowed: false,
+				reason: "UNAUTHORIZED",
+				message: "Esta encuesta aún no ha sido publicada.",
+			};
+		}
+
+		if (currentPoll.status === "archived") {
+			return {
+				allowed: false,
+				reason: "ARCHIVED",
+				message: "Esta encuesta ha sido archivada y ya no acepta respuestas.",
+			};
+		}
+
+		// ❌ CASO 3: Plazo de tiempo (¿Ya empezó? ¿Ya terminó?)
+		// Validar si tiene fecha de inicio y si ya pasó
+		if (currentPoll.startDate && now < currentPoll.startDate) {
+			return {
+				allowed: false,
+				reason: "NOT_STARTED",
+				message: `Esta encuesta comenzará el ${currentPoll.startDate.toLocaleString("es")}.`,
+			};
+		}
+
+		// Validar si tiene fecha de fin y si ya expiró
+		if (currentPoll.endDate && now > currentPoll.endDate) {
+			return {
+				allowed: false,
+				reason: "EXPIRED",
+				message: "El plazo para responder esta encuesta ha finalizado.",
+			};
+		}
+
+		// ❌ CASO 4: El usuario ya respondió (Duplicados)
+		// Gracias a tu índice único en `user_poll_unique_idx`, podemos estar seguros de esto
+		const existingSubmission = await db.query.submission.findFirst({
+			where: and(
+				eq(submission.pollId, currentPoll.id),
+				eq(submission.userId, userId),
+			),
+		});
+
+		if (existingSubmission) {
+			return {
+				allowed: false,
+				reason: "ALREADY_SUBMITTED",
+				message:
+					"Ya has completado esta encuesta. No se permiten múltiples respuestas.",
+				submissionId: existingSubmission.id, // Útil si quieres redirigirlo a sus respuestas
+			};
+		}
+
+		// ❌ CASO 5: Límite de respuestas globales (Metadata)
+		// Revisamos el campo json 'metadata' que definiste en tu esquema
+		if (currentPoll.metadata?.limitResponses) {
+			// Contamos cuántas respuestas totales tiene la encuesta
+			const totalSubmissions = await db
+				.select({ count: sql<number>`count(*)` })
+				.from(submission)
+				.where(eq(submission.pollId, currentPoll.id));
+
+			const count = totalSubmissions[0]?.count ?? 0;
+
+			if (count >= currentPoll.metadata.limitResponses) {
+				return {
+					allowed: false,
+					reason: "CAP_REACHED",
+					message:
+						"Esta encuesta ha alcanzado el límite máximo de respuestas permitidas.",
+				};
+			}
+		}
+
+		//  SI PASA TODAS LAS VALIDACIONES
+		return {
+			allowed: true,
+			pollId: currentPoll.id,
+			pollName: currentPoll.name,
+		};
+	});
+
+export const getUserPollResults = createServerFn({ method: "GET" })
+	.validator((data: { userId: string; slug: string }) => data)
+	.handler(async ({ data }) => {
+		const { slug, userId } = data;
+
+		// 1. Obtener los detalles de la encuesta actual
+		const currentPoll = await db
+			.select({ id: poll.id, name: poll.name, description: poll.description })
+			.from(poll)
+			.where(eq(poll.slug, slug))
+			.get();
+
+		if (!currentPoll) {
+			throw notFound();
+		}
+
+		// 2. Consulta unificada trayendo todas las relaciones posibles
+		const rawRows = await db
+			.select({
+				questionId: question.id,
+				questionText: question.questionText,
+				type: question.type,
+				order: pollQuestions.order,
+				userAnswerId: userAnswer.id,
+				selectedAnswerId: userAnswer.answerId,
+				textResponse: userAnswer.textResponse,
+				sortOrder: userAnswer.sortOrder,
+				answerText: answer.answerText,
+				isCorrect: answer.isCorrect,
+			})
+			.from(pollQuestions)
+			.where(eq(pollQuestions.pollId, currentPoll.id))
+			.innerJoin(question, eq(pollQuestions.questionId, question.id))
+			.leftJoin(
+				submission,
+				and(
+					eq(submission.pollId, currentPoll.id),
+					eq(submission.userId, userId),
+				),
+			)
+			.leftJoin(
+				userAnswer,
+				and(
+					eq(userAnswer.submissionId, submission.id),
+					eq(userAnswer.questionId, question.id),
+				),
+			)
+			.leftJoin(answer, eq(userAnswer.answerId, answer.id))
+			.orderBy(pollQuestions.order);
+
+		const questionsMap = new Map<
+			string,
+			{
+				id: string;
+				questionText: string;
+				type: string;
+				order: number | null;
+				textResponse: string | null;
+				selectedAnswers: {
+					answerId: string;
+					answerText: string | null;
+					isCorrect: boolean | null;
+					sortOrder?: number | null;
+				}[];
+			}
+		>();
+
+		for (const row of rawRows) {
+			if (!questionsMap.has(row.questionId)) {
+				questionsMap.set(row.questionId, {
+					id: row.questionId,
+					questionText: row.questionText,
+					type: row.type,
+					order: row.order,
+					textResponse: row.textResponse,
+					selectedAnswers: [],
+				});
+			}
+
+			const currentQuestion = questionsMap.get(row.questionId);
+			if (!currentQuestion) continue;
+
+			if (row.selectedAnswerId) {
+				currentQuestion.selectedAnswers.push({
+					answerId: row.selectedAnswerId,
+					answerText: row.answerText,
+					isCorrect: row.isCorrect,
+					...(row.type === "ranking" && { sortOrder: row.sortOrder }),
+				});
+			}
+		}
+
+		const finalResults = Array.from(questionsMap.values()).map((q) => {
+			if (q.type === "ranking" && q.selectedAnswers.length > 0) {
+				q.selectedAnswers.sort(
+					(a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+				);
+			}
+			return q;
+		});
+
+		return {
+			poll: currentPoll,
+			results: finalResults,
+		};
+	});
+
+export const deletePollBySlug = createServerFn({ method: "POST" })
+	.validator((data: { slug: string }) => data)
+	.handler(async ({ data }) => {
+		const session = await getSession();
+
+		if (!session) {
+			throw new Error("UNAUTHORIZED");
+		}
+
+		try {
+			const deletedPoll = await db
+				.delete(poll)
+				.where(and(eq(poll.slug, data.slug), eq(poll.userId, session.user.id)))
+				.returning({ id: poll.id, name: poll.name });
+
+			if (deletedPoll.length === 0) {
+				throw notFound();
+			}
+
+			return {
+				success: true,
+				message: `Encuesta "${deletedPoll[0].name}" eliminada correctamente.`,
+			};
+		} catch (error) {
+			console.error("Error al eliminar la encuesta:", error);
+			throw new Error("No se pudo eliminar la encuesta.");
+		}
+	});
+
+export const importPollAction = createServerFn()
+	.validator((val: ExportData) => val)
+	.handler(async ({ data }) => {
+		const session = await getSession();
+		if (!session?.user?.id) {
+			throw redirect({ to: "/" });
+		}
+		return await db.transaction(async (tx) => {
+			const [newPoll] = await tx
+				.insert(poll)
+				.values({
+					userId: session.user.id,
+					name: data.name,
+					description: data.description,
+					slug: generateRandomCode(),
+					status: "draft",
+					startDate: data.startDate ? new Date(data.startDate) : new Date(),
+					endDate: data.endDate ? new Date(data.endDate) : null,
+				})
+				.returning();
+
+			for (const q of data.questions) {
+				const [newQuestion] = await tx
+					.insert(question)
+					.values({
+						type: q.type,
+						questionText: q.questionText,
+						hasCorrectAnswers: q.hasCorrectAnswers,
+						maxSelections: q.maxSelections ?? 1,
+						isRequired: q.isRequired ?? false,
+						metadata: q.metadata,
+					})
+					.returning();
+
+				await tx.insert(pollQuestions).values({
+					pollId: newPoll.id,
+					questionId: newQuestion.id,
+					order: q.order ?? 0,
+				});
+
+				if (q.answers && q.answers.length > 0) {
+					const answersToInsert = q.answers.map((ans, idx) => ({
+						questionId: newQuestion.id,
+						answerText: ans.answerText || "",
+						isCorrect: ans.isCorrect ?? false,
+						order: idx,
+					}));
+
+					await tx.insert(answer).values(answersToInsert);
+				}
+			}
+
+			return { success: true, slug: newPoll.slug };
+		});
+	});

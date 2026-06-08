@@ -1,6 +1,6 @@
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
-import { getPollDetails, validatePollAccess } from "#/actions/poll";
-import PollCompleteForm from "#/components/partials/poll-complete-form";
+import { getPollDetails, validatePollAccess } from "@/poll/actions/poll";
+import PollCompleteForm from "@/poll/components/poll-complete-form";
 
 export const Route = createFileRoute("/_landing/p/$slug/")({
 	component: RouteComponent,

@@ -1,15 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText, Output } from "ai";
-import { openrouter } from "#/lib/openrouter";
-import type { GeneratePoll } from "#/shared/types";
-import { questionsBatchSchema } from "#/shared/validation";
+import { openrouter } from "@/common/lib/openrouter";
+import { questionsBatchSchema } from "@/question/lib/validation";
+import type { GeneratePollQuestion } from "@/question/shared/types";
 
 export const Route = createFileRoute("/api/poll/generate-questions")({
 	server: {
 		handlers: {
 			POST: async ({ request }) => {
 				try {
-					const { context, lang } = (await request.json()) as GeneratePoll;
+					const { context, lang } =
+						(await request.json()) as GeneratePollQuestion;
 					if (!context || context.trim().length < 10) {
 						return new Response("Too short context", { status: 400 });
 					}

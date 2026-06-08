@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ImportPollZone } from "#/components/partials/import-poll-zone";
-import PageHeading from "#/components/partials/page-heading";
+import PageHeading from "@/common/components/partials/page-heading";
+import { ImportPollZone } from "@/poll/components/import-poll-zone";
 
 export const Route = createFileRoute("/_protected/poll/import")({
 	component: RouteComponent,

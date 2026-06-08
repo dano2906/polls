@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { getUserPollResults } from "#/actions/poll";
-import { ResponseRenderer } from "#/components/partials/result-response-renderer";
-import { getSession } from "#/lib/auth-functions";
+import { ResponseRenderer } from "@/answers/components/result-response-renderer";
+import { getSession } from "@/common/lib/auth-functions";
+import { getUserPollResults } from "@/poll/actions/poll";
 
 export const Route = createFileRoute("/_landing/p/$slug/result")({
 	component: RouteComponent,

@@ -3,18 +3,18 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { getPublishedPolls } from "#/actions/poll";
-import ListPublishedPolls from "#/components/partials/list-published-polls";
-import { PollFilterBar } from "#/components/partials/poll-filter-bar";
+import { getPublishedPolls } from "@/poll/actions/poll";
+import ListPublishedPolls from "@/poll/components/list-published-polls";
+import { PollFilterBar } from "@/poll/components/poll-filter-bar";
+import { pollsSearchFiltershSchema } from "@/poll/lib/validation";
 import {
 	Empty,
 	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
-} from "#/components/ui/empty";
-import { Spinner } from "#/components/ui/spinner";
-import { pollsSearchFiltershSchema } from "#/shared/validation";
+} from "@/ui/empty";
+import { Spinner } from "@/ui/spinner";
 
 export const Route = createFileRoute("/_landing/")({
 	validateSearch: pollsSearchFiltershSchema,

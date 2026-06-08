@@ -7,11 +7,11 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { getSession } from "#/lib/auth-functions";
-import { getThemeServerFn } from "#/lib/theme.ts";
-import TanStackQueryDevtools from "@/components/tanstack-query/devtools";
-import { Toaster } from "@/components/ui/sonner";
-import appCss from "../styles.css?url";
+import TanStackQueryDevtools from "@/common/components/tanstack-query/devtools";
+import { getSession } from "@/common/lib/auth-functions";
+import { getThemeServerFn } from "@/common/lib/theme";
+import appCss from "@/common/styles/styles.css?url";
+import { Toaster } from "@/ui/sonner";
 
 interface MyRouterContext {
 	queryClient: QueryClient;

@@ -1,15 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { FilePlus } from "lucide-react";
 import { Suspense } from "react";
-import { getCompactUserPolls, getListedUserPolls } from "#/actions/poll";
-import { CompactUserPolls } from "#/components/partials/compact-user-polls";
-import { ListUserPolls } from "#/components/partials/list-user-polls";
-import { PollFilterBar } from "#/components/partials/poll-filter-bar";
-import { buttonVariants } from "#/components/ui/button";
-import { Spinner } from "#/components/ui/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
-import { cn } from "#/lib/utils";
-import { pollsSearchFiltershSchema } from "#/shared/validation";
+import { cn } from "@/common/lib/utils";
+import { getCompactUserPolls, getListedUserPolls } from "@/poll/actions/poll";
+import { CompactUserPolls } from "@/poll/components/compact-user-polls";
+import { ListUserPolls } from "@/poll/components/list-user-polls";
+import { PollFilterBar } from "@/poll/components/poll-filter-bar";
+import { pollsSearchFiltershSchema } from "@/poll/lib/validation";
+import { buttonVariants } from "@/ui/button";
+import { Spinner } from "@/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 
 export const Route = createFileRoute("/_protected/dashboard")({
 	validateSearch: pollsSearchFiltershSchema,

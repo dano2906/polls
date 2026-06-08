@@ -6,8 +6,8 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import AuthHeader from "#/components/partials/auth-header";
-import { Button } from "#/components/ui/button";
+import AuthHeader from "@/common/components/partials/auth-header";
+import { Button } from "@/ui/button";
 
 export const Route = createFileRoute("/_protected")({
 	component: RouteComponent,
