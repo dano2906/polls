@@ -6,7 +6,8 @@ import {
 	text,
 	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-import { QUESTION_TYPES } from "@/question/shared/types";
+import type { UserAnswerValue } from "@/answers/shared/types";
+import { QUESTION_TYPES, type QuestionMetadata } from "@/question/shared/types";
 
 export const user = sqliteTable("user", {
 	id: text("id").primaryKey(),
@@ -146,12 +147,9 @@ export const question = sqliteTable("question", {
 	createdAt: integer("created_at", { mode: "timestamp" }).default(
 		sql`CURRENT_TIMESTAMP`,
 	),
-	metadata: text("metadata", { mode: "json" }).$type<{
-		minRating?: number;
-		maxRating?: number;
-		minDate?: string;
-		maxDate?: string;
-	}>(),
+	metadata: text("metadata", { mode: "json" })
+		.$type<QuestionMetadata>()
+		.notNull(),
 });
 
 export const pollQuestions = sqliteTable("poll_question", {
@@ -215,9 +213,7 @@ export const userAnswer = sqliteTable("user_answer", {
 	questionId: text("question_id")
 		.notNull()
 		.references(() => question.id),
-	answerId: text("answer_id").references(() => answer.id),
-	sortOrder: integer("sort_order"),
-	textResponse: text("text_response"),
+	value: text("value", { mode: "json" }).$type<UserAnswerValue>().notNull(),
 });
 
 export const userRelations = relations(user, ({ many }) => ({

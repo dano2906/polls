@@ -1,5 +1,4 @@
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Save } from "lucide-react";
 import { useState } from "react";
@@ -14,6 +13,12 @@ import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
 import { createDynamicResponseSchema } from "../lib/utils";
 
+type ParsedMetadata = QuestionMetadata & {
+	minRating?: number;
+	maxRating?: number;
+	minDate?: string | Date | undefined;
+	maxDate?: string | Date;
+};
 interface Props {
 	pollData: Awaited<ReturnType<typeof getPollDetails>>;
 	slug: string;
@@ -21,6 +26,7 @@ interface Props {
 
 const PollCompleteForm = ({ pollData, slug }: Props) => {
 	const [isFinished, setIsFinished] = useState(false);
+
 	// Inicializamos los valores por defecto del formulario según el tipo de pregunta
 	const defaultValues = pollData.questions.reduce(
 		(acc: Record<string, Array<unknown> | string>, pq) => {
@@ -32,51 +38,54 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 
 	// Construimos el esquema de Zod en base a las preguntas reales recibidas
 	const dynamicFormSchema = createDynamicResponseSchema(pollData.questions);
-	const completePollMutation = useMutation({
-		mutationKey: ["complete", slug],
-		mutationFn: async (values: Record<string, Array<string> | string>) => {
-			if (pollData.questions.length === 0) {
-				throw new Error("Poll has no questions");
-			}
-			return submitPollAnswers({
-				data: {
-					pollId: pollData.questions[0].pollId,
-					answers: values,
-				},
-			});
-		},
-		onSuccess: async () => {
-			setIsFinished(true);
-			toast.success("Tus respuestas fueron validadas y guardadas con éxito.");
-		},
-	});
+
 	const form = useForm({
 		defaultValues,
 		validators: {
 			onChange: dynamicFormSchema,
 		},
 		onSubmit: async ({ value }) => {
-			const cleanAnswers = Object.fromEntries(
-				Object.entries(value).filter(([_, value]) => {
-					if (typeof value === "string" && value.trim() === "") {
-						return false;
-					}
-					if (Array.isArray(value)) {
-						const activeChoices = value.filter(
-							(id) => typeof id === "string" && id.trim() !== "",
-						);
-						return activeChoices.length > 0;
-					}
+			try {
+				if (pollData.questions.length === 0) {
+					throw new Error("Poll has no questions");
+				}
 
-					// 3. Si es null o undefined, lo descartamos
-					if (value === null || value === undefined) {
-						return false;
-					}
+				// 1. Limpiamos las respuestas inválidas o vacías
+				const cleanAnswers = Object.fromEntries(
+					Object.entries(value).filter(([_, val]) => {
+						if (typeof val === "string" && val.trim() === "") {
+							return false;
+						}
+						if (Array.isArray(val)) {
+							const activeChoices = val.filter(
+								(id) => typeof id === "string" && id.trim() !== "",
+							);
+							return activeChoices.length > 0;
+						}
+						if (val === null || val === undefined) {
+							return false;
+						}
+						return true;
+					}),
+				) as Record<string, string | string[]>;
 
-					return true;
-				}),
-			) as Record<string, string | string[]>;
-			return await completePollMutation.mutateAsync(cleanAnswers);
+				// 2. Llamamos a la server action directamente (isSubmitting se gestiona solo)
+				await submitPollAnswers({
+					data: {
+						pollId: pollData.questions[0].pollId,
+						answers: cleanAnswers,
+					},
+				});
+
+				// 3. Manejamos el éxito
+				setIsFinished(true);
+				toast.success("Tus respuestas fueron validadas y guardadas con éxito.");
+			} catch (error) {
+				console.error("Error al enviar la encuesta:", error);
+				toast.error(
+					"Hubo un problema al enviar tus respuestas. Inténtalo de nuevo.",
+				);
+			}
 		},
 	});
 
@@ -115,13 +124,16 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 			>
 				{pollData.questions.map((pq, index: number) => {
 					const q = pq;
-					let metadata: QuestionMetadata = {};
+
+					let metadata: ParsedMetadata = {};
+
 					if (q.metadata) {
 						try {
-							metadata =
+							metadata = (
 								typeof q.metadata === "string"
 									? JSON.parse(q.metadata)
-									: q.metadata;
+									: q.metadata
+							) as ParsedMetadata;
 						} catch (e) {
 							console.error("Error parseando metadata en el render:", e);
 						}
@@ -188,7 +200,6 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 														</div>
 													)}
 
-													{/* Tu mapa de checkboxes que ya tenías */}
 													{q.answers.map((ans) => {
 														return (
 															<FormField
@@ -196,7 +207,6 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 																field={field}
 																field_type={FieldType.CHECKBOX}
 																label={ans.answerText}
-																// Si quieres deshabilitar los que no están marcados cuando llega al tope:
 																disabled={
 																	selectedCount >= max &&
 																	hasMaxLimit &&
@@ -214,7 +224,6 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 																				ans.id,
 																			);
 
-																			// Validación extra: No dejar agregar más si ya llegó al máximo
 																			if (
 																				!isChecked &&
 																				hasMaxLimit &&
@@ -248,8 +257,6 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 												</div>
 											);
 										case "rating": {
-											const metadata = q.metadata || {};
-
 											return (
 												<FormField
 													field={field}
@@ -272,7 +279,6 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 													/>
 												</li>
 											);
-
 										case "date_range":
 											return (
 												<li className="space-y-2 list-none">
@@ -313,7 +319,6 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 									className="flex items-center gap-2"
 								>
 									<Save />
-
 									{isSubmitting ? "Enviando respuestas..." : "Enviar Encuesta"}
 								</LoadingSwap>
 							</Button>

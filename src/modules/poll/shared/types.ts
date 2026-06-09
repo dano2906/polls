@@ -1,6 +1,10 @@
 import type z from "zod";
-import type { QuestionType } from "@/question/shared/types";
-import type { createPollInput, selectPollOutput } from "../lib/validation";
+import type { QuestionMetadata } from "@/question/shared/types";
+import type {
+	createPollInput,
+	exportDataSchema,
+	selectPollOutput,
+} from "../lib/validation";
 
 export type Poll = z.infer<typeof selectPollOutput>;
 export type NewPollInput = z.infer<typeof createPollInput>;
@@ -11,25 +15,29 @@ export enum Statuses {
 	ARCHIVED = "archived",
 }
 
-export interface ExportData {
-	name: string;
-	description: string | null;
-	startDate: Date;
-	endDate: Date | null;
-	questions: {
-		questionText: string;
-		type: QuestionType;
-		hasCorrectAnswers: boolean | null;
-		maxSelections: number | null;
-		order: number | null;
-		isRequired: boolean | null;
-		metadata: {
-			minRating?: number;
-			maxRating?: number;
-		};
-		answers: {
-			answerText: string | null;
-			isCorrect: boolean | null;
-		}[];
-	}[];
-}
+export type SelectedAnswer = {
+	answerId: string;
+	answerText: string | null;
+	isCorrect: boolean | null;
+	sortOrder: number | null;
+};
+
+export type UserQuestionResult = {
+	id: string;
+	questionText: string;
+	type:
+		| "single_choice"
+		| "multiple_choice"
+		| "open_answer"
+		| "ranking"
+		| "rating"
+		| "date_single"
+		| "date_range"
+		| string;
+	metadata: QuestionMetadata;
+	order: number | null;
+	textResponse: string | null;
+	selectedAnswers: SelectedAnswer[];
+};
+
+export type ExportData = z.infer<typeof exportDataSchema>;

@@ -5,30 +5,39 @@ import { db } from "@/common/db";
 import { poll, question, submission, userAnswer } from "@/common/db/schema";
 import { getSession } from "@/common/lib/auth-functions";
 import { completePollInput } from "../lib/validation";
+import type { UserAnswerValue } from "../shared/types";
 
 export const submitPollAnswers = createServerFn()
 	.validator(completePollInput)
 	.handler(async ({ data }) => {
 		const { pollId, answers } = data;
-		const session = await getSession();
+		const session = await getSession(); // Tu función de autenticación
 
 		if (!session) {
 			throw redirect({ to: "/" });
 		}
 
+		// 1. Verificaciones de seguridad e integridad de la encuesta
 		const existingPoll = await db.query.poll.findFirst({
 			where: eq(poll.id, pollId),
 		});
 
 		if (!existingPoll) {
-			throw new Error("Poll not found");
+			throw new Error("Encuesta no encontrada");
 		}
 
 		if (existingPoll.status !== "published") {
-			throw new Error("Poll is not accepting submissions");
+			throw new Error(
+				"La encuesta no está aceptando respuestas en este momento",
+			);
 		}
 
+		// 2. Mapeamos los tipos de preguntas para saber cómo procesar cada JSON
 		const targetQuestionIds = Object.keys(answers);
+		if (targetQuestionIds.length === 0) {
+			throw new Error("No puedes enviar una encuesta vacía");
+		}
+
 		const pollQuestionsData = await db
 			.select({ id: question.id, type: question.type })
 			.from(question)
@@ -38,8 +47,9 @@ export const submitPollAnswers = createServerFn()
 			pollQuestionsData.map((q) => [q.id, q.type]),
 		);
 
+		// 3. Ejecutamos la transacción de guardado
 		return await db.transaction(async (tx) => {
-			// 1. Crear el registro de la entrega (Submission)
+			// Crear el registro de la cabecera de la entrega (Submission)
 			const [newSubmission] = await tx
 				.insert(submission)
 				.values({
@@ -48,86 +58,104 @@ export const submitPollAnswers = createServerFn()
 				})
 				.returning();
 
-			const answersToInsert = Object.entries(answers).flatMap(
-				([questionId, value]): (typeof userAnswer.$inferInsert)[] => {
+			// Transformamos las respuestas crudas en los objetos JSON polimórficos definitivos
+			const answersToInsert = Object.entries(answers)
+				.map(([questionId, rawValue]) => {
 					const qType = questionTypesMap.get(questionId);
 
-					// Validación de valores vacíos
+					// Validación rápida de campos vacíos (si aplica)
 					if (
-						value === undefined ||
-						value === null ||
-						(Array.isArray(value) && value.length === 0)
+						rawValue === undefined ||
+						rawValue === null ||
+						rawValue === "" ||
+						(Array.isArray(rawValue) && rawValue.length === 0)
 					) {
-						return [];
+						return null; // Ignoramos respuestas vacías voluntarias si la pregunta no era obligatoria
 					}
 
-					// --- CASO A: ORDENAMIENTO (Ranking) ---
-					if (qType === "ranking" && Array.isArray(value)) {
-						return value.map((aId, index) => ({
-							submissionId: newSubmission.id,
-							questionId: questionId,
-							answerId: aId,
-							textResponse: null,
-							sortOrder: index + 1,
-						}));
+					let computedValue: UserAnswerValue;
+
+					// Construimos el payload exacto discriminado por el tipo de pregunta
+					switch (qType) {
+						case "open_answer":
+							computedValue = {
+								type: "open_answer",
+								textResponse: String(rawValue),
+							};
+							break;
+
+						case "rating":
+							computedValue = {
+								type: "rating",
+								score: Number(rawValue),
+							};
+							break;
+
+						case "ranking":
+							computedValue = {
+								type: "ranking",
+								orderedAnswerIds: rawValue as string[],
+							};
+							break;
+
+						case "single_choice":
+							computedValue = {
+								type: "single_choice",
+								selectedAnswerId: String(rawValue),
+							};
+							break;
+
+						case "multiple_choice":
+							computedValue = {
+								type: "multiple_choice",
+								selectedAnswerIds: rawValue as string[],
+							};
+							break;
+
+						case "date_single":
+							computedValue = {
+								type: "date_single",
+								date: String(rawValue),
+							};
+							break;
+
+						case "date_range":
+							// Soporta tanto string plano "YYYY-MM-DD/YYYY-MM-DD" como objetos estructurados
+							if (typeof rawValue === "string" && rawValue.includes("/")) {
+								const [start, end] = rawValue.split("/");
+								computedValue = {
+									type: "date_range",
+									startDate: start?.trim() ?? "",
+									endDate: end?.trim() ?? "",
+								};
+							} else if (
+								typeof rawValue === "object" &&
+								"startDate" in rawValue
+							) {
+								computedValue = {
+									type: "date_range",
+									startDate: rawValue.startDate,
+									endDate: rawValue.endDate,
+								};
+							} else {
+								return null;
+							}
+							break;
+
+						default:
+							return null; // Si es un tipo desconocido, lo ignoramos de forma segura
 					}
 
-					// --- CASO B: SELECCIÓN MÚLTIPLE ---
-					if (qType === "multiple_choice" && Array.isArray(value)) {
-						return value.map((aId) => ({
-							submissionId: newSubmission.id,
-							questionId: questionId,
-							answerId: aId,
-							textResponse: null,
-							sortOrder: null,
-						}));
-					}
+					// Retornamos el objeto listo para Drizzle alineado con el esquema de la BD
+					return {
+						submissionId: newSubmission.id,
+						questionId: questionId,
+						value: computedValue, // Drizzle serializa este objeto a JSON automáticamente en SQLite
+					};
+				})
+				.filter((item): item is NonNullable<typeof item> => item !== null);
 
-					// --- 🆕 CASO E: RANGO DE FECHAS (date_range) ---
-					if (qType === "date_range" && typeof value === "string") {
-						return [
-							{
-								submissionId: newSubmission.id,
-								questionId: questionId,
-								answerId: null,
-								// Guardamos el string plano directamente: "2026-06-09/2026-06-25"
-								textResponse: value,
-								sortOrder: null,
-							},
-						];
-					}
-
-					// --- CASO C: TEXTO LIBRE, CALIFICACIÓN O FECHA ÚNICA ---
-					// 💡 Añadimos "date_single" y "date" aquí porque se guardan como un string simple directo
-					if (
-						qType === "open_answer" ||
-						qType === "rating" ||
-						qType === "date_single"
-					) {
-						return [
-							{
-								submissionId: newSubmission.id,
-								questionId: questionId,
-								answerId: null,
-								textResponse: String(value), // Guarda la fecha ISO string o YYYY-MM-DD directamente
-								sortOrder: null,
-							},
-						];
-					}
-
-					// --- CASO D: SELECCIÓN SIMPLE ---
-					return [
-						{
-							submissionId: newSubmission.id,
-							questionId: questionId,
-							answerId: String(value),
-							textResponse: null,
-							sortOrder: null,
-						},
-					];
-				},
-			);
-
+			// Inserción masiva ultra rápida (una sola operación de escritura para todas las respuestas)
 			if (answersToInsert.length > 0) {
 				await tx.insert(userAnswer).values(answersToInsert);
 			}
