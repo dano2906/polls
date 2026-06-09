@@ -26,6 +26,7 @@
 - Multiple dropdown
 - Distribucion de puntos
 - Escala de likert
+- Geolocation
 - Videos y audios
   [] Implementar el reorder de las preguntas
   [] En csv le resta un dia a las fechas
