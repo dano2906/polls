@@ -37,9 +37,17 @@ export const QUESTION_TYPES = [
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
 
-export interface QuestionMetadata {
-	minRating?: number;
-	maxRating?: number;
-	minDate?: string | null;
-	maxDate?: string | null;
-}
+export type QuestionInput = z.infer<typeof createQuestionInput>;
+
+export type QuestionMetadata =
+	| { type: "open_answer" }
+	| { type: "rating"; minValue: number; maxValue: number }
+	| { type: "ranking" }
+	| { type: "single_choice"; hasCorrectAnswers: boolean; maxSelections: number }
+	| {
+			type: "multiple_choice";
+			hasCorrectAnswers: boolean;
+			maxSelections: number;
+	  }
+	| { type: "date_single"; minDate?: string | null; maxDate?: string | null }
+	| { type: "date_range"; minDate?: string | null; maxDate?: string | null };

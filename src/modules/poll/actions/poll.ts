@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "@tanstack/react-router";
 import { createClientOnlyFn, createServerFn } from "@tanstack/react-start";
 import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
+import type { UserAnswerValue } from "@/answers/shared/types";
 import { db } from "@/common/db";
 import {
 	answer,
@@ -14,10 +15,12 @@ import {
 import { getSession } from "@/common/lib/auth-functions";
 import { exportPoll } from "@/common/lib/export";
 import { ExportFormat } from "@/common/shared/types";
+import type { QuestionMetadata } from "@/question/shared/types";
 import { generateRandomCode } from "../lib/utils";
 import {
 	createPollInput,
 	editPollInput,
+	exportDataSchema,
 	forkPollInput,
 	pollsSearchFiltershSchema,
 	pollsSearchFilterWithUserSchema,
@@ -239,13 +242,29 @@ export const getPollDetails = createServerFn({ method: "GET" })
 		}
 
 		const questions = poll.pollQuestions.map((item) => {
+			// 1. Parseamos la metadata aquí en el servidor
+			let parsedMetadata = {};
+
+			if (item.question.metadata) {
+				try {
+					parsedMetadata =
+						typeof item.question.metadata === "string"
+							? JSON.parse(item.question.metadata)
+							: item.question.metadata;
+				} catch (e) {
+					console.error(
+						`Error parseando metadata de la pregunta ${item.question.id}:`,
+						e,
+					);
+				}
+			}
+
 			return {
 				order: item.order,
 				pollId: item.pollId,
 				...item.question,
-				// Al esparcir item.question ya incluye:
-				// imageUrl: item.question.imageUrl,
-				// imagePublicId: item.question.imagePublicId
+				// 2. Sobrescribimos la metadata original con la parseada y fuertemente tipada
+				metadata: parsedMetadata,
 			};
 		});
 
@@ -256,7 +275,7 @@ export const getPollDetails = createServerFn({ method: "GET" })
 			endDate: poll.endDate,
 			status: poll.status,
 			version: poll.version,
-			metadata: undefined,
+			pollMetadata: undefined,
 			questions,
 		};
 	});
@@ -286,111 +305,6 @@ export const createPoll = createServerFn({ method: "POST" })
 		} catch (error) {
 			console.log("error", error);
 			throw error;
-		}
-	});
-
-export const forkPoll = createServerFn({ method: "POST" })
-	.validator(forkPollInput)
-	.handler(async ({ data }) => {
-		const { pollSlug } = data;
-
-		try {
-			// Iniciamos una transacción para asegurar la atomicidad
-			const result = await db.transaction(async (tx) => {
-				// 1. Obtener la encuesta original con todas sus preguntas y respuestas
-				const originalPoll = await tx.query.poll.findFirst({
-					where: eq(poll.slug, pollSlug),
-					with: {
-						pollQuestions: {
-							with: {
-								question: {
-									with: {
-										answers: true,
-									},
-								},
-							},
-						},
-					},
-				});
-
-				if (!originalPoll) {
-					throw notFound({
-						throw: true,
-					});
-				}
-
-				// 2. Calcular la nueva versión y el nuevo slug único
-				const nextVersion = (originalPoll.version ?? 1) + 1;
-				const nextSlug = generateRandomCode();
-
-				// 3. Insertar la nueva encuesta clonada
-				const [insertedPoll] = await tx
-					.insert(poll)
-					.values({
-						userId: originalPoll.userId,
-						name: `${originalPoll.name}`,
-						description: originalPoll.description,
-						slug: nextSlug,
-						status: "draft",
-						version: nextVersion,
-						metadata: originalPoll.metadata,
-						startDate: new Date(originalPoll.startDate),
-						endDate: originalPoll.endDate
-							? new Date(originalPoll.endDate)
-							: null,
-						rootId: originalPoll.rootId ?? originalPoll.id,
-					})
-					.returning({ id: poll.id });
-
-				const newPollId = insertedPoll.id;
-
-				// 4. Iterar sobre las preguntas para duplicarlas
-				for (const pq of originalPoll.pollQuestions) {
-					const origQuestion = pq.question;
-
-					// Insertar la nueva pregunta
-					const [insertedQuestion] = await tx
-						.insert(question)
-						.values({
-							type: origQuestion.type,
-							questionText: origQuestion.questionText,
-							hasCorrectAnswers: origQuestion.hasCorrectAnswers,
-							maxSelections: origQuestion.maxSelections,
-							isRequired: origQuestion.isRequired,
-						})
-						.returning({ id: question.id });
-
-					const newQuestionId = insertedQuestion.id;
-
-					// Crear la relación en la tabla intermedia de la nueva encuesta
-					await tx.insert(pollQuestions).values({
-						pollId: newPollId,
-						questionId: newQuestionId,
-						order: pq.order,
-					});
-
-					// 5. Si la pregunta tiene respuestas, duplicarlas en lote
-					if (origQuestion.answers && origQuestion.answers.length > 0) {
-						const newAnswers = origQuestion.answers.map((ans) => ({
-							questionId: newQuestionId,
-							answerText: ans.answerText,
-							isCorrect: ans.isCorrect,
-							order: ans.order,
-							metadata: ans.metadata,
-						}));
-
-						await tx.insert(answer).values(newAnswers);
-					}
-				}
-
-				// Retornamos el ID de la nueva encuesta clonada
-				return { success: true, newPollId };
-			});
-
-			return result;
-		} catch (error) {
-			console.error("Error al duplicar la encuesta:", error);
-			throw new Error("No se pudo duplicar la encuesta");
 		}
 	});
 
@@ -524,113 +438,6 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 		};
 	});
 
-export const getUserPollResults = createServerFn({ method: "GET" })
-	.validator((data: { userId: string; slug: string }) => data)
-	.handler(async ({ data }) => {
-		const { slug, userId } = data;
-
-		// 1. Obtener los detalles de la encuesta actual
-		const currentPoll = await db
-			.select({ id: poll.id, name: poll.name, description: poll.description })
-			.from(poll)
-			.where(eq(poll.slug, slug))
-			.get();
-
-		if (!currentPoll) {
-			throw notFound();
-		}
-
-		// 2. Consulta unificada trayendo todas las relaciones posibles
-		const rawRows = await db
-			.select({
-				questionId: question.id,
-				questionText: question.questionText,
-				type: question.type,
-				order: pollQuestions.order,
-				userAnswerId: userAnswer.id,
-				selectedAnswerId: userAnswer.answerId,
-				textResponse: userAnswer.textResponse,
-				sortOrder: userAnswer.sortOrder,
-				answerText: answer.answerText,
-				isCorrect: answer.isCorrect,
-			})
-			.from(pollQuestions)
-			.where(eq(pollQuestions.pollId, currentPoll.id))
-			.innerJoin(question, eq(pollQuestions.questionId, question.id))
-			.leftJoin(
-				submission,
-				and(
-					eq(submission.pollId, currentPoll.id),
-					eq(submission.userId, userId),
-				),
-			)
-			.leftJoin(
-				userAnswer,
-				and(
-					eq(userAnswer.submissionId, submission.id),
-					eq(userAnswer.questionId, question.id),
-				),
-			)
-			.leftJoin(answer, eq(userAnswer.answerId, answer.id))
-			.orderBy(pollQuestions.order);
-
-		const questionsMap = new Map<
-			string,
-			{
-				id: string;
-				questionText: string;
-				type: string;
-				order: number | null;
-				textResponse: string | null;
-				selectedAnswers: {
-					answerId: string;
-					answerText: string | null;
-					isCorrect: boolean | null;
-					sortOrder?: number | null;
-				}[];
-			}
-		>();
-
-		for (const row of rawRows) {
-			if (!questionsMap.has(row.questionId)) {
-				questionsMap.set(row.questionId, {
-					id: row.questionId,
-					questionText: row.questionText,
-					type: row.type,
-					order: row.order,
-					textResponse: row.textResponse,
-					selectedAnswers: [],
-				});
-			}
-
-			const currentQuestion = questionsMap.get(row.questionId);
-			if (!currentQuestion) continue;
-
-			if (row.selectedAnswerId) {
-				currentQuestion.selectedAnswers.push({
-					answerId: row.selectedAnswerId,
-					answerText: row.answerText,
-					isCorrect: row.isCorrect,
-					...(row.type === "ranking" && { sortOrder: row.sortOrder }),
-				});
-			}
-		}
-
-		const finalResults = Array.from(questionsMap.values()).map((q) => {
-			if (q.type === "ranking" && q.selectedAnswers.length > 0) {
-				q.selectedAnswers.sort(
-					(a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
-				);
-			}
-			return q;
-		});
-
-		return {
-			poll: currentPoll,
-			results: finalResults,
-		};
-	});
-
 export const deletePollBySlug = createServerFn({ method: "POST" })
 	.validator((data: { slug: string }) => data)
 	.handler(async ({ data }) => {
@@ -661,13 +468,15 @@ export const deletePollBySlug = createServerFn({ method: "POST" })
 	});
 
 export const importPollAction = createServerFn()
-	.validator((val: ExportData) => val)
+	.validator(exportDataSchema)
 	.handler(async ({ data }) => {
 		const session = await getSession();
 		if (!session?.user?.id) {
 			throw redirect({ to: "/" });
 		}
+
 		return await db.transaction(async (tx) => {
+			// 1. Insertar la encuesta principal
 			const [newPoll] = await tx
 				.insert(poll)
 				.values({
@@ -676,42 +485,398 @@ export const importPollAction = createServerFn()
 					description: data.description,
 					slug: generateRandomCode(),
 					status: "draft",
-					startDate: data.startDate ? new Date(data.startDate) : new Date(),
-					endDate: data.endDate ? new Date(data.endDate) : null,
+					startDate: data.startDate,
+					endDate: data.endDate,
+					version: 1,
 				})
 				.returning();
 
-			for (const q of data.questions) {
-				const [newQuestion] = await tx
-					.insert(question)
-					.values({
+			if (!data.questions || data.questions.length === 0) {
+				return { success: true, slug: newPoll.slug };
+			}
+
+			// 2. Mapear preguntas transformando la metadata y limpiando los tipos null de Zod
+			const questionsToInsert: (typeof question.$inferInsert)[] =
+				data.questions.map((q) => {
+					let dbMetadata: QuestionMetadata;
+
+					switch (q.type) {
+						case "rating":
+							dbMetadata = {
+								type: "rating",
+								minValue: q.metadata.minRating ?? 1,
+								maxValue: q.metadata.maxRating ?? 5,
+							};
+							break;
+						case "single_choice":
+						case "multiple_choice":
+							dbMetadata = {
+								type: q.type,
+								hasCorrectAnswers: q.hasCorrectAnswers ?? false,
+								maxSelections: q.maxSelections ?? 1,
+							};
+							break;
+						case "date_single":
+						case "date_range":
+							dbMetadata = {
+								type: q.type,
+								minDate: null,
+								maxDate: null,
+							};
+							break;
+
+						default:
+							dbMetadata = { type: q.type };
+							break;
+					}
+
+					return {
 						type: q.type,
 						questionText: q.questionText,
-						hasCorrectAnswers: q.hasCorrectAnswers,
+						// Usamos '??' para convertir el 'boolean | null' de Zod en un 'boolean' puro que Drizzle acepte
+						hasCorrectAnswers: q.hasCorrectAnswers ?? false,
 						maxSelections: q.maxSelections ?? 1,
-						isRequired: q.isRequired ?? false,
-						metadata: q.metadata,
-					})
-					.returning();
+						isRequired: q.isRequired ?? false, // <-- SOLUCIÓN ERROR 3: Elimina el null para Drizzle
+						metadata: dbMetadata,
+					};
+				});
 
-				await tx.insert(pollQuestions).values({
+			const insertedQuestions = await tx
+				.insert(question)
+				.values(questionsToInsert)
+				.returning({ id: question.id });
+
+			// 3. Preparar estructuras masivas para relaciones y opciones de respuesta
+			const pollQuestionsToInsert: (typeof pollQuestions.$inferInsert)[] = [];
+			const answersToInsert: (typeof answer.$inferInsert)[] = [];
+
+			data.questions.forEach((q, index) => {
+				const newQuestionId = insertedQuestions[index].id;
+
+				pollQuestionsToInsert.push({
 					pollId: newPoll.id,
-					questionId: newQuestion.id,
+					questionId: newQuestionId,
 					order: q.order ?? 0,
 				});
 
 				if (q.answers && q.answers.length > 0) {
-					const answersToInsert = q.answers.map((ans, idx) => ({
-						questionId: newQuestion.id,
-						answerText: ans.answerText || "",
-						isCorrect: ans.isCorrect ?? false,
-						order: idx,
-					}));
-
-					await tx.insert(answer).values(answersToInsert);
+					q.answers.forEach((ans, idx) => {
+						// SOLUCIÓN ERRORES 1 y 2: Ajustado al formato estricto que acepta la tabla 'answer'
+						answersToInsert.push({
+							questionId: newQuestionId,
+							answerText: ans.answerText || "",
+							isCorrect: ans.isCorrect ?? false,
+							order: idx, // Asignamos directamente el índice del bucle como orden cronológico
+							// Eliminamos ans.metadata ya que las respuestas de encuestas no llevan metadata extendida
+						});
+					});
 				}
+			});
+
+			// 4. Ejecución final en lote
+			await tx.insert(pollQuestions).values(pollQuestionsToInsert);
+
+			if (answersToInsert.length > 0) {
+				await tx.insert(answer).values(answersToInsert);
 			}
 
 			return { success: true, slug: newPoll.slug };
 		});
+	});
+
+export const forkPoll = createServerFn({ method: "POST" })
+	.validator(forkPollInput)
+	.handler(async ({ data }) => {
+		const { pollSlug } = data;
+
+		try {
+			const result = await db.transaction(async (tx) => {
+				// 1. Obtener la encuesta desde la que se está haciendo el fork
+				const originalPoll = await tx.query.poll.findFirst({
+					where: eq(poll.slug, pollSlug),
+					with: {
+						pollQuestions: {
+							with: {
+								question: {
+									with: {
+										answers: true,
+									},
+								},
+							},
+						},
+					},
+				});
+
+				if (!originalPoll) {
+					throw notFound({ throw: true });
+				}
+
+				// 2. Identificar el ID raíz de la familia
+				const targetRootId = originalPoll.rootId ?? originalPoll.id;
+
+				// 3. NUEVA LÓGICA: Buscar la versión más alta en TODA la familia (raíz + hijas)
+				const [highestVersionPoll] = await tx
+					.select({ version: poll.version })
+					.from(poll)
+					.where(
+						or(
+							eq(poll.rootId, targetRootId), // Hijas que apuntan a la raíz
+							eq(poll.id, targetRootId), // La encuesta raíz misma
+						),
+					)
+					.orderBy(desc(poll.version)) // Ordenamos de mayor a menor
+					.limit(1); // Nos quedamos solo con la más alta
+
+				// Calculamos la siguiente versión basándonos en el máximo real del árbol
+				const maxFamilyVersion = highestVersionPoll?.version
+					? Number(highestVersionPoll.version)
+					: 1;
+				const nextVersion = maxFamilyVersion + 1;
+
+				const nextSlug = generateRandomCode();
+
+				// 4. Insertar la nueva encuesta clonada con la versión consecutiva global
+				const [insertedPoll] = await tx
+					.insert(poll)
+					.values({
+						userId: originalPoll.userId,
+						name: originalPoll.name,
+						description: originalPoll.description,
+						slug: nextSlug,
+						status: "draft",
+						version: nextVersion, // <-- Ahora sí, v3, v4, etc. consecutivas
+						metadata: originalPoll.metadata,
+						startDate: new Date(originalPoll.startDate),
+						endDate: originalPoll.endDate
+							? new Date(originalPoll.endDate)
+							: null,
+						rootId: targetRootId, // Mantenemos el mismo ID raíz para toda la familia
+					})
+					.returning({ id: poll.id });
+
+				const newPollId = insertedPoll.id;
+
+				if (
+					!originalPoll.pollQuestions ||
+					originalPoll.pollQuestions.length === 0
+				) {
+					return { success: true, newPollId };
+				}
+
+				// 5. PREPARACIÓN EN LOTE: Preguntas
+				const questionsToInsert = originalPoll.pollQuestions.map((pq) => ({
+					type: pq.question.type,
+					questionText: pq.question.questionText,
+					hasCorrectAnswers: pq.question.hasCorrectAnswers,
+					maxSelections: pq.question.maxSelections,
+					isRequired: pq.question.isRequired,
+					metadata: pq.question.metadata,
+					imagePublicId: pq.question.imagePublicId,
+				}));
+
+				const insertedQuestions = await tx
+					.insert(question)
+					.values(questionsToInsert)
+					.returning({ id: question.id });
+
+				// 6. CONSTRUCCIÓN DE RELACIONES Y RESPUESTAS
+				const pollQuestionsToInsert: any[] = [];
+				const answersToInsert: any[] = [];
+
+				originalPoll.pollQuestions.forEach((pq, index) => {
+					const newQuestionId = insertedQuestions[index].id;
+
+					pollQuestionsToInsert.push({
+						pollId: newPollId,
+						questionId: newQuestionId,
+						order: pq.order,
+					});
+
+					if (pq.question.answers && pq.question.answers.length > 0) {
+						pq.question.answers.forEach((ans) => {
+							answersToInsert.push({
+								questionId: newQuestionId,
+								answerText: ans.answerText,
+								isCorrect: ans.isCorrect,
+								order: ans.order,
+								metadata: ans.metadata,
+							});
+						});
+					}
+				});
+
+				await tx.insert(pollQuestions).values(pollQuestionsToInsert);
+
+				if (answersToInsert.length > 0) {
+					await tx.insert(answer).values(answersToInsert);
+				}
+
+				return { success: true, newPollId };
+			});
+
+			return result;
+		} catch (error) {
+			console.error("Error al duplicar la encuesta:", error);
+			throw new Error("No se pudo duplicar la encuesta");
+		}
+	});
+
+export const getUserPollResults = createServerFn({ method: "GET" })
+	.validator((data: { userId: string; slug: string }) => data)
+	.handler(async ({ data }) => {
+		const { slug, userId } = data;
+
+		// 1. CONSULTA ESTRUCTURA
+		const pollStructure = await db.query.poll.findFirst({
+			where: (table, { eq }) => eq(table.slug, slug),
+			columns: {
+				id: true,
+				name: true,
+				description: true,
+			},
+			with: {
+				pollQuestions: {
+					orderBy: (pq, { asc }) => [asc(pq.order)],
+					columns: { order: true },
+					with: {
+						question: {
+							with: {
+								answers: {
+									orderBy: (ans, { asc }) => [asc(ans.order)],
+									columns: {
+										id: true,
+										answerText: true,
+										isCorrect: true,
+										order: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		if (!pollStructure) {
+			throw notFound();
+		}
+
+		// 2. CONSULTA RESPUESTAS
+		const userAnswersRows = await db
+			.select({
+				questionId: userAnswer.questionId,
+				value: userAnswer.value,
+				submittedAt: submission.submittedAt,
+			})
+			.from(userAnswer)
+			.innerJoin(submission, eq(userAnswer.submissionId, submission.id))
+			.where(
+				and(
+					eq(submission.pollId, pollStructure.id),
+					eq(submission.userId, userId),
+				),
+			);
+
+		const submittedAt = userAnswersRows[0]?.submittedAt ?? null;
+
+		const userAnswersMap = new Map<string, any>();
+		for (const row of userAnswersRows) {
+			if (row.questionId) {
+				userAnswersMap.set(row.questionId, row.value);
+			}
+		}
+
+		// 3. FUSIÓN EN MEMORIA
+		const results = pollStructure.pollQuestions.map((pq) => {
+			const q = pq.question;
+			// Forzamos el tipado para aprovechar el discriminated union
+			const uv = userAnswersMap.get(q.id) as UserAnswerValue | undefined;
+
+			let textResponse: string | null = null;
+			const selectedAnswers: any[] = []; // Usamos any o un tipo extendido para inyectar score/dates
+
+			// Si el usuario respondió, leemos estrictamente según el `type` guardado
+			if (uv) {
+				switch (uv.type) {
+					case "open_answer":
+						textResponse = uv.textResponse;
+						break;
+
+					case "rating":
+						// Lo metemos en el array para que el frontend lo lea en selectedAnswers[0].score
+						selectedAnswers.push({ score: uv.score });
+						break;
+
+					case "ranking":
+						uv.orderedAnswerIds.forEach((id, index) => {
+							const ans = q.answers.find((a) => a.id === id);
+							if (ans) {
+								selectedAnswers.push({
+									id: ans.id, // ID compatible con el frontend
+									answerText: ans.answerText,
+									isCorrect: ans.isCorrect,
+									orderIndex: index, // Clave para que el frontend mantenga el orden
+								});
+							}
+						});
+						break;
+
+					case "single_choice": {
+						const ans = q.answers.find((a) => a.id === uv.selectedAnswerId);
+						if (ans) {
+							selectedAnswers.push({
+								id: ans.id,
+								answerText: ans.answerText,
+								isCorrect: ans.isCorrect,
+							});
+						}
+						break;
+					}
+
+					case "multiple_choice":
+						uv.selectedAnswerIds.forEach((id) => {
+							const ans = q.answers.find((a) => a.id === id);
+							if (ans) {
+								selectedAnswers.push({
+									id: ans.id,
+									answerText: ans.answerText,
+									isCorrect: ans.isCorrect,
+								});
+							}
+						});
+						break;
+
+					case "date_single":
+						selectedAnswers.push({ dateValue: uv.date });
+						break;
+
+					case "date_range":
+						selectedAnswers.push({
+							startDate: uv.startDate,
+							endDate: uv.endDate,
+						});
+						break;
+				}
+			}
+
+			return {
+				id: q.id,
+				questionText: q.questionText,
+				type: q.type,
+				metadata: q.metadata,
+				order: pq.order ?? 0,
+				textResponse,
+				selectedAnswers,
+			};
+		});
+
+		return {
+			poll: {
+				id: pollStructure.id,
+				name: pollStructure.name,
+				description: pollStructure.description,
+				submittedAt,
+			},
+			results,
+		};
 	});

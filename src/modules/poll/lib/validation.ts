@@ -75,4 +75,45 @@ export const pollsSearchFilterWithUserSchema = pollsSearchFiltershSchema.extend(
 	},
 );
 
+export const questionTypeSchema = z.enum([
+	"single_choice",
+	"multiple_choice",
+	"open_answer",
+	"ranking",
+	"rating",
+	"date_single",
+	"date_range",
+]);
+
+export const exportDataSchema = z.object({
+	name: z.string().min(1, "El nombre es obligatorio"),
+	description: z.string().nullable(),
+
+	// z.coerce.date() transforma automáticamente los strings del JSON de la red en objetos Date reales
+	startDate: z.coerce.date().default(() => new Date()),
+	endDate: z.coerce.date().nullable().default(null),
+
+	questions: z.array(
+		z.object({
+			questionText: z.string().min(1, "El texto de la pregunta es obligatorio"),
+			type: questionTypeSchema,
+			hasCorrectAnswers: z.boolean().nullable().default(false),
+			maxSelections: z.number().nullable().default(1),
+			order: z.number().nullable().default(0),
+			isRequired: z.boolean().nullable().default(false),
+			metadata: z.object({
+				minRating: z.number().optional(),
+				maxRating: z.number().optional(),
+			}),
+
+			answers: z.array(
+				z.object({
+					answerText: z.string().nullable().default(""),
+					isCorrect: z.boolean().nullable().default(false),
+				}),
+			),
+		}),
+	),
+});
+
 export const selectPollOutput = createSelectSchema(poll);

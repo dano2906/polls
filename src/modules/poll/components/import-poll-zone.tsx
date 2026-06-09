@@ -37,10 +37,10 @@ export function ImportPollZone() {
 	const [isDragActive, setIsDragActive] = useState(false);
 	const [localError, setLocalError] = useState<string | null>(null);
 
-	// 💡 Estado para guardar la previsualización antes de enviar a DB
+	// Estado para guardar la previsualización antes de enviar a DB
 	const [previewData, setPreviewData] = useState<ExportData | null>(null);
 
-	// 💡 Integración de TanStack Query Mutation
+	// Integración de TanStack Query Mutation
 	const {
 		mutate: submitImport,
 		isPending: isSaving,
@@ -133,7 +133,7 @@ export function ImportPollZone() {
 					onDragOver={handleDrag}
 					onDragLeave={handleDrag}
 					onDrop={handleDrop}
-					className={`flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-xl cursor-pointer bg-muted/20 transition-all group relative
+					className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl cursor-pointer bg-muted/20 transition-all group relative
                         ${isDragActive ? "border-primary bg-primary/10 scale-[1.01]" : "border-muted-foreground/30 hover:bg-muted/40"}
                     `}
 				>
@@ -182,7 +182,7 @@ export function ImportPollZone() {
 					</div>
 
 					{/* Contenido Extendido del Archivo Parseado */}
-					<div className="p-5 space-y-4 max-h-96 overflow-y-auto">
+					<div className="p-5 space-y-4 overflow-y-auto">
 						<div>
 							<h6 className="text-2xl font-medium tracking-wide text-foreground">
 								{previewData.name}
@@ -253,10 +253,64 @@ export function ImportPollZone() {
 
 									{q.type === "rating" && q.metadata && (
 										<span className="bg-background text-muted-foreground tracking-wide font-normal text-xs p-1.5 rounded border flex items-center justify-between">
-											Desde {JSON.parse(q.metadata as string).minRating} hasta{" "}
-											{JSON.parse(q.metadata as string).maxRating}.
+											Desde {(q.metadata as any).minRating ?? 1} hasta{" "}
+											{(q.metadata as any).maxRating ?? 5}.
 										</span>
 									)}
+
+									{(q.type === "date_single" || q.type === "date_range") &&
+										q.metadata &&
+										((q.metadata as any).minDate ||
+											(q.metadata as any).maxDate) && (
+											<span className="bg-background text-muted-foreground tracking-wide font-normal text-xs p-1.5 rounded border flex items-center gap-2 flex-wrap">
+												<span className="text-muted-foreground/80">
+													Límites de fecha:
+												</span>
+
+												{(q.metadata as any).minDate && (
+													<span>
+														Desde el{" "}
+														<strong className="text-foreground font-medium">
+															{(() => {
+																try {
+																	return format(
+																		new Date((q.metadata as any).minDate),
+																		"dd/MM/yyyy",
+																		{ locale: es },
+																	);
+																} catch {
+																	return (q.metadata as any).minDate; // Fallback por si la fecha no es válida
+																}
+															})()}
+														</strong>
+													</span>
+												)}
+
+												{(q.metadata as any).minDate &&
+													(q.metadata as any).maxDate && (
+														<span className="text-muted-foreground/40">•</span>
+													)}
+
+												{(q.metadata as any).maxDate && (
+													<span>
+														Hasta el{" "}
+														<strong className="text-foreground font-medium">
+															{(() => {
+																try {
+																	return format(
+																		new Date((q.metadata as any).maxDate),
+																		"dd/MM/yyyy",
+																		{ locale: es },
+																	);
+																} catch {
+																	return (q.metadata as any).maxDate; // Fallback por si la fecha no es válida
+																}
+															})()}
+														</strong>
+													</span>
+												)}
+											</span>
+										)}
 
 									{/* Mapeo de Opciones de la Pregunta si las tiene */}
 									{q.answers && q.answers.length > 0 && (
