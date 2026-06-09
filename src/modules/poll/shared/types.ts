@@ -9,11 +9,8 @@ import type {
 export type Poll = z.infer<typeof selectPollOutput>;
 export type NewPollInput = z.infer<typeof createPollInput>;
 
-export enum Statuses {
-	DRAFT = "draft",
-	PUBLISHED = "published",
-	ARCHIVED = "archived",
-}
+export const POLL_STATUS_FLOW = ["draft", "published", "archived"] as const;
+export type PollStatus = (typeof POLL_STATUS_FLOW)[number];
 
 export type SelectedAnswer = {
 	answerId: string;

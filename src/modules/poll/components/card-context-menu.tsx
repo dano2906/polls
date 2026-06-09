@@ -13,6 +13,8 @@ import {
 	ContextMenuSubTrigger,
 	ContextMenuTrigger,
 } from "@/ui/context-menu";
+import type { Poll, PollStatus } from "../shared/types";
+import { ChangePollStatus } from "./change-poll-status";
 import CopyClipboardPoll from "./copy-clipboard-poll";
 import DeletePollButton from "./delete-poll-button";
 import ExportMenuButton from "./export-menu-button";
@@ -21,18 +23,7 @@ import PollQrPopover from "./poll-qrcode-popover";
 
 interface Props {
 	children: React.ReactNode;
-	poll: {
-		id: string;
-		rootId: string | null;
-		name: string;
-		description: string | null;
-		slug: string | null;
-		startDate: Date;
-		endDate: Date | null;
-		status: "draft" | "published" | "archived" | null;
-		version: number | null;
-		createdAt: Date | null;
-	};
+	poll: Poll;
 	forkVersion: number;
 }
 
@@ -54,13 +45,14 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 							buttonVariants({
 								variant: "ghostContext",
 							}),
-							"w-full flex items-center justify-start",
+							"w-full flex items-center justify-start group",
 						)}
 					>
-						<Pencil />
+						<Pencil className="group-hover:text-accent-foreground" />
 						Editar encuesta
 					</Link>
 				</ContextMenuItem>
+
 				<ContextMenuItem asChild>
 					<ForkVersionButton slug={poll.slug as string} version={forkVersion} />
 				</ContextMenuItem>
@@ -75,11 +67,14 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 				{poll.slug && (
 					<ContextMenuSub>
 						<ContextMenuSubTrigger
-							className={buttonVariants({
-								variant: "ghostContext",
-							})}
+							className={cn(
+								buttonVariants({
+									variant: "ghostContext",
+								}),
+								"w-full flex items-center justify-start group",
+							)}
 						>
-							<Sheet />
+							<Sheet className="group-hover:text-accent-foreground" />
 							Exportar
 						</ContextMenuSubTrigger>
 						<ContextMenuSubContent>
@@ -95,6 +90,13 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 						</ContextMenuSubContent>
 					</ContextMenuSub>
 				)}
+				<ContextMenuItem asChild>
+					<ChangePollStatus
+						slug={poll.slug as string}
+						status={poll.status as PollStatus}
+						inMenu
+					/>
+				</ContextMenuItem>
 				<ContextMenuItem asChild>
 					<DeletePollButton slug={poll.slug as string} />
 				</ContextMenuItem>
