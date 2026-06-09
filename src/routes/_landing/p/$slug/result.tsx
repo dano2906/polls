@@ -26,7 +26,6 @@ function RouteComponent() {
 
 	return (
 		<div className="w-full max-w-4xl mx-auto space-y-6 py-6 px-4">
-			{/* Cabecera de la Encuesta */}
 			<div className="border-b pb-5 space-y-2">
 				<h2 className="text-sm font-semibold tracking-wider text-primary uppercase">
 					Resumen de Resultados

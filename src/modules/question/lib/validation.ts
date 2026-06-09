@@ -189,6 +189,16 @@ export const dateRangeQuestionSchema = baseQuestionFields
 		},
 	);
 
+export const pointAssignationQUestionSchema = baseQuestionFields.extend({
+	type: z.literal("point_distribution"),
+	distributionAmount: z
+		.number()
+		.min(1, "No puedes asignar puntos negativos o nulos"),
+	answers: z
+		.array(createAnswerInput)
+		.min(2, "Debes añadir al menos 2 opciones de respuesta."),
+});
+
 // ========================================================
 // 2. UNION DISCRIMINADA FINAL
 // ========================================================
@@ -199,6 +209,7 @@ export const createQuestionInput = z.discriminatedUnion("type", [
 	choiceQuestionsSchema,
 	dateSingleQuestionSchema,
 	dateRangeQuestionSchema,
+	pointAssignationQUestionSchema,
 ]);
 export const questionsBatchSchema = z
 	.object({

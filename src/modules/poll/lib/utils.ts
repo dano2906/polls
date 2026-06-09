@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { QuestionMetadata } from "@/question/shared/types";
 
 export const generateRandomCode = (): string => {
 	return Math.random().toString(36).substring(2, 8).toLowerCase();
@@ -8,7 +9,7 @@ export function createDynamicResponseSchema(questions: any[]) {
 	const shape: Record<string, z.ZodTypeAny> = {};
 
 	questions.forEach((q) => {
-		let metadata: QuestionMetadata = {};
+		let metadata: any = {};
 		if (q.metadata) {
 			try {
 				metadata =
@@ -232,6 +233,29 @@ export function createDynamicResponseSchema(questions: any[]) {
 				break;
 			}
 
+			case "point_distribution": {
+				let schema = z.record(z.string(), z.coerce.number());
+
+				const limit = metadata.distributionAmount ?? 100;
+
+				// Validamos que la suma total sea igual al límite configurado
+				schema = schema.refine(
+					(val) => {
+						const total = Object.values(val).reduce(
+							(acc, curr) => acc + (curr || 0),
+							0,
+						);
+						return total === limit;
+					},
+					{
+						message: `La suma de los puntos debe ser exactamente ${limit}.`,
+					},
+				);
+
+				shape[q.id] = schema;
+				break;
+			}
+
 			// --- CASO POR DEFECTO ---
 			default:
 				// Si llega un tipo desconocido, permitimos cualquier dato para no romper el formulario entero
@@ -241,4 +265,16 @@ export function createDynamicResponseSchema(questions: any[]) {
 	});
 
 	return z.object(shape);
+}
+
+export function ensureMetadata(metadata: string | any) {
+	if (metadata) {
+		try {
+			return (
+				typeof metadata === "string" ? JSON.parse(metadata) : metadata
+			) as Partial<QuestionMetadata>;
+		} catch (e) {
+			console.error("Error parseando metadata en el render:", e);
+		}
+	}
 }

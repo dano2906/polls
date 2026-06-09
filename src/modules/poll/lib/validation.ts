@@ -1,6 +1,7 @@
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { poll } from "@/common/db/schema";
+import { QUESTION_TYPES } from "@/question/shared/types";
 
 export const createPollInput = z
 	.object({
@@ -75,15 +76,7 @@ export const pollsSearchFilterWithUserSchema = pollsSearchFiltershSchema.extend(
 	},
 );
 
-export const questionTypeSchema = z.enum([
-	"single_choice",
-	"multiple_choice",
-	"open_answer",
-	"ranking",
-	"rating",
-	"date_single",
-	"date_range",
-]);
+export const questionTypeSchema = z.enum(QUESTION_TYPES);
 
 export const exportDataSchema = z.object({
 	name: z.string().min(1, "El nombre es obligatorio"),
@@ -104,6 +97,9 @@ export const exportDataSchema = z.object({
 			metadata: z.object({
 				minRating: z.number().optional(),
 				maxRating: z.number().optional(),
+				distributionAmount: z.number().optional(),
+				minDate: z.string().optional(),
+				maxDate: z.string().optional(),
 			}),
 
 			answers: z.array(

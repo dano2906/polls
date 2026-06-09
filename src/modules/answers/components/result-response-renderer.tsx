@@ -7,37 +7,28 @@ import {
 	CheckCircle2,
 	HelpCircle,
 	MessageSquare,
+	PieChart,
+	Trophy,
 	XCircle,
 } from "lucide-react";
+import { Badge } from "@/common/components/ui/badge";
 import { cn } from "@/common/lib/utils";
-import type { QuestionMetadata } from "@/question/shared/types";
+import type { QuestionMetadata, QuestionType } from "@/question/shared/types";
 
 interface Props {
 	question: {
 		id: string;
 		questionText: string;
-		type:
-			| "open_answer"
-			| "rating"
-			| "ranking"
-			| "single_choice"
-			| "multiple_choice"
-			| "date_single"
-			| "date_range";
+		type: QuestionType;
 		metadata: QuestionMetadata;
 		order: number;
 		textResponse: string | null;
-		// Dependiendo de cómo tengas definido SelectedAnswer, aquí usamos los campos que
-		// inyectamos en la Server Action (score, dateValue, startDate, orderIndex, id)
 		selectedAnswers: any[];
 	};
 }
 
 export function ResponseRenderer({ question }: Props) {
-	const { type, textResponse, selectedAnswers, metadata } = question;
-
-	// Extraemos las opciones desde la metadata (útil para choice y ranking si necesitas la lista completa)
-	const options = (metadata as any)?.options || [];
+	const { type, textResponse, selectedAnswers } = question;
 
 	// 1. Estado vacío: Validamos si hay respuestas según el tipo de pregunta
 	const hasNoResponse =
@@ -239,6 +230,94 @@ export function ResponseRenderer({ question }: Props) {
 								Período inválido o incompleto.
 							</span>
 						)}
+					</div>
+				</div>
+			);
+		}
+
+		case "point_distribution": {
+			const distribution = [...selectedAnswers].sort(
+				(a, b) => (b.points ?? 0) - (a.points ?? 0),
+			);
+
+			const totalPoints =
+				distribution.reduce((sum, item) => sum + (item.points ?? 0), 0) || 1;
+
+			return (
+				<div className="space-y-3">
+					<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+						<div className="flex items-center gap-1.5">
+							<PieChart className="h-4 w-4" />
+							<span>Así repartiste tu presupuesto:</span>
+						</div>
+						<span className="font-medium">
+							Total:{" "}
+							{totalPoints === 1 && distribution[0].points === 0
+								? 0
+								: totalPoints}{" "}
+							pts
+						</span>
+					</div>
+
+					<div className="grid gap-2">
+						{distribution.map((ans, idx) => {
+							const pts = ans.points ?? 0;
+							const percentage = Math.round((pts / totalPoints) * 100);
+
+							const isWinner = idx === 0 && pts > 0;
+
+							return (
+								<div
+									key={ans.id}
+									className="relative flex items-center justify-between p-2 border rounded-lg bg-background shadow-sm overflow-hidden group font-sgc "
+								>
+									<div
+										className="absolute left-0 top-0 bottom-0 bg-primary/10 animate-grow-x"
+										style={{
+											width: `${percentage}%`,
+											animationDelay: `${idx * 250}ms`,
+										}}
+									/>
+
+									{/* Texto y Trofeo */}
+									<div className="relative z-10 flex items-center gap-2.5 w-full pr-4">
+										{isWinner ? (
+											<Trophy className="h-4 w-4 text-primary shrink-0 drop-shadow-sm" />
+										) : (
+											// Spacer para mantener alineación si no hay trofeo
+											<div className="h-4 w-4 shrink-0 opacity-0" />
+										)}
+										<span
+											className={cn(
+												"text-sm truncate tracking-wider",
+												isWinner
+													? "font-bold text-foreground"
+													: "font-medium text-foreground/80",
+											)}
+										>
+											{ans.answerText || ans.text}
+										</span>
+									</div>
+
+									{/* Badge con Puntuación */}
+									<div className="relative z-10 flex items-center gap-3 shrink-0">
+										<span className="text-xs tracking-wider font-semibold text-muted-foreground/70 w-8 text-right">
+											{percentage}%
+										</span>
+										<Badge
+											className={cn(
+												"flex items-center justify-center rounded-xs tracking-wider text-xs font-bold min-w-10 shadow-sm",
+												isWinner
+													? "bg-primary text-primary-foreground"
+													: "bg-muted text-muted-foreground border",
+											)}
+										>
+											{pts}
+										</Badge>
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				</div>
 			);

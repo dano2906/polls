@@ -19,6 +19,7 @@ import {
 	questionsBatchSchema,
 } from "@/question/lib/validation";
 import type { QUESTION_TYPES } from "@/question/shared/types";
+import { getMetadataForQuestion } from "../lib/utils";
 
 // ==========================================
 // 1. CREATE QUESTIONS (BATCH INSERT INICIAL)
@@ -42,12 +43,6 @@ export const createQuestions = createServerFn({ method: "POST" })
 
 		return await db.transaction(async (tx) => {
 			for (const [index, qData] of data.questions.entries()) {
-				const minValue = "minValue" in qData ? qData.minValue : 1;
-				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
-
-				const minDateValue = "minDate" in qData ? qData.minDate : null;
-				const maxDateValue = "maxDate" in qData ? qData.maxDate : null;
-
 				const [insertedQuestion] = await tx
 					.insert(question)
 					.values({
@@ -59,12 +54,7 @@ export const createQuestions = createServerFn({ method: "POST" })
 						isRequired: qData.isRequired ?? false,
 						imageUrl: qData.imageUrl ?? null,
 						imagePublicId: qData.imagePublicId ?? null,
-						metadata: JSON.stringify({
-							minRating: minValue,
-							maxRating: maxValue,
-							minDate: minDateValue,
-							maxDate: maxDateValue,
-						}) as any,
+						metadata: getMetadataForQuestion(qData),
 					})
 					.returning();
 
@@ -173,12 +163,6 @@ export const saveQuestionsBatch = createServerFn({
 				const qData = questionsData[i];
 				let qId = qData.id;
 
-				const minValue = "minValue" in qData ? qData.minValue : 1;
-				const maxValue = "maxValue" in qData ? qData.maxValue : 5;
-
-				const minDateValue = "minDate" in qData ? qData.minDate : null;
-				const maxDateValue = "maxDate" in qData ? qData.maxDate : null;
-
 				// --- FLUJO DE TRATAMIENTO DE PREGUNTA ---
 				if (qId && !isNewVersion) {
 					// Actualización en caliente (Mismo Formulario, sin respuestas aún)
@@ -187,17 +171,12 @@ export const saveQuestionsBatch = createServerFn({
 						.set({
 							type: qData.type as (typeof QUESTION_TYPES)[number],
 							questionText: qData.questionText,
-							hasCorrectAnswers: qData.hasCorrectAnswers,
-							maxSelections: qData.maxSelections,
+							hasCorrectAnswers: qData?.hasCorrectAnswers ?? false,
+							maxSelections: qData?.maxSelections ?? 1,
 							isRequired: qData.isRequired,
 							imageUrl: qData.imageUrl ?? null,
 							imagePublicId: qData.imagePublicId ?? null,
-							metadata: JSON.stringify({
-								minRating: minValue,
-								maxRating: maxValue,
-								minDate: minDateValue,
-								maxDate: maxDateValue,
-							}) as any,
+							metadata: getMetadataForQuestion(qData),
 						})
 						.where(eq(question.id, qId));
 				} else {
@@ -208,17 +187,12 @@ export const saveQuestionsBatch = createServerFn({
 						.values({
 							questionText: qData.questionText,
 							type: qData.type as (typeof QUESTION_TYPES)[number],
-							hasCorrectAnswers: qData.hasCorrectAnswers,
-							maxSelections: qData.maxSelections,
+							hasCorrectAnswers: qData?.hasCorrectAnswers ?? false,
+							maxSelections: qData?.maxSelections ?? 1,
 							isRequired: qData.isRequired,
 							imageUrl: qData.imageUrl ?? null,
 							imagePublicId: qData.imagePublicId ?? null,
-							metadata: JSON.stringify({
-								minRating: minValue,
-								maxRating: maxValue,
-								minDate: minDateValue,
-								maxDate: maxDateValue,
-							}) as any,
+							metadata: getMetadataForQuestion(qData),
 						})
 						.returning();
 

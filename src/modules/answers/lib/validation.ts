@@ -3,10 +3,12 @@ import z from "zod";
 const submissionAnswerInput = z.record(
 	z.uuid({ message: "La clave debe ser un UUID válido" }),
 	z.union([
-		z.string(),
-		z.number(),
-		z.array(z.string()),
-		z.object({ startDate: z.string(), endDate: z.string() }), // Por si manejas el rango como objeto
+		z.string(), // open_answer, single_choice, date_single, date_range
+		z.number(), // rating
+		z.array(z.string()), // multiple_choice, ranking
+		z.object({ startDate: z.string(), endDate: z.string() }), // date_range
+		z.record(z.string(), z.number()), //  point_distribution
+		z.record(z.string(), z.string()),
 	]),
 );
 

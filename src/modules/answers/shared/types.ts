@@ -5,4 +5,5 @@ export type UserAnswerValue =
 	| { type: "single_choice"; selectedAnswerId: string }
 	| { type: "multiple_choice"; selectedAnswerIds: string[] }
 	| { type: "date_single"; date: string }
-	| { type: "date_range"; startDate: string; endDate: string };
+	| { type: "date_range"; startDate: string; endDate: string }
+	| { type: "point_distribution"; points: Record<string, number> };

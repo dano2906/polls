@@ -23,11 +23,12 @@
 [X] Implementar la subida de imagenes a las preguntas y respuestas
 [] Agregar preguntas de:
 
-- Multiple dropdown
-- Distribucion de puntos
 - Escala de likert
 - Geolocation
+- Multiple dropdown
 - Videos y audios
+
+  [] Examenes x tiempo
   [] Implementar el reorder de las preguntas
   [] En csv le resta un dia a las fechas
   [] Agregar encuestas con contrasena

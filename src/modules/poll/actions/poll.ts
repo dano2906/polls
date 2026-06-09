@@ -845,6 +845,20 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 							}
 						});
 						break;
+					case "point_distribution":
+						if (uv.points) {
+							Object.entries(uv.points).forEach(([answerId, points]) => {
+								const ans = q.answers.find((a) => a.id === answerId);
+								if (ans) {
+									selectedAnswers.push({
+										id: ans.id,
+										answerText: ans.answerText,
+										points,
+									});
+								}
+							});
+						}
+						break;
 
 					case "date_single":
 						selectedAnswers.push({ dateValue: uv.date });

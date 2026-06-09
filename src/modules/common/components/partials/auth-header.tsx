@@ -5,7 +5,7 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { File, FilePlus, Import, LayoutDashboard, LogOut } from "lucide-react";
-import { authClient } from "#/modules/common/lib/auth-client";
+import { authClient } from "@/common/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { Button } from "@/ui/button";
 import {
@@ -20,6 +20,7 @@ import {
 import { GithubDark } from "@/ui/svgs/githubDark";
 import { GithubLight } from "@/ui/svgs/githubLight.tsx";
 import { Google } from "@/ui/svgs/google";
+import { Spinner } from "../ui/spinner";
 import ThemeToggle from "./theme-toggle";
 
 export default function AuthHeader() {
@@ -44,7 +45,12 @@ export default function AuthHeader() {
 
 	if (isPending) {
 		return (
-			<div className="h-8 w-8 bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+			<Avatar size="lg">
+				<AvatarImage src={undefined} />
+				<AvatarFallback>
+					<Spinner />
+				</AvatarFallback>
+			</Avatar>
 		);
 	}
 

@@ -33,6 +33,7 @@ export const QUESTION_TYPES = [
 	"rating",
 	"date_single",
 	"date_range",
+	"point_distribution",
 ] as const;
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
@@ -50,4 +51,5 @@ export type QuestionMetadata =
 			maxSelections: number;
 	  }
 	| { type: "date_single"; minDate?: string | null; maxDate?: string | null }
-	| { type: "date_range"; minDate?: string | null; maxDate?: string | null };
+	| { type: "date_range"; minDate?: string | null; maxDate?: string | null }
+	| { type: "point_distribution"; distributionAmount: number };

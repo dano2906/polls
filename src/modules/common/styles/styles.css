@@ -181,3 +181,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.animate-grow-x {
+  transform-origin: left;
+  animation: grow-x 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

@@ -134,14 +134,27 @@ export const submitPollAnswers = createServerFn()
 							) {
 								computedValue = {
 									type: "date_range",
-									startDate: rawValue.startDate,
-									endDate: rawValue.endDate,
+									startDate: rawValue.startDate as string,
+									endDate: rawValue.endDate as string,
 								};
 							} else {
 								return null;
 							}
 							break;
-
+						case "point_distribution":
+							if (
+								typeof rawValue === "object" &&
+								rawValue !== null &&
+								!Array.isArray(rawValue)
+							) {
+								computedValue = {
+									type: "point_distribution",
+									points: rawValue as Record<string, number>,
+								};
+							} else {
+								return null;
+							}
+							break;
 						default:
 							return null; // Si es un tipo desconocido, lo ignoramos de forma segura
 					}

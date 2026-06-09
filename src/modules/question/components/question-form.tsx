@@ -19,7 +19,6 @@ import {
 	saveQuestionsBatch,
 } from "@/question/actions/question";
 import { questionsBatchSchema } from "@/question/lib/validation";
-import type { QuestionMetadata } from "@/question/shared/types";
 import { Button } from "@/ui/button";
 import {
 	Card,
@@ -38,6 +37,7 @@ import {
 import { FieldSet } from "@/ui/field";
 import { LoadingSwap } from "@/ui/loading-swap";
 import { Slider } from "@/ui/slider";
+import { transformInitialQuestionData } from "../lib/utils";
 import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
@@ -77,6 +77,10 @@ const OPTION_TYPES = [
 		label: "Fecha rango",
 		value: "date_range",
 	},
+	{
+		label: "Distribución de puntos",
+		value: "point_distribution",
+	},
 ];
 
 const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
@@ -103,85 +107,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 	});
 
 	const form = useForm({
-		defaultValues: {
-			slug,
-			questions:
-				initialData && initialData.length > 0
-					? initialData.map((q) => {
-							let meta: QuestionMetadata = {};
-							if (q.metadata) {
-								try {
-									meta =
-										typeof q.metadata === "string"
-											? JSON.parse(q.metadata)
-											: q.metadata;
-								} catch (e) {
-									console.error("Error parseando metadata de la pregunta:", e);
-								}
-							}
-							const base = {
-								id: q.id,
-								questionText: q.questionText ?? "",
-								isRequired: q.isRequired ?? true,
-								imageUrl: q.imageUrl ?? null,
-								imagePublicId: q.imagePublicId ?? null,
-							};
-
-							if (
-								q.type === "open_answer" ||
-								q.type === "rating" ||
-								q.type === "date_single" ||
-								q.type === "date_range"
-							) {
-								return {
-									...base,
-									type: q.type,
-									hasCorrectAnswers: false as const,
-									maxSelections: 1 as const,
-									answers: [] as [],
-									...(q.type === "rating"
-										? {
-												minValue: meta.minRating ?? 1,
-												maxValue: meta.maxRating ?? 5,
-											}
-										: {}),
-									...(q.type === "date_single" || q.type === "date_range"
-										? {
-												minDate: meta.minDate ?? null,
-												maxDate: meta.maxDate ?? null,
-											}
-										: {}),
-								};
-							}
-
-							return {
-								...base,
-								type: q.type,
-								hasCorrectAnswers: q.hasCorrectAnswers ?? false,
-								maxSelections: q.maxSelections ?? 1,
-								answers:
-									q.answers?.map((a) => ({
-										id: a.id,
-										answerText: a.answerText ?? "",
-										isCorrect: a.isCorrect ?? false,
-										imageUrl: a.imageUrl ?? null,
-										imagePublicId: a.imagePublicId ?? null,
-									})) || [],
-							};
-						})
-					: [
-							{
-								type: "single_choice" as const,
-								questionText: "",
-								hasCorrectAnswers: false,
-								isRequired: true,
-								maxSelections: 1,
-								imageUrl: null,
-								imagePublicId: null,
-								answers: [{ answerText: "", isCorrect: false }],
-							},
-						],
-		} as QuestionBatchInput,
+		defaultValues: transformInitialQuestionData(initialData, slug),
 		validators: {
 			onChange: questionsBatchSchema,
 		},
@@ -275,6 +201,17 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 								};
 							}),
 						);
+
+						if (q.type === "point_distribution") {
+							return {
+								...baseCleaned,
+								type: "point_distribution" as const,
+								hasCorrectAnswers: false,
+								maxSelections: 1,
+								distributionAmount: Number(q.distributionAmount ?? 100),
+								answers: cleanedAnswers,
+							};
+						}
 
 						return {
 							...baseCleaned,
@@ -423,6 +360,22 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																</form.Field>
 															)}
 
+															{typeField.state.value ===
+																"point_distribution" && (
+																<form.Field
+																	name={`questions[${i}].distributionAmount`}
+																>
+																	{(configSubField) => (
+																		<FormField
+																			field={configSubField}
+																			field_type={FieldType.INPUT_NUMBER}
+																			label="Puntos a distribuir"
+																			input_classes="col-span-1"
+																		/>
+																	)}
+																</form.Field>
+															)}
+
 															{["date_single", "date_range"].includes(
 																typeField.state.value,
 															) && (
@@ -551,6 +504,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																"single_choice",
 																"multiple_choice",
 																"ranking",
+																"point_distribution",
 															].includes(typeField.state.value) && (
 																<form.Field
 																	name={`questions[${i}].answers`}
