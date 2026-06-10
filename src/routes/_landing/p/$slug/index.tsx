@@ -1,6 +1,6 @@
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
+import QuestionResponseForm from "@/answers/components/questions-response-form";
 import { getPollDetails, validatePollAccess } from "@/poll/actions/poll";
-import PollCompleteForm from "@/poll/components/poll-complete-form";
 
 export const Route = createFileRoute("/_landing/p/$slug/")({
 	component: RouteComponent,
@@ -49,5 +49,5 @@ export const Route = createFileRoute("/_landing/p/$slug/")({
 function RouteComponent() {
 	const data = Route.useLoaderData();
 	const { slug } = Route.useParams();
-	return <PollCompleteForm pollData={data} slug={slug} />;
+	return <QuestionResponseForm pollData={data} slug={slug} />;
 }

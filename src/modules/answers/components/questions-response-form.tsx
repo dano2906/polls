@@ -5,37 +5,31 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { submitPollAnswers } from "@/answers/actions/result";
 import FormField, { FieldType } from "@/common/components/partials/form-field";
+import { MapField } from "@/common/components/partials/map-field";
 import { RankingField } from "@/common/components/partials/ranking-field";
 import type { getPollDetails } from "@/poll/actions/poll";
-import type { QuestionMetadata } from "@/question/shared/types";
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
-import { createDynamicResponseSchema } from "../lib/utils";
+import { createDynamicResponseSchema, ensureMetadata } from "../lib/utils";
 
-type ParsedMetadata = QuestionMetadata & {
-	minRating?: number;
-	maxRating?: number;
-	minDate?: string | Date | undefined;
-	maxDate?: string | Date;
-};
 interface Props {
 	pollData: Awaited<ReturnType<typeof getPollDetails>>;
 	slug: string;
 }
 
-const PollCompleteForm = ({ pollData, slug }: Props) => {
+const QuestionResponseForm = ({ pollData, slug }: Props) => {
 	const [isFinished, setIsFinished] = useState(false);
 
-	// Inicializamos los valores por defecto del formulario según el tipo de pregunta
 	const defaultValues = pollData.questions.reduce(
-		(acc: Record<string, Array<unknown> | string>, pq) => {
-			acc[pq.id] = pq.type === "multiple_choice" ? [] : "";
+		(acc: Record<string, any>, pq) => {
+			if (pq.type === "multiple_choice") acc[pq.id] = [];
+			else if (pq.type === "point_distribution") acc[pq.id] = {};
+			else acc[pq.id] = "";
 			return acc;
 		},
 		{},
 	);
-
 	// Construimos el esquema de Zod en base a las preguntas reales recibidas
 	const dynamicFormSchema = createDynamicResponseSchema(pollData.questions);
 
@@ -49,27 +43,42 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 				if (pollData.questions.length === 0) {
 					throw new Error("Poll has no questions");
 				}
+				const cleanAnswers = Object.keys(value).reduce(
+					(acc, key) => {
+						const val = value[key];
 
-				// 1. Limpiamos las respuestas inválidas o vacías
-				const cleanAnswers = Object.fromEntries(
-					Object.entries(value).filter(([_, val]) => {
-						if (typeof val === "string" && val.trim() === "") {
-							return false;
-						}
+						if (val === null || val === undefined) return acc;
+
+						if (typeof val === "string" && val.trim() === "") return acc;
+
 						if (Array.isArray(val)) {
 							const activeChoices = val.filter(
 								(id) => typeof id === "string" && id.trim() !== "",
 							);
-							return activeChoices.length > 0;
+							if (activeChoices.length > 0) {
+								acc[key] = activeChoices;
+							}
+							return acc;
 						}
-						if (val === null || val === undefined) {
-							return false;
-						}
-						return true;
-					}),
-				) as Record<string, string | string[]>;
 
-				// 2. Llamamos a la server action directamente (isSubmitting se gestiona solo)
+						if (typeof val === "object" && !Array.isArray(val)) {
+							const cleanedObject = Object.fromEntries(
+								Object.entries(val).map(([k, v]) => [
+									k,
+									v === "" ? 0 : Number(v),
+								]),
+							);
+							acc[key] = cleanedObject;
+							return acc;
+						}
+
+						acc[key] = val;
+						return acc;
+					},
+					{} as Record<string, any>,
+				); // Usamos 'any' o un tipo más amplio para aceptar el objeto de puntos
+
+				// 2. Llamamos a la server action
 				await submitPollAnswers({
 					data: {
 						pollId: pollData.questions[0].pollId,
@@ -125,19 +134,8 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 				{pollData.questions.map((pq, index: number) => {
 					const q = pq;
 
-					let metadata: ParsedMetadata = {};
+					const metadata = ensureMetadata(q.metadata);
 
-					if (q.metadata) {
-						try {
-							metadata = (
-								typeof q.metadata === "string"
-									? JSON.parse(q.metadata)
-									: q.metadata
-							) as ParsedMetadata;
-						} catch (e) {
-							console.error("Error parseando metadata en el render:", e);
-						}
-					}
 					return (
 						<ol key={q.id} className="p-3 rounded-xs bg-muted/50 space-y-3">
 							<h6 className="text-lg font-medium text-muted-foreground">
@@ -246,6 +244,77 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 												</li>
 											);
 										}
+										case "point_distribution": {
+											const limit = metadata?.distributionAmount ?? 100;
+											const currentPoints =
+												(field.state.value as Record<string, number>) || {};
+
+											// Calculamos la suma total actual
+											const total = Object.values(currentPoints).reduce(
+												(sum, val) => sum + (Number(val) || 0),
+												0,
+											);
+
+											return (
+												<div className="space-y-4">
+													<Badge
+														className={`rounded-md text-sm font-medium ${total > limit ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}
+													>
+														{total} / {limit} puntos
+													</Badge>
+
+													<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+														{q.answers.map((ans) => (
+															<FormField
+																key={ans.id}
+																field={field}
+																field_type={FieldType.INPUT_NUMBER}
+																label={ans.answerText}
+																minLimit={0}
+																maxLimit={
+																	(Number(currentPoints[ans.id]) || 0) +
+																	(limit - total)
+																}
+																overrideBindings={(f) => ({
+																	// 1. Usar '??' en lugar de '||' y devolver "" por defecto.
+																	// Esto permite que el input inicie vacío o se pueda borrar completamente.
+																	value: currentPoints[ans.id] ?? "",
+
+																	onChange: (e: any) => {
+																		// 2. Prevenir errores si e.target no existe
+																		// (algunas librerías de UI pasan el valor directamente en vez del evento)
+																		const rawValue = e?.target
+																			? e.target.value
+																			: e;
+
+																		// 3. Si el usuario borró todo, guardamos un string vacío temporalmente
+																		if (rawValue === "") {
+																			f.handleChange({
+																				...currentPoints,
+																				[ans.id]: "",
+																			});
+																			return;
+																		}
+
+																		// 4. Parsear el número. Si escriben letras o símbolos no válidos, ignoramos.
+																		const parsedVal = parseInt(rawValue, 10);
+																		if (Number.isNaN(parsedVal)) return;
+
+																		// 5. Aplicar el límite inferior (0)
+																		const finalVal = Math.max(0, parsedVal);
+
+																		f.handleChange({
+																			...currentPoints,
+																			[ans.id]: finalVal,
+																		});
+																	},
+																})}
+															/>
+														))}
+													</div>
+												</div>
+											);
+										}
 										case "ranking":
 											return (
 												<div className="space-y-2">
@@ -265,6 +334,17 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 													minRating={metadata.minRating}
 													maxRating={metadata.maxRating}
 												/>
+											);
+										}
+										case "geolocation": {
+											return (
+												<li className="space-y-2 list-none">
+													<MapField
+														value={field.state.value}
+														onChange={(coords) => field.handleChange(coords)}
+														error={field.state.meta.errors?.join(", ")}
+													/>
+												</li>
 											);
 										}
 										case "date_single":
@@ -330,4 +410,4 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 	);
 };
 
-export default PollCompleteForm;
+export default QuestionResponseForm;

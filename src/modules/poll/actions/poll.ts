@@ -845,6 +845,28 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 							}
 						});
 						break;
+					case "point_distribution":
+						if (uv.points) {
+							Object.entries(uv.points).forEach(([answerId, points]) => {
+								const ans = q.answers.find((a) => a.id === answerId);
+								if (ans) {
+									selectedAnswers.push({
+										id: ans.id,
+										answerText: ans.answerText,
+										points,
+									});
+								}
+							});
+						}
+						break;
+					case "geolocation": {
+						selectedAnswers.push({
+							lat: uv.lat,
+							lng: uv.lng,
+							address: uv.address,
+						});
+						break;
+					}
 
 					case "date_single":
 						selectedAnswers.push({ dateValue: uv.date });
@@ -860,7 +882,6 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			}
 
 			return {
-				id: q.id,
 				questionText: q.questionText,
 				type: q.type,
 				metadata: q.metadata,
@@ -872,7 +893,6 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 
 		return {
 			poll: {
-				id: pollStructure.id,
 				name: pollStructure.name,
 				description: pollStructure.description,
 				submittedAt,

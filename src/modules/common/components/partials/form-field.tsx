@@ -4,7 +4,7 @@ import { format, isValid, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import type { DateRange } from "react-day-picker";
-import { cn } from "#/modules/common/lib/utils";
+import { cn } from "@/common/lib/utils";
 import { Button } from "@/ui/button";
 import { Calendar } from "@/ui/calendar";
 import { Checkbox } from "@/ui/checkbox";
@@ -64,6 +64,8 @@ interface Props {
 	maxRating?: number;
 	minDate?: string;
 	maxDate?: string;
+	minLimit?: number;
+	maxLimit?: number;
 	overrideBindings?: (field: AnyFieldApi) => OverrideBindings;
 }
 
@@ -78,6 +80,8 @@ const RenderField = ({
 	maxRating = 5,
 	minDate,
 	maxDate,
+	minLimit,
+	maxLimit,
 }: Omit<Props, "label" | "input_classes">) => {
 	const overrides = overrideBindings ? overrideBindings(field) : {};
 
@@ -112,6 +116,8 @@ const RenderField = ({
 					id={field.name}
 					name={field.name}
 					value={value}
+					min={minLimit}
+					max={maxLimit}
 					onChange={(e) =>
 						overrides.onChange ? overrides.onChange(e) : field.handleChange(e)
 					}

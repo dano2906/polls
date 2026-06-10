@@ -6,10 +6,9 @@ import { cn } from "@/common/lib/utils";
 import { updatePoll } from "@/poll/actions/poll";
 import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
+import { POLL_STATUS_FLOW, type PollStatus } from "../shared/types";
 
-const POLL_STATUS_FLOW = ["draft", "published", "archived"] as const;
-
-const statusLabels: Record<(typeof POLL_STATUS_FLOW)[number], string> = {
+const statusLabels: Record<PollStatus, string> = {
 	draft: "Borrador",
 	published: "Publicado",
 	archived: "Archivado",
@@ -20,8 +19,6 @@ const statusStyles: Record<PollStatus, string> = {
 	published: "text-success",
 	archived: "text-destructive",
 };
-
-type PollStatus = (typeof POLL_STATUS_FLOW)[number];
 
 export const StatusBadge = ({
 	children,
@@ -35,7 +32,7 @@ export const StatusBadge = ({
 	return (
 		<span
 			className={cn(
-				"text-inherit font-medium",
+				"text-inherit font-medium text-sm",
 				statusStyles[status],
 				className,
 			)}
@@ -48,9 +45,11 @@ export const StatusBadge = ({
 export const ChangePollStatus = ({
 	status,
 	slug,
+	inMenu = false,
 }: {
 	status: PollStatus;
 	slug: string;
+	inMenu?: boolean;
 }) => {
 	const router = useRouter();
 
@@ -82,7 +81,12 @@ export const ChangePollStatus = ({
 		<Button
 			disabled={isPending}
 			onClick={() => changeStatus()}
-			variant="secondary"
+			variant={"secondary"}
+			className={cn(
+				"flex items-center  px-2.5",
+				inMenu &&
+					" hover:bg-muted hover:text-accent-foreground w-full max-w-xs justify-start",
+			)}
 		>
 			<LoadingSwap isLoading={isPending} className="flex items-center gap-2">
 				<CircleArrowUp className="size-4" />

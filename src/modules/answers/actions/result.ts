@@ -134,8 +134,39 @@ export const submitPollAnswers = createServerFn()
 							) {
 								computedValue = {
 									type: "date_range",
-									startDate: rawValue.startDate,
-									endDate: rawValue.endDate,
+									startDate: rawValue.startDate as string,
+									endDate: rawValue.endDate as string,
+								};
+							} else {
+								return null;
+							}
+							break;
+						case "point_distribution":
+							if (
+								typeof rawValue === "object" &&
+								rawValue !== null &&
+								!Array.isArray(rawValue)
+							) {
+								computedValue = {
+									type: "point_distribution",
+									points: rawValue as Record<string, number>,
+								};
+							} else {
+								return null;
+							}
+							break;
+
+						case "geolocation":
+							if (
+								typeof rawValue === "object" &&
+								rawValue !== null &&
+								"lat" in rawValue &&
+								"lng" in rawValue
+							) {
+								computedValue = {
+									type: "geolocation",
+									lat: Number(rawValue.lat),
+									lng: Number(rawValue.lng),
 								};
 							} else {
 								return null;

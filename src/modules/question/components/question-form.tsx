@@ -6,7 +6,6 @@ import { useRouter } from "@tanstack/react-router";
 import { Download, Plus, Save, Trash } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type z from "zod";
 import { deleteImagesFromCloudinary } from "@/common/actions/cloudinary";
 import FormField, { FieldType } from "@/common/components/partials/form-field";
 import ImageUploader from "@/common/components/partials/form-image-uploader";
@@ -19,7 +18,6 @@ import {
 	saveQuestionsBatch,
 } from "@/question/actions/question";
 import { questionsBatchSchema } from "@/question/lib/validation";
-import type { QuestionMetadata } from "@/question/shared/types";
 import { Button } from "@/ui/button";
 import {
 	Card,
@@ -38,6 +36,8 @@ import {
 import { FieldSet } from "@/ui/field";
 import { LoadingSwap } from "@/ui/loading-swap";
 import { Slider } from "@/ui/slider";
+import { transformInitialQuestionData } from "../lib/utils";
+import type { QuestionBatchInput } from "../shared/types";
 import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
@@ -45,8 +45,6 @@ interface Props {
 	pollDescription?: string | null;
 	initialData?: Awaited<ReturnType<typeof getPollDetails>>["questions"];
 }
-
-type QuestionBatchInput = z.infer<typeof questionsBatchSchema>;
 
 const OPTION_TYPES = [
 	{
@@ -77,6 +75,14 @@ const OPTION_TYPES = [
 		label: "Fecha rango",
 		value: "date_range",
 	},
+	{
+		label: "Distribución de puntos",
+		value: "point_distribution",
+	},
+	{
+		label: "Geolocalización",
+		value: "geolocation",
+	},
 ];
 
 const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
@@ -103,85 +109,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 	});
 
 	const form = useForm({
-		defaultValues: {
-			slug,
-			questions:
-				initialData && initialData.length > 0
-					? initialData.map((q) => {
-							let meta: QuestionMetadata = {};
-							if (q.metadata) {
-								try {
-									meta =
-										typeof q.metadata === "string"
-											? JSON.parse(q.metadata)
-											: q.metadata;
-								} catch (e) {
-									console.error("Error parseando metadata de la pregunta:", e);
-								}
-							}
-							const base = {
-								id: q.id,
-								questionText: q.questionText ?? "",
-								isRequired: q.isRequired ?? true,
-								imageUrl: q.imageUrl ?? null,
-								imagePublicId: q.imagePublicId ?? null,
-							};
-
-							if (
-								q.type === "open_answer" ||
-								q.type === "rating" ||
-								q.type === "date_single" ||
-								q.type === "date_range"
-							) {
-								return {
-									...base,
-									type: q.type,
-									hasCorrectAnswers: false as const,
-									maxSelections: 1 as const,
-									answers: [] as [],
-									...(q.type === "rating"
-										? {
-												minValue: meta.minRating ?? 1,
-												maxValue: meta.maxRating ?? 5,
-											}
-										: {}),
-									...(q.type === "date_single" || q.type === "date_range"
-										? {
-												minDate: meta.minDate ?? null,
-												maxDate: meta.maxDate ?? null,
-											}
-										: {}),
-								};
-							}
-
-							return {
-								...base,
-								type: q.type,
-								hasCorrectAnswers: q.hasCorrectAnswers ?? false,
-								maxSelections: q.maxSelections ?? 1,
-								answers:
-									q.answers?.map((a) => ({
-										id: a.id,
-										answerText: a.answerText ?? "",
-										isCorrect: a.isCorrect ?? false,
-										imageUrl: a.imageUrl ?? null,
-										imagePublicId: a.imagePublicId ?? null,
-									})) || [],
-							};
-						})
-					: [
-							{
-								type: "single_choice" as const,
-								questionText: "",
-								hasCorrectAnswers: false,
-								isRequired: true,
-								maxSelections: 1,
-								imageUrl: null,
-								imagePublicId: null,
-								answers: [{ answerText: "", isCorrect: false }],
-							},
-						],
-		} as QuestionBatchInput,
+		defaultValues: transformInitialQuestionData(initialData, slug),
 		validators: {
 			onChange: questionsBatchSchema,
 		},
@@ -215,10 +143,10 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 							imagePublicId,
 						};
 
-						if (q.type === "open_answer") {
+						if (q.type === "open_answer" || q.type === "geolocation") {
 							return {
 								...baseCleaned,
-								type: "open_answer" as const,
+								type: q.type as "open_answer" | "geolocation",
 								hasCorrectAnswers: false as const,
 								maxSelections: 1 as const,
 								answers: [] as [],
@@ -276,6 +204,17 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 							}),
 						);
 
+						if (q.type === "point_distribution") {
+							return {
+								...baseCleaned,
+								type: "point_distribution" as const,
+								hasCorrectAnswers: false,
+								maxSelections: 1,
+								distributionAmount: Number(q.distributionAmount ?? 100),
+								answers: cleanedAnswers,
+							};
+						}
+
 						return {
 							...baseCleaned,
 							type: q.type,
@@ -288,7 +227,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 				);
 
 				const cleanedValues = {
-					slug: value.slug,
+					slug: value.slug as string,
 					questions: cleanedQuestions,
 				};
 
@@ -336,7 +275,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 						<form.Field name="questions" mode="array">
 							{(field) => (
 								<div className="space-y-4">
-									{field.state.value.map((_, i) => (
+									{field.state.value.map((_: any, i: number) => (
 										<Card
 											key={`${i}`}
 											className="p-4 border border-dashed shadow-sm relative"
@@ -417,6 +356,22 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																			field={configSubField}
 																			field_type={FieldType.INPUT_NUMBER}
 																			label="Cantidad máxima de respuestas seleccionables"
+																			input_classes="col-span-1"
+																		/>
+																	)}
+																</form.Field>
+															)}
+
+															{typeField.state.value ===
+																"point_distribution" && (
+																<form.Field
+																	name={`questions[${i}].distributionAmount`}
+																>
+																	{(configSubField) => (
+																		<FormField
+																			field={configSubField}
+																			field_type={FieldType.INPUT_NUMBER}
+																			label="Puntos a distribuir"
 																			input_classes="col-span-1"
 																		/>
 																	)}
@@ -551,6 +506,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																"single_choice",
 																"multiple_choice",
 																"ranking",
+																"point_distribution",
 															].includes(typeField.state.value) && (
 																<form.Field
 																	name={`questions[${i}].answers`}
@@ -574,7 +530,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																			)}
 
 																			{answersField.state.value?.map(
-																				(_, ai) => (
+																				(_: any, ai: number) => (
 																					<div
 																						key={`${i}-${ai}`}
 																						className="w-full grid grid-cols-1 gap-3 items-center bg-primary-foreground/15 p-4 rounded shadow relative group"

@@ -180,4 +180,20 @@
   body {
     @apply bg-background text-foreground;
   }
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
+  }
+}
+
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.animate-grow-x {
+  transform-origin: left;
+  animation: grow-x 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

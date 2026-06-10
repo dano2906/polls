@@ -16,6 +16,15 @@ const config = defineConfig({
 		viteReact(),
 		babel({ presets: [reactCompilerPreset()] }),
 	],
+	server: {
+		proxy: {
+			"/carto-api": {
+				target: "https://tiles-c.basemaps.cartocdn.com",
+				changeOrigin: true,
+				rewrite: (path) => path.replace(/^\/carto-api/, ""),
+			},
+		},
+	},
 });
 
 export default config;
