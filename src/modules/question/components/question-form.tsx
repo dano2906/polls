@@ -6,7 +6,6 @@ import { useRouter } from "@tanstack/react-router";
 import { Download, Plus, Save, Trash } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type z from "zod";
 import { deleteImagesFromCloudinary } from "@/common/actions/cloudinary";
 import FormField, { FieldType } from "@/common/components/partials/form-field";
 import ImageUploader from "@/common/components/partials/form-image-uploader";
@@ -38,6 +37,7 @@ import { FieldSet } from "@/ui/field";
 import { LoadingSwap } from "@/ui/loading-swap";
 import { Slider } from "@/ui/slider";
 import { transformInitialQuestionData } from "../lib/utils";
+import type { QuestionBatchInput } from "../shared/types";
 import GenerateQuestionsButton from "./generate-questions-button";
 
 interface Props {
@@ -45,8 +45,6 @@ interface Props {
 	pollDescription?: string | null;
 	initialData?: Awaited<ReturnType<typeof getPollDetails>>["questions"];
 }
-
-type QuestionBatchInput = z.infer<typeof questionsBatchSchema>;
 
 const OPTION_TYPES = [
 	{
@@ -80,6 +78,10 @@ const OPTION_TYPES = [
 	{
 		label: "Distribución de puntos",
 		value: "point_distribution",
+	},
+	{
+		label: "Geolocalización",
+		value: "geolocation",
 	},
 ];
 
@@ -141,10 +143,10 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 							imagePublicId,
 						};
 
-						if (q.type === "open_answer") {
+						if (q.type === "open_answer" || q.type === "geolocation") {
 							return {
 								...baseCleaned,
-								type: "open_answer" as const,
+								type: q.type as "open_answer" | "geolocation",
 								hasCorrectAnswers: false as const,
 								maxSelections: 1 as const,
 								answers: [] as [],
@@ -225,7 +227,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 				);
 
 				const cleanedValues = {
-					slug: value.slug,
+					slug: value.slug as string,
 					questions: cleanedQuestions,
 				};
 
@@ -273,7 +275,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 						<form.Field name="questions" mode="array">
 							{(field) => (
 								<div className="space-y-4">
-									{field.state.value.map((_, i) => (
+									{field.state.value.map((_: any, i: number) => (
 										<Card
 											key={`${i}`}
 											className="p-4 border border-dashed shadow-sm relative"
@@ -528,7 +530,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																			)}
 
 																			{answersField.state.value?.map(
-																				(_, ai) => (
+																				(_: any, ai: number) => (
 																					<div
 																						key={`${i}-${ai}`}
 																						className="w-full grid grid-cols-1 gap-3 items-center bg-primary-foreground/15 p-4 rounded shadow relative group"

@@ -23,8 +23,6 @@
 [X] Implementar la subida de imagenes a las preguntas y respuestas
 [] Agregar preguntas de:
 
-- Escala de likert
-- Geolocation
 - Multiple dropdown
 - Videos y audios
 

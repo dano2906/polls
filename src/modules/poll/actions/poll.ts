@@ -859,6 +859,14 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 							});
 						}
 						break;
+					case "geolocation": {
+						selectedAnswers.push({
+							lat: uv.lat,
+							lng: uv.lng,
+							address: uv.address,
+						});
+						break;
+					}
 
 					case "date_single":
 						selectedAnswers.push({ dateValue: uv.date });
@@ -874,7 +882,6 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			}
 
 			return {
-				id: q.id,
 				questionText: q.questionText,
 				type: q.type,
 				metadata: q.metadata,
@@ -886,7 +893,6 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 
 		return {
 			poll: {
-				id: pollStructure.id,
 				name: pollStructure.name,
 				description: pollStructure.description,
 				submittedAt,

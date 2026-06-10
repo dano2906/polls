@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { submitPollAnswers } from "@/answers/actions/result";
 import FormField, { FieldType } from "@/common/components/partials/form-field";
+import { MapField } from "@/common/components/partials/map-field";
 import { RankingField } from "@/common/components/partials/ranking-field";
 import type { getPollDetails } from "@/poll/actions/poll";
 import { Badge } from "@/ui/badge";
@@ -17,7 +18,7 @@ interface Props {
 	slug: string;
 }
 
-const PollCompleteForm = ({ pollData, slug }: Props) => {
+const QuestionResponseForm = ({ pollData, slug }: Props) => {
 	const [isFinished, setIsFinished] = useState(false);
 
 	const defaultValues = pollData.questions.reduce(
@@ -42,7 +43,6 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 				if (pollData.questions.length === 0) {
 					throw new Error("Poll has no questions");
 				}
-
 				const cleanAnswers = Object.keys(value).reduce(
 					(acc, key) => {
 						const val = value[key];
@@ -336,6 +336,17 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 												/>
 											);
 										}
+										case "geolocation": {
+											return (
+												<li className="space-y-2 list-none">
+													<MapField
+														value={field.state.value}
+														onChange={(coords) => field.handleChange(coords)}
+														error={field.state.meta.errors?.join(", ")}
+													/>
+												</li>
+											);
+										}
 										case "date_single":
 											return (
 												<li className="space-y-2 list-none">
@@ -399,4 +410,4 @@ const PollCompleteForm = ({ pollData, slug }: Props) => {
 	);
 };
 
-export default PollCompleteForm;
+export default QuestionResponseForm;

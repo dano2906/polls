@@ -180,8 +180,6 @@ export const saveQuestionsBatch = createServerFn({
 						})
 						.where(eq(question.id, qId));
 				} else {
-					// ✅ CORREGIDO: Nueva pregunta o clonación profunda por nueva versión.
-					// Se elimina el .where() erróneo y se añade .returning() para capturar el ID generado.
 					const [newQ] = await tx
 						.insert(question)
 						.values({

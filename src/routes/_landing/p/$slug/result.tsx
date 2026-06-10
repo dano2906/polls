@@ -44,7 +44,7 @@ function RouteComponent() {
 			<div className="space-y-4">
 				{results.map((q, index) => (
 					<div
-						key={q.id}
+						key={q.order}
 						className="bg-card text-card-foreground border rounded-xl p-5 shadow-xs transition-all"
 					>
 						{/* Enunciado de la Pregunta */}

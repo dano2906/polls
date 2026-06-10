@@ -9,6 +9,16 @@ const submissionAnswerInput = z.record(
 		z.object({ startDate: z.string(), endDate: z.string() }), // date_range
 		z.record(z.string(), z.number()), //  point_distribution
 		z.record(z.string(), z.string()),
+		z.object({
+			lat: z
+				.number({ error: "La latitud debe ser un número" })
+				.min(-90)
+				.max(90),
+			lng: z
+				.number({ error: "La longitud debe ser un número" })
+				.min(-180)
+				.max(-180),
+		}),
 	]),
 );
 

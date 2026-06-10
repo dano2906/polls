@@ -155,6 +155,24 @@ export const submitPollAnswers = createServerFn()
 								return null;
 							}
 							break;
+
+						case "geolocation":
+							if (
+								typeof rawValue === "object" &&
+								rawValue !== null &&
+								"lat" in rawValue &&
+								"lng" in rawValue
+							) {
+								computedValue = {
+									type: "geolocation",
+									lat: Number(rawValue.lat),
+									lng: Number(rawValue.lng),
+								};
+							} else {
+								return null;
+							}
+							break;
+
 						default:
 							return null; // Si es un tipo desconocido, lo ignoramos de forma segura
 					}
