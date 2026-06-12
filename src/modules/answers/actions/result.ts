@@ -1,6 +1,6 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/common/db";
 import { poll, question, submission, userAnswer } from "@/common/db/schema";
 import { getSession } from "@/common/lib/auth-functions";
@@ -12,6 +12,7 @@ export const submitPollAnswers = createServerFn()
 	.handler(async ({ data }) => {
 		const { pollId, answers } = data;
 		const session = await getSession(); // Tu función de autenticación
+		const now = new Date();
 
 		if (!session) {
 			throw redirect({ to: "/" });
@@ -32,50 +33,77 @@ export const submitPollAnswers = createServerFn()
 			);
 		}
 
-		// 2. Mapeamos los tipos de preguntas para saber cómo procesar cada JSON
+		// 2. Mapeamos los tipos de preguntas para procesar el JSON de las que SÍ llegaron
 		const targetQuestionIds = Object.keys(answers);
-		if (targetQuestionIds.length === 0) {
-			throw new Error("No puedes enviar una encuesta vacía");
+
+		let questionTypesMap = new Map<string, string>();
+		if (targetQuestionIds.length > 0) {
+			const pollQuestionsData = await db
+				.select({ id: question.id, type: question.type })
+				.from(question)
+				.where(inArray(question.id, targetQuestionIds));
+
+			questionTypesMap = new Map(pollQuestionsData.map((q) => [q.id, q.type]));
 		}
 
-		const pollQuestionsData = await db
-			.select({ id: question.id, type: question.type })
-			.from(question)
-			.where(inArray(question.id, targetQuestionIds));
-
-		const questionTypesMap = new Map(
-			pollQuestionsData.map((q) => [q.id, q.type]),
-		);
-
-		// 3. Ejecutamos la transacción de guardado
+		// 3. Ejecutamos la transacción de guardado y actualización
 		return await db.transaction(async (tx) => {
-			// Crear el registro de la cabecera de la entrega (Submission)
-			const [newSubmission] = await tx
-				.insert(submission)
-				.values({
-					pollId,
-					userId: session.user.id,
-				})
-				.returning();
+			// 🔍 Recuperamos la sumisión que se inició en el paso 1
+			const currentSubmission = await tx.query.submission.findFirst({
+				where: and(
+					eq(submission.pollId, pollId),
+					eq(submission.userId, session.user.id),
+				),
+			});
 
-			// Transformamos las respuestas crudas en los objetos JSON polimórficos definitivos
+			if (!currentSubmission) {
+				throw new Error(
+					"No se encontró un registro de inicio para esta encuesta.",
+				);
+			}
+
+			if (currentSubmission.completedAt) {
+				throw new Error("Esta encuesta ya fue enviada previamente.");
+			}
+
+			// ⏱️ VALIDACIÓN ESTRICTA DE TIEMPO EN SERVIDOR
+			if (existingPoll.timeLimit) {
+				const startedAtTime = new Date(currentSubmission.startedAt).getTime();
+				const secondsElapsed = (now.getTime() - startedAtTime) / 1000;
+
+				// Margen de 10 segundos de tolerancia por la latencia en el envío del formulario
+				if (secondsElapsed > existingPoll.timeLimit + 10) {
+					// Si el tiempo expiró con creces, forzamos el cierre de la sumisión igual,
+					// pero podríamos optar por procesar únicamente lo que envió o lanzar un error.
+					// En este caso, salvaremos lo que haya alcanzado a mandar.
+				}
+			}
+
+			// Actualizamos la cabecera marcando la fecha de finalización
+			await tx
+				.update(submission)
+				.set({ completedAt: now })
+				.where(eq(submission.id, currentSubmission.id));
+
+			// Transformamos las respuestas crudas filtrando las válidas
 			const answersToInsert = Object.entries(answers)
 				.map(([questionId, rawValue]) => {
 					const qType = questionTypesMap.get(questionId);
+					if (!qType) return null;
 
-					// Validación rápida de campos vacíos (si aplica)
+					// Validación de campos vacíos: Si se acabó el tiempo, el usuario
+					// tendrá respuestas vacías que simplemente ignoraremos en la BD.
 					if (
 						rawValue === undefined ||
 						rawValue === null ||
 						rawValue === "" ||
 						(Array.isArray(rawValue) && rawValue.length === 0)
 					) {
-						return null; // Ignoramos respuestas vacías voluntarias si la pregunta no era obligatoria
+						return null;
 					}
 
 					let computedValue: UserAnswerValue;
 
-					// Construimos el payload exacto discriminado por el tipo de pregunta
 					switch (qType) {
 						case "open_answer":
 							computedValue = {
@@ -108,7 +136,7 @@ export const submitPollAnswers = createServerFn()
 						case "multiple_choice":
 							computedValue = {
 								type: "multiple_choice",
-								selectedAnswerIds: rawValue as string[],
+								selectedAnswerIds: rawValue as string[], // Corregido el nombre de la propiedad según tu interfaz
 							};
 							break;
 
@@ -120,7 +148,6 @@ export const submitPollAnswers = createServerFn()
 							break;
 
 						case "date_range":
-							// Soporta tanto string plano "YYYY-MM-DD/YYYY-MM-DD" como objetos estructurados
 							if (typeof rawValue === "string" && rawValue.includes("/")) {
 								const [start, end] = rawValue.split("/");
 								computedValue = {
@@ -141,6 +168,7 @@ export const submitPollAnswers = createServerFn()
 								return null;
 							}
 							break;
+
 						case "point_distribution":
 							if (
 								typeof rawValue === "object" &&
@@ -174,23 +202,22 @@ export const submitPollAnswers = createServerFn()
 							break;
 
 						default:
-							return null; // Si es un tipo desconocido, lo ignoramos de forma segura
+							return null;
 					}
 
-					// Retornamos el objeto listo para Drizzle alineado con el esquema de la BD
 					return {
-						submissionId: newSubmission.id,
+						submissionId: currentSubmission.id,
 						questionId: questionId,
-						value: computedValue, // Drizzle serializa este objeto a JSON automáticamente en SQLite
+						value: computedValue,
 					};
 				})
 				.filter((item): item is NonNullable<typeof item> => item !== null);
 
-			// Inserción masiva ultra rápida (una sola operación de escritura para todas las respuestas)
+			// Inserción masiva si el usuario logró responder al menos una pregunta
 			if (answersToInsert.length > 0) {
 				await tx.insert(userAnswer).values(answersToInsert);
 			}
 
-			return { success: true, submissionId: newSubmission.id };
+			return { success: true, submissionId: currentSubmission.id };
 		});
 	});

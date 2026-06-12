@@ -85,6 +85,13 @@
       "when": 1781019910986,
       "tag": "0011_busy_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1781272692223,
+      "tag": "0012_harsh_ghost_rider",
+      "breakpoints": true
     }
   ]
 }

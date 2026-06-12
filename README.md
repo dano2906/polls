@@ -21,16 +21,11 @@
 [X] Completar pagina de visualizar respuestas
 [X] Exportar/importar encuesta como JSON, Excel, CSV
 [X] Implementar la subida de imagenes a las preguntas y respuestas
-[] Agregar preguntas de:
-
-- Multiple dropdown
-- Videos y audios
-
-  [] Examenes x tiempo
-  [] Implementar el reorder de las preguntas
-  [] En csv le resta un dia a las fechas
-  [] Agregar encuestas con contrasena
-  [] Funcionalidades de admin
-  [] Multi idioma
-  [] Multi tema
-  [] Gestion de equipos y colaboracion
+[X] Examenes x tiempo
+[] Agregar encuestas con contrasena
+[] Implementar el reorder de las preguntas
+[] En csv le resta un dia a las fechas
+[] Funcionalidades de admin
+[] Multi idioma
+[] Multi tema
+[] Gestion de equipos y colaboracion

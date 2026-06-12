@@ -12,6 +12,7 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
 import { createDynamicResponseSchema, ensureMetadata } from "../lib/utils";
+import { ResponseCountdown } from "./response-countdown";
 
 interface Props {
 	pollData: Awaited<ReturnType<typeof getPollDetails>>;
@@ -117,12 +118,18 @@ const QuestionResponseForm = ({ pollData, slug }: Props) => {
 	}
 
 	return (
-		<div className="w-full p-6 bg-background">
+		<div className="w-full p-2 bg-background relative">
 			<h2 className="text-3xl font-bold">{pollData.name}</h2>
 			{pollData.description && (
 				<p className="text-foreground mt-2 mb-6">{pollData.description}</p>
 			)}
-
+			{pollData.timeLimit && (
+				<ResponseCountdown
+					startedAt={pollData.submission.startedAt}
+					timeLimitInSeconds={pollData.timeLimit}
+					onTimeUp={() => form.handleSubmit()}
+				/>
+			)}
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();

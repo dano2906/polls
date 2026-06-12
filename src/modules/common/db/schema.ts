@@ -111,6 +111,7 @@ export const poll = sqliteTable("poll", {
 		"draft",
 	),
 	version: integer("version").default(1),
+	timeLimit: integer("time-limit"),
 	startDate: integer("start_date", { mode: "timestamp" })
 		.default(sql`CURRENT_TIMESTAMP`)
 		.notNull(),
@@ -197,6 +198,10 @@ export const submission = sqliteTable(
 		submittedAt: integer("submitted_at", { mode: "timestamp" }).default(
 			sql`CURRENT_TIMESTAMP`,
 		),
+		startedAt: integer("started_at", { mode: "timestamp" })
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		completedAt: integer("completed_at", { mode: "timestamp" }),
 	},
 	(table) => [
 		uniqueIndex("user_poll_unique_idx").on(table.userId, table.pollId),

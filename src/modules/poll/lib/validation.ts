@@ -13,6 +13,7 @@ export const createPollInput = z
 		startDate: z.date(),
 		endDate: z.date().optional(),
 		description: z.string().max(500).optional(),
+		timeLimit: z.number().optional(),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 		userId: z.string(),
 	})
@@ -45,6 +46,7 @@ export const editPollInput = z
 			.max(200, { message: "Debe tener máximo 32 caracteres" }),
 		startDate: z.date(),
 		endDate: z.date().optional(),
+		timeLimit: z.number().optional(),
 		description: z.string().max(500).optional(),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 		userId: z.string(),

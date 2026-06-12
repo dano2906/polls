@@ -11,12 +11,19 @@ import { LoadingSwap } from "@/ui/loading-swap";
 import { createPollInput, editPollInput } from "../lib/validation";
 import type { NewPollInput, Poll } from "../shared/types";
 import { ChangePollStatus } from "./change-poll-status";
+import { TimeLimitPicker } from "./time-limit-input";
 
 interface Props {
 	userId: string;
 	initialData?: Pick<
 		Poll,
-		"name" | "slug" | "description" | "endDate" | "startDate" | "status"
+		| "name"
+		| "slug"
+		| "description"
+		| "endDate"
+		| "startDate"
+		| "status"
+		| "timeLimit"
 	>;
 	onCreatePoll?: Dispatch<SetStateAction<string | null>>;
 }
@@ -57,6 +64,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 			startDate: initialData?.startDate ?? new Date(),
 			endDate: initialData?.endDate ?? undefined,
 			status: initialData?.status ?? "draft",
+			timeLimit: initialData?.timeLimit ?? undefined,
 			userId,
 		},
 		validators: {
@@ -113,6 +121,22 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 						field_type={FieldType.SIMPLE_DATE}
 						label="Fecha de fin"
 					/>
+				)}
+			</form.Field>
+			<form.Field name="timeLimit">
+				{(field) => (
+					<div className="space-y-2">
+						<TimeLimitPicker
+							value={field.state.value}
+							onChange={(seconds) => field.handleChange(seconds)}
+						/>
+
+						{field.state.meta.errors ? (
+							<p className="text-sm text-destructive">
+								{field.state.meta.errors.join(", ")}
+							</p>
+						) : null}
+					</div>
 				)}
 			</form.Field>
 			<form.Field name="description">

@@ -206,15 +206,23 @@ export const getCompactUserPolls = createServerFn({ method: "GET" })
 export const getPollDetails = createServerFn({ method: "GET" })
 	.validator((data: { slug: string }) => data)
 	.handler(async ({ data }) => {
+		const session = await getSession();
+
+		if (!session) {
+			throw new Error("UNAUTHORIZED");
+		}
+
 		const poll = await db.query.poll.findFirst({
 			where: (poll, { eq }) => eq(poll.slug, data.slug),
 			columns: {
+				id: true,
 				description: true,
 				endDate: true,
 				name: true,
 				startDate: true,
 				status: true,
 				version: true,
+				timeLimit: true,
 			},
 			with: {
 				pollQuestions: {
@@ -241,8 +249,31 @@ export const getPollDetails = createServerFn({ method: "GET" })
 			throw notFound();
 		}
 
+		// 4. Buscamos si el usuario ya inició un intento para esta encuesta
+		let currentSubmission = await db.query.submission.findFirst({
+			where: (submission, { eq, and }) =>
+				and(
+					eq(submission.pollId, poll.id),
+					eq(submission.userId, session.session.userId),
+				),
+		});
+
+		// 5. Si no existe, creamos la sumisión con la hora exacta del servidor
+		if (!currentSubmission) {
+			const [newSubmission] = await db
+				.insert(submission)
+				.values({
+					pollId: poll.id,
+					userId: session.session.userId,
+					startedAt: new Date(),
+				})
+				.returning();
+
+			currentSubmission = newSubmission;
+		}
+
+		// Mapeo de preguntas (Tu lógica exacta intacta)
 		const questions = poll.pollQuestions.map((item) => {
-			// 1. Parseamos la metadata aquí en el servidor
 			let parsedMetadata = {};
 
 			if (item.question.metadata) {
@@ -263,20 +294,26 @@ export const getPollDetails = createServerFn({ method: "GET" })
 				order: item.order,
 				pollId: item.pollId,
 				...item.question,
-				// 2. Sobrescribimos la metadata original con la parseada y fuertemente tipada
 				metadata: parsedMetadata,
 			};
 		});
 
+		// 6. Retornamos los datos de la encuesta junto con los de la sumisión
 		return {
+			id: poll.id,
 			name: poll.name,
 			description: poll.description,
 			startDate: poll.startDate,
 			endDate: poll.endDate,
 			status: poll.status,
 			version: poll.version,
+			timeLimit: poll.timeLimit,
 			pollMetadata: undefined,
 			questions,
+			submission: {
+				id: currentSubmission.id,
+				startedAt: currentSubmission.startedAt,
+			},
 		};
 	});
 
@@ -290,6 +327,7 @@ export const createPoll = createServerFn({ method: "POST" })
 				.values({
 					...data,
 					id: newId,
+					timeLimit: data.timeLimit ?? null,
 					slug:
 						data.slug && data.slug.length === 6
 							? data.slug
@@ -322,6 +360,7 @@ export const updatePoll = createServerFn({ method: "POST" })
 				.update(poll)
 				.set({
 					...data.updatedData,
+					timeLimit: data.updatedData.timeLimit,
 					updatedAt: new Date(),
 				})
 				.where(eq(poll.slug, data.slug));
@@ -344,7 +383,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 		const { slug, userId } = data;
 		const now = new Date();
 
-		// 1. Buscar la encuesta por su slug
+		// 1. Buscar la encuesta por su slug (incluyendo la nueva columna timeLimit)
 		const currentPoll = await db.query.poll.findFirst({
 			where: eq(poll.slug, slug),
 		});
@@ -371,8 +410,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			};
 		}
 
-		// ❌ CASO 3: Plazo de tiempo (¿Ya empezó? ¿Ya terminó?)
-		// Validar si tiene fecha de inicio y si ya pasó
+		// ❌ CASO 3: Plazo de tiempo general (¿Ya empezó? ¿Ya terminó?)
 		if (currentPoll.startDate && now < currentPoll.startDate) {
 			return {
 				allowed: false,
@@ -381,7 +419,6 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			};
 		}
 
-		// Validar si tiene fecha de fin y si ya expiró
 		if (currentPoll.endDate && now > currentPoll.endDate) {
 			return {
 				allowed: false,
@@ -390,8 +427,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			};
 		}
 
-		// ❌ CASO 4: El usuario ya respondió (Duplicados)
-		// Gracias a tu índice único en `user_poll_unique_idx`, podemos estar seguros de esto
+		// 🔍 CASO 4: Evaluación de la Sumisión Existente
 		const existingSubmission = await db.query.submission.findFirst({
 			where: and(
 				eq(submission.pollId, currentPoll.id),
@@ -400,19 +436,45 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 		});
 
 		if (existingSubmission) {
-			return {
-				allowed: false,
-				reason: "ALREADY_SUBMITTED",
-				message:
-					"Ya has completado esta encuesta. No se permiten múltiples respuestas.",
-				submissionId: existingSubmission.id, // Útil si quieres redirigirlo a sus respuestas
-			};
+			// Condición A: Si la encuesta ya fue explícitamente terminada/enviada
+			if (existingSubmission.completedAt) {
+				return {
+					allowed: false,
+					reason: "ALREADY_SUBMITTED",
+					message:
+						"Ya has completado esta encuesta. No se permiten múltiples respuestas.",
+					submissionId: existingSubmission.id,
+				};
+			}
+
+			// Condición B: Si no está completada pero la encuesta TIENE límite de tiempo
+			if (currentPoll.timeLimit) {
+				const startedAtTime = new Date(existingSubmission.startedAt).getTime();
+				const nowTime = now.getTime();
+
+				// Calculamos cuántos segundos han pasado desde que inició
+				const secondsElapsed = (nowTime - startedAtTime) / 1000;
+
+				// Si el tiempo transcurrido supera el límite (+ 5 segundos de cortesía por latencia de red)
+				if (secondsElapsed > currentPoll.timeLimit + 5) {
+					return {
+						allowed: false,
+						reason: "ALREADY_SUBMITTED", // Mantenemos el reason para que tu router lo mande a /result
+						message:
+							"El tiempo disponible para realizar esta encuesta ha expirado.",
+						submissionId: existingSubmission.id,
+					};
+				}
+			}
+
+			// Si llegó aquí significa que:
+			// - O la encuesta tiene tiempo límite y todavía le quedan minutos/segundos.
+			// - O la encuesta NO tiene tiempo límite y simplemente está refrescando la página.
+			// En ambos casos, ¡lo dejamos continuar!
 		}
 
 		// ❌ CASO 5: Límite de respuestas globales (Metadata)
-		// Revisamos el campo json 'metadata' que definiste en tu esquema
 		if (currentPoll.metadata?.limitResponses) {
-			// Contamos cuántas respuestas totales tiene la encuesta
 			const totalSubmissions = await db
 				.select({ count: sql<number>`count(*)` })
 				.from(submission)
@@ -430,7 +492,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			}
 		}
 
-		//  SI PASA TODAS LAS VALIDACIONES
+		// Si pasa todas las validaciones (o es un intento activo válido), permitimos el acceso
 		return {
 			allowed: true,
 			pollId: currentPoll.id,
