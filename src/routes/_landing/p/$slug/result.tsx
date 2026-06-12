@@ -1,21 +1,28 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
 import { ResponseRenderer } from "@/answers/components/result-response-renderer";
-import { getSession } from "@/common/lib/auth-functions";
 import { getUserPollResults } from "@/poll/actions/poll";
 
 export const Route = createFileRoute("/_landing/p/$slug/result")({
 	component: RouteComponent,
-	loader: async ({ params }) => {
-		const session = await getSession();
-		if (!session) {
+	beforeLoad: async ({ context }) => {
+		try {
+			if (!context.auth?.session) {
+				throw redirect({
+					to: "/",
+				});
+			}
+		} catch (error) {
+			if (isRedirect(error)) throw error;
 			throw redirect({
 				to: "/",
 			});
 		}
+	},
+	loader: async ({ context, params }) => {
 		return await getUserPollResults({
 			data: {
 				slug: params.slug,
-				userId: session?.user?.id as string,
+				userId: context?.auth?.session?.userId as string,
 			},
 		});
 	},

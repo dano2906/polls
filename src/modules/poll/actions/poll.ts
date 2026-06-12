@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "@tanstack/react-router";
 import { createClientOnlyFn, createServerFn } from "@tanstack/react-start";
-import { getCookie, setCookie, useSession } from "@tanstack/react-start/server";
+import {
+	deleteCookie,
+	getCookie,
+	setCookie,
+} from "@tanstack/react-start/server";
 import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
 import type { UserAnswerValue } from "@/answers/shared/types";
 import { db } from "@/common/db";
@@ -14,6 +18,7 @@ import {
 	userAnswer,
 } from "@/common/db/schema";
 import {
+	ensureSession,
 	getSession,
 	hashPassword,
 	verifyPassword,
@@ -212,11 +217,7 @@ export const getCompactUserPolls = createServerFn({ method: "GET" })
 export const getPollDetails = createServerFn({ method: "GET" })
 	.validator((data: { slug: string }) => data)
 	.handler(async ({ data }) => {
-		const session = await getSession();
-
-		if (!session) {
-			throw new Error("UNAUTHORIZED");
-		}
+		const session = await ensureSession();
 
 		const poll = await db.query.poll.findFirst({
 			where: (poll, { eq }) => eq(poll.slug, data.slug),
@@ -397,6 +398,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 	.handler(async ({ data }) => {
 		const { slug, userId } = data;
 		const now = new Date();
+		const { user } = await ensureSession();
 
 		// 1. Buscar la encuesta por su slug (incluyendo la nueva columna timeLimit)
 		const currentPoll = await db.query.poll.findFirst({
@@ -442,16 +444,27 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			};
 		}
 
+		// ❌ CASO 4. Tiene contraseña
 		if (currentPoll.password) {
-			const hasAccessCookie = getCookie(`poll_unlocked_${slug}`);
-			if (!hasAccessCookie)
+			const accessCookie = getCookie(`poll_unlocked_${slug}`);
+			if (!accessCookie)
 				throw redirect({
 					to: "/p/$slug/password",
 					params: { slug },
 				});
+			const decodedJson = atob(accessCookie);
+			const { userId: cookieUserId } = JSON.parse(decodedJson);
+
+			if (cookieUserId !== user.id) {
+				deleteCookie(`poll_unlocked_${slug}`);
+				throw redirect({
+					to: "/p/$slug/password",
+					params: { slug },
+				});
+			}
 		}
 
-		// 🔍 CASO 4: Evaluación de la Sumisión Existente
+		// 🔍 CASO 5: Evaluación de la Sumisión Existente
 		const existingSubmission = await db.query.submission.findFirst({
 			where: and(
 				eq(submission.pollId, currentPoll.id),
@@ -610,7 +623,7 @@ export const importPollAction = createServerFn()
 							break;
 
 						default:
-							dbMetadata = { type: q.type };
+							dbMetadata = { type: q.type as "geolocation" | "open_answer" };
 							break;
 					}
 
@@ -991,6 +1004,10 @@ export const validatePollPassword = createServerFn({ method: "POST" })
 		password: passwordSchema.parse(data.password),
 	}))
 	.handler(async ({ data }) => {
+		const session = await getSession();
+		if (!session) {
+			throw new Error("UNAUTHORIZED");
+		}
 		const { slug, password } = data;
 		let isValid = false;
 
@@ -1019,7 +1036,11 @@ export const validatePollPassword = createServerFn({ method: "POST" })
 
 			if (isValid) {
 				const sessionValue = btoa(
-					JSON.stringify({ slug, unlockedAt: Date.now() }),
+					JSON.stringify({
+						slug,
+						userId: session.user.id,
+						unlockedAt: Date.now(),
+					}),
 				);
 
 				setCookie(`poll_unlocked_${slug}`, sessionValue, {
