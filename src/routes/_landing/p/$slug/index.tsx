@@ -18,13 +18,6 @@ export const Route = createFileRoute("/_landing/p/$slug/")({
 				},
 			});
 			if (!access.allowed) {
-				if (access.reason === "ALREADY_SUBMITTED") {
-					throw redirect({
-						to: "/p/$slug/result",
-						params: { slug: params.slug },
-					});
-				}
-
 				throw redirect({
 					to: "/",
 					search: { error: access.message },

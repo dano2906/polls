@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "@tanstack/react-router";
 import { createClientOnlyFn, createServerFn } from "@tanstack/react-start";
+import { getCookie, setCookie, useSession } from "@tanstack/react-start/server";
 import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
 import type { UserAnswerValue } from "@/answers/shared/types";
 import { db } from "@/common/db";
@@ -12,8 +13,13 @@ import {
 	submission,
 	userAnswer,
 } from "@/common/db/schema";
-import { getSession } from "@/common/lib/auth-functions";
+import {
+	getSession,
+	hashPassword,
+	verifyPassword,
+} from "@/common/lib/auth-functions";
 import { exportPoll } from "@/common/lib/export";
+import { passwordSchema } from "@/common/lib/validation";
 import { ExportFormat } from "@/common/shared/types";
 import type { QuestionMetadata } from "@/question/shared/types";
 import { generateRandomCode } from "../lib/utils";
@@ -322,12 +328,21 @@ export const createPoll = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		try {
 			const newId = randomUUID();
+			const hasPassword = !!(data.password && data.password.trim().length > 0);
+			const hashedPassword = hasPassword
+				? await hashPassword({
+						data: {
+							password: data.password as string,
+						},
+					})
+				: null;
 			const [newPoll] = await db
 				.insert(poll)
 				.values({
 					...data,
 					id: newId,
 					timeLimit: data.timeLimit ?? null,
+					password: hashedPassword,
 					slug:
 						data.slug && data.slug.length === 6
 							? data.slug
@@ -427,6 +442,20 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			};
 		}
 
+		if (currentPoll.password) {
+			const hasAccessCookie = getCookie(`poll_unlocked_${slug}`);
+			console.log(hasAccessCookie);
+			if (!hasAccessCookie)
+				throw redirect({
+					to: "/p/$slug/password",
+					params: { slug },
+				});
+			else
+				return {
+					allowed: true,
+				};
+		}
+
 		// 🔍 CASO 4: Evaluación de la Sumisión Existente
 		const existingSubmission = await db.query.submission.findFirst({
 			where: and(
@@ -438,13 +467,10 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 		if (existingSubmission) {
 			// Condición A: Si la encuesta ya fue explícitamente terminada/enviada
 			if (existingSubmission.completedAt) {
-				return {
-					allowed: false,
-					reason: "ALREADY_SUBMITTED",
-					message:
-						"Ya has completado esta encuesta. No se permiten múltiples respuestas.",
-					submissionId: existingSubmission.id,
-				};
+				throw redirect({
+					to: "/p/$slug/result",
+					params: { slug },
+				});
 			}
 
 			// Condición B: Si no está completada pero la encuesta TIENE límite de tiempo
@@ -457,13 +483,10 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 
 				// Si el tiempo transcurrido supera el límite (+ 5 segundos de cortesía por latencia de red)
 				if (secondsElapsed > currentPoll.timeLimit + 5) {
-					return {
-						allowed: false,
-						reason: "ALREADY_SUBMITTED", // Mantenemos el reason para que tu router lo mande a /result
-						message:
-							"El tiempo disponible para realizar esta encuesta ha expirado.",
-						submissionId: existingSubmission.id,
-					};
+					throw redirect({
+						to: "/p/$slug/result",
+						params: { slug },
+					});
 				}
 			}
 
@@ -961,4 +984,63 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			},
 			results,
 		};
+	});
+
+export const validatePollPassword = createServerFn({ method: "POST" })
+	.validator((data: { password: string; slug: string }) => ({
+		slug: data.slug,
+		password: passwordSchema.parse(data.password),
+	}))
+	.handler(async ({ data }) => {
+		const { slug, password } = data;
+		let isValid = false;
+
+		try {
+			// 1. Buscamos el hash de la encuesta usando el slug
+			const [foundPoll] = await db
+				.select({
+					password: poll.password,
+				})
+				.from(poll)
+				.where(eq(poll.slug, slug))
+				.limit(1);
+
+			// Si la encuesta no existe o no está protegida, no hay nada que validar
+			if (!foundPoll || !foundPoll.password) {
+				throw notFound();
+			}
+
+			// 2. Validamos la contraseña criptográficamente
+			isValid = await verifyPassword({
+				data: {
+					passwordAttempt: password,
+					storedValue: foundPoll.password,
+				},
+			});
+
+			if (isValid) {
+				const sessionValue = btoa(
+					JSON.stringify({ slug, unlockedAt: Date.now() }),
+				);
+
+				setCookie(`poll_unlocked_${slug}`, sessionValue, {
+					httpOnly: true,
+					secure: process.env.NODE_ENV === "production",
+					sameSite: "lax",
+					maxAge: 3600,
+				});
+
+				return { success: true };
+			}
+		} catch (error) {
+			console.error("Error al validar la contraseña en el servidor:", error);
+			return { success: false, message: "Error interno del servidor." };
+		}
+
+		// 3. Respuesta según el resultado
+		if (!isValid) {
+			return { success: false, message: "Contraseña incorrecta." };
+		}
+
+		return { success: true };
 	});

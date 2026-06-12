@@ -112,6 +112,7 @@ export const poll = sqliteTable("poll", {
 	),
 	version: integer("version").default(1),
 	timeLimit: integer("time-limit"),
+	password: text("password"),
 	startDate: integer("start_date", { mode: "timestamp" })
 		.default(sql`CURRENT_TIMESTAMP`)
 		.notNull(),
@@ -270,5 +271,12 @@ export const answerRelations = relations(answer, ({ one }) => ({
 	question: one(question, {
 		fields: [answer.questionId],
 		references: [question.id],
+	}),
+}));
+
+export const submissionRelations = relations(submission, ({ one }) => ({
+	poll: one(poll, {
+		fields: [submission.pollId],
+		references: [poll.id],
 	}),
 }));

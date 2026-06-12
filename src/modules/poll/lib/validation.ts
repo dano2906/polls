@@ -1,6 +1,7 @@
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { poll } from "@/common/db/schema";
+import { passwordSchema } from "@/common/lib/validation";
 import { QUESTION_TYPES } from "@/question/shared/types";
 
 export const createPollInput = z
@@ -14,6 +15,10 @@ export const createPollInput = z
 		endDate: z.date().optional(),
 		description: z.string().max(500).optional(),
 		timeLimit: z.number().optional(),
+		password: z.preprocess(
+			(val) => (val === "" ? null : val),
+			passwordSchema.optional().nullable(),
+		),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 		userId: z.string(),
 	})
@@ -77,6 +82,10 @@ export const pollsSearchFilterWithUserSchema = pollsSearchFiltershSchema.extend(
 		userId: z.string(),
 	},
 );
+
+export const pollPasswordSchema = z.object({
+	password: passwordSchema,
+});
 
 export const questionTypeSchema = z.enum(QUESTION_TYPES);
 

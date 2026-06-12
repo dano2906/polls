@@ -24,6 +24,7 @@ import {
 } from "@/ui/select";
 import { Slider } from "@/ui/slider";
 import { Textarea } from "@/ui/textarea";
+import PasswordInput from "../ui/input-password-with-toggle";
 
 export enum FieldType {
 	INPUT_TEXT = "input_text",
@@ -37,6 +38,7 @@ export enum FieldType {
 	SLIDER = "slider",
 	DATE_SINGLE = "date_single",
 	DATE_RANGE = "date_range",
+	PASSWORD = "password",
 }
 
 // 1. Interfaz para definir qué puedes sobreescribir del comportamiento por defecto
@@ -95,6 +97,24 @@ const RenderField = ({
 		case "input_text":
 			return (
 				<Input
+					id={field.name}
+					name={field.name}
+					value={value}
+					onChange={(e) =>
+						overrides.onChange
+							? overrides.onChange(e)
+							: field.handleChange(e.target.value)
+					}
+					onBlur={() =>
+						overrides.onBlur ? overrides.onBlur() : field.handleBlur()
+					}
+					placeholder={placeholder}
+					disabled={disabled}
+				/>
+			);
+		case "password":
+			return (
+				<PasswordInput
 					id={field.name}
 					name={field.name}
 					value={value}

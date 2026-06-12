@@ -1,0 +1,1 @@
+ALTER TABLE `poll` ADD `password` text;

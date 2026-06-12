@@ -22,7 +22,8 @@
 [X] Exportar/importar encuesta como JSON, Excel, CSV
 [X] Implementar la subida de imagenes a las preguntas y respuestas
 [X] Examenes x tiempo
-[] Agregar encuestas con contrasena
+[x] Agregar encuestas con contrasena
+[] Quitar la validacion de requeridas si es un autosubmit obligatorio
 [] Implementar el reorder de las preguntas
 [] En csv le resta un dia a las fechas
 [] Funcionalidades de admin

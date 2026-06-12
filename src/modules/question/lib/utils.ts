@@ -31,14 +31,14 @@ export const transformInitialQuestionData = (
 			slug,
 			questions: [
 				{
-					type: "single_choice" as const,
+					type: "open_answer",
 					questionText: "",
 					hasCorrectAnswers: false,
 					isRequired: true,
 					maxSelections: 1,
 					imageUrl: null,
 					imagePublicId: null,
-					answers: [{ answerText: "", isCorrect: false }],
+					answers: [],
 				},
 			],
 		};

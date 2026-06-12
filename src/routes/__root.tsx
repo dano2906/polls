@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import TanStackQueryDevtools from "@/common/components/tanstack-query/devtools";
+import { TooltipProvider } from "@/common/components/ui/tooltip";
 import { getSession } from "@/common/lib/auth-functions";
 import { getThemeServerFn } from "@/common/lib/theme";
 import appCss from "@/common/styles/styles.css?url";
@@ -58,7 +59,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				{children}
+				<TooltipProvider>{children}</TooltipProvider>
 				<Toaster richColors />
 				<TanStackDevtools
 					config={{

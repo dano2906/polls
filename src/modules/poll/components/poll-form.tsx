@@ -24,6 +24,7 @@ interface Props {
 		| "startDate"
 		| "status"
 		| "timeLimit"
+		| "password"
 	>;
 	onCreatePoll?: Dispatch<SetStateAction<string | null>>;
 }
@@ -65,6 +66,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 			endDate: initialData?.endDate ?? undefined,
 			status: initialData?.status ?? "draft",
 			timeLimit: initialData?.timeLimit ?? undefined,
+			password: initialData?.password ?? undefined,
 			userId,
 		},
 		validators: {
@@ -90,6 +92,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 						field_type={FieldType.INPUT_TEXT}
 						label="Nombre de la encuesta"
 						placeholder="My first poll"
+						required
 					/>
 				)}
 			</form.Field>
@@ -111,6 +114,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 						field={field}
 						field_type={FieldType.SIMPLE_DATE}
 						label="Fecha de inicio"
+						required
 					/>
 				)}
 			</form.Field>
@@ -123,9 +127,26 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 					/>
 				)}
 			</form.Field>
+			<form.Field name="password">
+				{(field) => (
+					<div className="space-y-2">
+						<FormField
+							field={field}
+							field_type={FieldType.PASSWORD}
+							label="Contraseña"
+							placeholder="aBCd98@*"
+							disabled={isEditing}
+							input_classes={isEditing ? "cursor-not-allowed" : ""}
+						/>
+					</div>
+				)}
+			</form.Field>
+
 			<form.Field name="timeLimit">
 				{(field) => (
 					<div className="space-y-2">
+						{/* Asegúrate de que el componente de arriba tenga un label o espacio superior */}
+
 						<TimeLimitPicker
 							value={field.state.value}
 							onChange={(seconds) => field.handleChange(seconds)}
@@ -139,6 +160,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 					</div>
 				)}
 			</form.Field>
+
 			<form.Field name="description">
 				{(field) => (
 					<FormField

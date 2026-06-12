@@ -20,6 +20,7 @@ import { Route as ProtectedPollImportRouteImport } from './routes/_protected/pol
 import { Route as LandingPSlugIndexRouteImport } from './routes/_landing/p/$slug/index'
 import { Route as ProtectedPollUpdateSlugRouteImport } from './routes/_protected/poll/update.$slug'
 import { Route as LandingPSlugResultRouteImport } from './routes/_landing/p/$slug/result'
+import { Route as LandingPSlugPasswordRouteImport } from './routes/_landing/p/$slug/password'
 
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
@@ -75,6 +76,11 @@ const LandingPSlugResultRoute = LandingPSlugResultRouteImport.update({
   path: '/p/$slug/result',
   getParentRoute: () => LandingRoute,
 } as any)
+const LandingPSlugPasswordRoute = LandingPSlugPasswordRouteImport.update({
+  id: '/p/$slug/password',
+  path: '/p/$slug/password',
+  getParentRoute: () => LandingRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LandingIndexRoute
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
+  '/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/p/$slug/result': typeof LandingPSlugResultRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
   '/p/$slug/': typeof LandingPSlugIndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
+  '/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/p/$slug/result': typeof LandingPSlugResultRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
   '/p/$slug': typeof LandingPSlugIndexRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/_protected/poll/new': typeof ProtectedPollNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
+  '/_landing/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/_landing/p/$slug/result': typeof LandingPSlugResultRoute
   '/_protected/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
   '/_landing/p/$slug/': typeof LandingPSlugIndexRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/poll/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
+    | '/p/$slug/password'
     | '/p/$slug/result'
     | '/poll/update/$slug'
     | '/p/$slug/'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/poll/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
+    | '/p/$slug/password'
     | '/p/$slug/result'
     | '/poll/update/$slug'
     | '/p/$slug'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/_protected/poll/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
+    | '/_landing/p/$slug/password'
     | '/_landing/p/$slug/result'
     | '/_protected/poll/update/$slug'
     | '/_landing/p/$slug/'
@@ -236,17 +248,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LandingPSlugResultRouteImport
       parentRoute: typeof LandingRoute
     }
+    '/_landing/p/$slug/password': {
+      id: '/_landing/p/$slug/password'
+      path: '/p/$slug/password'
+      fullPath: '/p/$slug/password'
+      preLoaderRoute: typeof LandingPSlugPasswordRouteImport
+      parentRoute: typeof LandingRoute
+    }
   }
 }
 
 interface LandingRouteChildren {
   LandingIndexRoute: typeof LandingIndexRoute
+  LandingPSlugPasswordRoute: typeof LandingPSlugPasswordRoute
   LandingPSlugResultRoute: typeof LandingPSlugResultRoute
   LandingPSlugIndexRoute: typeof LandingPSlugIndexRoute
 }
 
 const LandingRouteChildren: LandingRouteChildren = {
   LandingIndexRoute: LandingIndexRoute,
+  LandingPSlugPasswordRoute: LandingPSlugPasswordRoute,
   LandingPSlugResultRoute: LandingPSlugResultRoute,
   LandingPSlugIndexRoute: LandingPSlugIndexRoute,
 }

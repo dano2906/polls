@@ -121,7 +121,7 @@ export function TimeLimitPicker({ value, onChange }: TimeLimitPickerProps) {
 		// Contenedor principal puramente vertical (flex-col) en cualquier tamaño de pantalla
 		<div className="w-full flex flex-col gap-1">
 			{/* Selector de Presets Principal */}
-			<div className="w-full space-y-1">
+			<div className="w-full space-y-2">
 				<Label htmlFor="time-preset" className="text-sm font-medium">
 					Límite de tiempo para el test
 				</Label>
