@@ -34,70 +34,77 @@ const QuestionResponseForm = ({ pollData, slug }: Props) => {
 	// Construimos el esquema de Zod en base a las preguntas reales recibidas
 	const dynamicFormSchema = createDynamicResponseSchema(pollData.questions);
 
+	const submitAction = async (answers: Record<string, any>) => {
+		try {
+			if (pollData.questions.length === 0) {
+				throw new Error("Poll has no questions");
+			}
+			const cleanAnswers = Object.keys(answers).reduce(
+				(acc, key) => {
+					const val = answers[key];
+
+					if (val === null || val === undefined) return acc;
+
+					if (typeof val === "string" && val.trim() === "") return acc;
+
+					if (Array.isArray(val)) {
+						const activeChoices = val.filter(
+							(id) => typeof id === "string" && id.trim() !== "",
+						);
+						if (activeChoices.length > 0) {
+							acc[key] = activeChoices;
+						}
+						return acc;
+					}
+
+					if (typeof val === "object" && !Array.isArray(val)) {
+						const cleanedObject = Object.fromEntries(
+							Object.entries(val).map(([k, v]) => [
+								k,
+								v === "" ? 0 : Number(v),
+							]),
+						);
+						acc[key] = cleanedObject;
+						return acc;
+					}
+
+					acc[key] = val;
+					return acc;
+				},
+				{} as Record<string, any>,
+			); // Usamos 'any' o un tipo más amplio para aceptar el objeto de puntos
+
+			// 2. Llamamos a la server action
+			await submitPollAnswers({
+				data: {
+					pollId: pollData.questions[0].pollId,
+					answers: cleanAnswers,
+				},
+			});
+
+			// 3. Manejamos el éxito
+			setIsFinished(true);
+			toast.success("Tus respuestas fueron validadas y guardadas con éxito.");
+		} catch {
+			toast.error(
+				"Hubo un problema al enviar tus respuestas. Inténtalo de nuevo.",
+			);
+		}
+	};
+
 	const form = useForm({
 		defaultValues,
 		validators: {
 			onChange: dynamicFormSchema,
 		},
 		onSubmit: async ({ value }) => {
-			try {
-				if (pollData.questions.length === 0) {
-					throw new Error("Poll has no questions");
-				}
-				const cleanAnswers = Object.keys(value).reduce(
-					(acc, key) => {
-						const val = value[key];
-
-						if (val === null || val === undefined) return acc;
-
-						if (typeof val === "string" && val.trim() === "") return acc;
-
-						if (Array.isArray(val)) {
-							const activeChoices = val.filter(
-								(id) => typeof id === "string" && id.trim() !== "",
-							);
-							if (activeChoices.length > 0) {
-								acc[key] = activeChoices;
-							}
-							return acc;
-						}
-
-						if (typeof val === "object" && !Array.isArray(val)) {
-							const cleanedObject = Object.fromEntries(
-								Object.entries(val).map(([k, v]) => [
-									k,
-									v === "" ? 0 : Number(v),
-								]),
-							);
-							acc[key] = cleanedObject;
-							return acc;
-						}
-
-						acc[key] = val;
-						return acc;
-					},
-					{} as Record<string, any>,
-				); // Usamos 'any' o un tipo más amplio para aceptar el objeto de puntos
-
-				// 2. Llamamos a la server action
-				await submitPollAnswers({
-					data: {
-						pollId: pollData.questions[0].pollId,
-						answers: cleanAnswers,
-					},
-				});
-
-				// 3. Manejamos el éxito
-				setIsFinished(true);
-				toast.success("Tus respuestas fueron validadas y guardadas con éxito.");
-			} catch (error) {
-				console.error("Error al enviar la encuesta:", error);
-				toast.error(
-					"Hubo un problema al enviar tus respuestas. Inténtalo de nuevo.",
-				);
-			}
+			await submitAction(value);
 		},
 	});
+
+	async function onTimeUp() {
+		submitAction(form.state.values);
+	}
 
 	if (isFinished) {
 		return (
@@ -127,7 +134,7 @@ const QuestionResponseForm = ({ pollData, slug }: Props) => {
 				<ResponseCountdown
 					startedAt={pollData.submission.startedAt}
 					timeLimitInSeconds={pollData.timeLimit}
-					onTimeUp={() => form.handleSubmit()}
+					onTimeUp={onTimeUp}
 				/>
 			)}
 			<form

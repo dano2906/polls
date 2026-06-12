@@ -23,7 +23,7 @@
 [X] Implementar la subida de imagenes a las preguntas y respuestas
 [X] Examenes x tiempo
 [x] Agregar encuestas con contrasena
-[] Quitar la validacion de requeridas si es un autosubmit obligatorio
+[X] Quitar la validacion de requeridas si es un autosubmit obligatorio
 [] Implementar el reorder de las preguntas
 [] En csv le resta un dia a las fechas
 [] Funcionalidades de admin

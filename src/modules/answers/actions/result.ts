@@ -11,7 +11,7 @@ export const submitPollAnswers = createServerFn()
 	.validator(completePollInput)
 	.handler(async ({ data }) => {
 		const { pollId, answers } = data;
-		const session = await getSession(); // Tu función de autenticación
+		const session = await getSession();
 		const now = new Date();
 
 		if (!session) {
@@ -33,10 +33,43 @@ export const submitPollAnswers = createServerFn()
 			);
 		}
 
-		// 2. Mapeamos los tipos de preguntas para procesar el JSON de las que SÍ llegaron
-		const targetQuestionIds = Object.keys(answers);
+		// 🔍 [CORRECCIÓN] Recuperamos la sumisión ANTES de la transacción
+		const currentSubmission = await db.query.submission.findFirst({
+			where: and(
+				eq(submission.pollId, pollId),
+				eq(submission.userId, session.user.id),
+			),
+		});
 
+		if (!currentSubmission) {
+			throw new Error(
+				"No se encontró un registro de inicio para esta encuesta.",
+			);
+		}
+
+		// 🚀 [CORRECCIÓN] El redirect ahora vive de forma segura fuera de la transacción
+		if (currentSubmission.completedAt) {
+			throw redirect({
+				to: "/p/$slug/result",
+				params: { slug: existingPoll.slug as string },
+			});
+		}
+
+		// ⏱️ VALIDACIÓN DE TIEMPO (También la podemos evaluar fuera)
+		if (existingPoll.timeLimit) {
+			const startedAtTime = new Date(currentSubmission.startedAt).getTime();
+			const secondsElapsed = (now.getTime() - startedAtTime) / 1000;
+
+			// Margen de 10 segundos de tolerancia por latencia
+			if (secondsElapsed > existingPoll.timeLimit + 10) {
+				// Aquí manejas si guardas parcial o lanzas error
+			}
+		}
+
+		// 2. Mapeamos los tipos de preguntas para procesar el JSON
+		const targetQuestionIds = Object.keys(answers);
 		let questionTypesMap = new Map<string, string>();
+
 		if (targetQuestionIds.length > 0) {
 			const pollQuestionsData = await db
 				.select({ id: question.id, type: question.type })
@@ -46,39 +79,8 @@ export const submitPollAnswers = createServerFn()
 			questionTypesMap = new Map(pollQuestionsData.map((q) => [q.id, q.type]));
 		}
 
-		// 3. Ejecutamos la transacción de guardado y actualización
+		// 3. Ejecutamos la transacción ÚNICAMENTE para la escritura pesada
 		return await db.transaction(async (tx) => {
-			// 🔍 Recuperamos la sumisión que se inició en el paso 1
-			const currentSubmission = await tx.query.submission.findFirst({
-				where: and(
-					eq(submission.pollId, pollId),
-					eq(submission.userId, session.user.id),
-				),
-			});
-
-			if (!currentSubmission) {
-				throw new Error(
-					"No se encontró un registro de inicio para esta encuesta.",
-				);
-			}
-
-			if (currentSubmission.completedAt) {
-				throw new Error("Esta encuesta ya fue enviada previamente.");
-			}
-
-			// ⏱️ VALIDACIÓN ESTRICTA DE TIEMPO EN SERVIDOR
-			if (existingPoll.timeLimit) {
-				const startedAtTime = new Date(currentSubmission.startedAt).getTime();
-				const secondsElapsed = (now.getTime() - startedAtTime) / 1000;
-
-				// Margen de 10 segundos de tolerancia por la latencia en el envío del formulario
-				if (secondsElapsed > existingPoll.timeLimit + 10) {
-					// Si el tiempo expiró con creces, forzamos el cierre de la sumisión igual,
-					// pero podríamos optar por procesar únicamente lo que envió o lanzar un error.
-					// En este caso, salvaremos lo que haya alcanzado a mandar.
-				}
-			}
-
 			// Actualizamos la cabecera marcando la fecha de finalización
 			await tx
 				.update(submission)
@@ -91,8 +93,7 @@ export const submitPollAnswers = createServerFn()
 					const qType = questionTypesMap.get(questionId);
 					if (!qType) return null;
 
-					// Validación de campos vacíos: Si se acabó el tiempo, el usuario
-					// tendrá respuestas vacías que simplemente ignoraremos en la BD.
+					// Validación de campos vacíos
 					if (
 						rawValue === undefined ||
 						rawValue === null ||
@@ -111,42 +112,30 @@ export const submitPollAnswers = createServerFn()
 								textResponse: String(rawValue),
 							};
 							break;
-
 						case "rating":
-							computedValue = {
-								type: "rating",
-								score: Number(rawValue),
-							};
+							computedValue = { type: "rating", score: Number(rawValue) };
 							break;
-
 						case "ranking":
 							computedValue = {
 								type: "ranking",
 								orderedAnswerIds: rawValue as string[],
 							};
 							break;
-
 						case "single_choice":
 							computedValue = {
 								type: "single_choice",
 								selectedAnswerId: String(rawValue),
 							};
 							break;
-
 						case "multiple_choice":
 							computedValue = {
 								type: "multiple_choice",
-								selectedAnswerIds: rawValue as string[], // Corregido el nombre de la propiedad según tu interfaz
+								selectedAnswerIds: rawValue as string[],
 							};
 							break;
-
 						case "date_single":
-							computedValue = {
-								type: "date_single",
-								date: String(rawValue),
-							};
+							computedValue = { type: "date_single", date: String(rawValue) };
 							break;
-
 						case "date_range":
 							if (typeof rawValue === "string" && rawValue.includes("/")) {
 								const [start, end] = rawValue.split("/");
@@ -157,6 +146,7 @@ export const submitPollAnswers = createServerFn()
 								};
 							} else if (
 								typeof rawValue === "object" &&
+								rawValue !== null &&
 								"startDate" in rawValue
 							) {
 								computedValue = {
@@ -168,7 +158,6 @@ export const submitPollAnswers = createServerFn()
 								return null;
 							}
 							break;
-
 						case "point_distribution":
 							if (
 								typeof rawValue === "object" &&
@@ -183,7 +172,6 @@ export const submitPollAnswers = createServerFn()
 								return null;
 							}
 							break;
-
 						case "geolocation":
 							if (
 								typeof rawValue === "object" &&
@@ -200,7 +188,6 @@ export const submitPollAnswers = createServerFn()
 								return null;
 							}
 							break;
-
 						default:
 							return null;
 					}
@@ -213,7 +200,7 @@ export const submitPollAnswers = createServerFn()
 				})
 				.filter((item): item is NonNullable<typeof item> => item !== null);
 
-			// Inserción masiva si el usuario logró responder al menos una pregunta
+			// Inserción masiva si aplica
 			if (answersToInsert.length > 0) {
 				await tx.insert(userAnswer).values(answersToInsert);
 			}

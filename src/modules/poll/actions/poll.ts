@@ -444,16 +444,11 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 
 		if (currentPoll.password) {
 			const hasAccessCookie = getCookie(`poll_unlocked_${slug}`);
-			console.log(hasAccessCookie);
 			if (!hasAccessCookie)
 				throw redirect({
 					to: "/p/$slug/password",
 					params: { slug },
 				});
-			else
-				return {
-					allowed: true,
-				};
 		}
 
 		// 🔍 CASO 4: Evaluación de la Sumisión Existente
@@ -483,6 +478,10 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 
 				// Si el tiempo transcurrido supera el límite (+ 5 segundos de cortesía por latencia de red)
 				if (secondsElapsed > currentPoll.timeLimit + 5) {
+					await db
+						.update(submission)
+						.set({ completedAt: now })
+						.where(eq(submission.id, existingSubmission.id));
 					throw redirect({
 						to: "/p/$slug/result",
 						params: { slug },

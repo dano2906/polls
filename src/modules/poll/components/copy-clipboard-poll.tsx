@@ -1,5 +1,6 @@
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { cn } from "@/common/lib/utils";
 import { Button } from "@/ui/button";
 import { createPollPublicURL } from "../actions/poll";
@@ -20,6 +21,7 @@ const CopyClipboardPoll = ({
 		try {
 			await createPollPublicURL(slug);
 			setCopied(true);
+			toast.info("URL copiada en el portapapeles");
 			setTimeout(() => {
 				setCopied(false);
 			}, 2000);
