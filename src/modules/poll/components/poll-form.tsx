@@ -43,7 +43,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 			if (isEditing) {
 				return updatePoll({
 					data: {
-						slug: values.slug,
+						slug: values.slug as string,
 						values,
 					},
 				});

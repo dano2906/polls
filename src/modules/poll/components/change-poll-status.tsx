@@ -65,6 +65,7 @@ export const ChangePollStatus = ({
 				data: {
 					slug,
 					values: { status: nextStatus ?? "draft" },
+					scenario: "status",
 				},
 			});
 		},
@@ -75,8 +76,8 @@ export const ChangePollStatus = ({
 			});
 			toast.success(`Estado actualizado`);
 		},
-		onError: () => {
-			toast.error("No se pudo actualizar el estado");
+		onError: (error) => {
+			toast.error(error.message);
 		},
 	});
 

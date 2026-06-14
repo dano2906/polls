@@ -363,14 +363,51 @@ export const createPoll = createServerFn({ method: "POST" })
 	});
 
 export const updatePoll = createServerFn({ method: "POST" })
-	.validator(({ slug, values }) => ({
-		slug,
-		updatedData: editPollInput.parse(values),
-	}))
+	.validator(
+		({
+			slug,
+			values,
+			scenario = "update",
+		}: {
+			slug: string;
+			values: unknown;
+			scenario?: "update" | "status";
+		}) => ({
+			slug,
+			updatedData: editPollInput.parse(values),
+			scenario,
+		}),
+	)
 	.handler(async ({ data }) => {
 		try {
 			if (!data.slug) {
 				throw new Error("El slug es necesario para identificar la encuesta");
+			}
+			const currentPoll = await db
+				.select({ id: poll.id })
+				.from(poll)
+				.where(eq(poll.slug, data.slug))
+				.get();
+
+			if (!currentPoll) {
+				throw new Error("La encuesta especificada no existe");
+			}
+
+			if (
+				data.scenario === "status" &&
+				data.updatedData.status === "published"
+			) {
+				const questionCount = await db
+					.select({ count: sql<number>`count(*)` })
+					.from(pollQuestions)
+					.where(eq(pollQuestions.pollId, currentPoll.id))
+					.get();
+
+				if (!questionCount || questionCount.count === 0) {
+					throw new Error(
+						"No puedes publicar una encuesta que no tiene preguntas",
+					);
+				}
 			}
 			const res = await db
 				.update(poll)
@@ -388,7 +425,6 @@ export const updatePoll = createServerFn({ method: "POST" })
 				};
 			}
 		} catch (error) {
-			console.error("Error al actualizar la encuesta:", error);
 			throw error;
 		}
 	});
