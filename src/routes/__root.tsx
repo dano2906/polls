@@ -7,9 +7,9 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { getSession } from "@/auth/actions/auth";
 import TanStackQueryDevtools from "@/common/components/tanstack-query/devtools";
 import { TooltipProvider } from "@/common/components/ui/tooltip";
-import { ensureSession } from "@/common/lib/auth-functions";
 import { getThemeServerFn } from "@/common/lib/theme";
 import appCss from "@/common/styles/styles.css?url";
 import { Toaster } from "@/ui/sonner";
@@ -45,7 +45,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		],
 	}),
 	beforeLoad: async () => ({
-		auth: await ensureSession(),
+		auth: await getSession(),
 		theme: await getThemeServerFn(),
 	}),
 	shellComponent: RootDocument,

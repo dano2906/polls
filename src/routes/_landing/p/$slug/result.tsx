@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ResponseRenderer } from "@/answers/components/result-response-renderer";
-import { ensureSession } from "@/common/lib/auth-functions";
+import { ensureSession } from "@/auth/actions/auth";
 import { pollResultOptions } from "@/poll/lib/query";
 
 export const Route = createFileRoute("/_landing/p/$slug/result")({

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import AuthHeader from "@/common/components/partials/auth-header";
-import { ensureSession } from "@/common/lib/auth-functions";
+import { ensureSession } from "@/auth/actions/auth";
+import AuthHeader from "@/auth/components/auth-header";
 import { Button } from "@/ui/button";
 
 export const Route = createFileRoute("/_protected")({

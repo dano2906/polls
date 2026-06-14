@@ -1,7 +1,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { auth } from "@/common/lib/auth";
+import { auth } from "@/auth/lib/auth";
 
 export const getSession = createServerFn({ method: "GET" }).handler(
 	async () => {

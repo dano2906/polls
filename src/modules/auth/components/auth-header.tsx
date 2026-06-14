@@ -5,7 +5,7 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { File, FilePlus, Import, LayoutDashboard, LogOut } from "lucide-react";
-import { authClient } from "@/common/lib/auth-client";
+import { authClient } from "@/auth/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { Button } from "@/ui/button";
 import {
@@ -20,7 +20,7 @@ import {
 import { GithubDark } from "@/ui/svgs/githubDark";
 import { GithubLight } from "@/ui/svgs/githubLight.tsx";
 import { Google } from "@/ui/svgs/google";
-import ThemeToggle from "./theme-toggle";
+import ThemeToggle from "../../common/components/partials/theme-toggle";
 
 export default function AuthHeader() {
 	const { theme, auth } = useRouteContext({ from: "__root__" });
@@ -41,7 +41,7 @@ export default function AuthHeader() {
 		await router.invalidate();
 	}
 
-	if (auth.user) {
+	if (auth?.user) {
 		return (
 			<div className="flex items-center gap-2">
 				<DropdownMenu>

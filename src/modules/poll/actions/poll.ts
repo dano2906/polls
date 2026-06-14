@@ -8,6 +8,12 @@ import {
 } from "@tanstack/react-start/server";
 import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
 import type { UserAnswerValue } from "@/answers/shared/types";
+import {
+	ensureSession,
+	getSession,
+	hashPassword,
+	verifyPassword,
+} from "@/auth/actions/auth";
 import { db } from "@/common/db";
 import {
 	answer,
@@ -17,12 +23,6 @@ import {
 	submission,
 	userAnswer,
 } from "@/common/db/schema";
-import {
-	ensureSession,
-	getSession,
-	hashPassword,
-	verifyPassword,
-} from "@/common/lib/auth-functions";
 import { exportPoll } from "@/common/lib/export";
 import { passwordSchema } from "@/common/lib/validation";
 import { ExportFormat } from "@/common/shared/types";

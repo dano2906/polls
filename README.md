@@ -26,7 +26,8 @@
 [X] Quitar la validacion de requeridas si es un autosubmit obligatorio
 [] Implementar el reorder de las preguntas
 [] En csv le resta un dia a las fechas
+[] Gestion de equipos y colaboracion
 [] Funcionalidades de admin
 [] Multi idioma
 [] Multi tema
-[] Gestion de equipos y colaboracion
+

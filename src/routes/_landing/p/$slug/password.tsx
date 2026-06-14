@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ensureSession } from "@/common/lib/auth-functions";
+import { ensureSession } from "@/auth/actions/auth";
 import PollPasswordForm from "@/poll/components/poll-password-form";
 
 export const Route = createFileRoute("/_landing/p/$slug/password")({

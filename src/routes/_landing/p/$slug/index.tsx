@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
 import QuestionResponseForm from "@/answers/components/questions-response-form";
-import { ensureSession } from "@/common/lib/auth-functions";
+import { ensureSession } from "@/auth/actions/auth";
 import { validatePollAccess } from "@/poll/actions/poll";
 import { pollDetailsOptions } from "@/poll/lib/query";
 

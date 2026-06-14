@@ -2,6 +2,7 @@ import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { getSession } from "@/auth/actions/auth";
 import { db } from "@/common/db";
 import {
 	answer,
@@ -10,7 +11,6 @@ import {
 	question,
 	submission,
 } from "@/common/db/schema";
-import { getSession } from "@/common/lib/auth-functions";
 import { openrouter } from "@/common/lib/openrouter";
 import { generateRandomCode } from "@/poll/lib/utils";
 import {

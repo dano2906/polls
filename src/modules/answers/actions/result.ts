@@ -1,9 +1,9 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, inArray } from "drizzle-orm";
+import { getSession } from "@/auth/actions/auth";
 import { db } from "@/common/db";
 import { poll, question, submission, userAnswer } from "@/common/db/schema";
-import { getSession } from "@/common/lib/auth-functions";
 import { completePollInput } from "../lib/validation";
 import type { UserAnswerValue } from "../shared/types";
 

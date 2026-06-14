@@ -1,6 +1,6 @@
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { getSession } from "@/common/lib/auth-functions";
+import { getSession } from "@/auth/actions/auth";
 
 export const getCloudinarySignature = createServerFn({ method: "GET" }).handler(
 	async () => {
