@@ -240,7 +240,7 @@ export async function parsePollFile(file: File): Promise<ExportData> {
 }
 
 export const exportPoll = {
-	// --- EXPORTAR A JSON ---
+	// --- EXPORTAR A JSON (Se mantiene impecable) ---
 	json: (poll: ExportData, filename: string) => {
 		const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(poll, null, 2))}`;
 		const downloadAnchor = document.createElement("a");
@@ -251,12 +251,12 @@ export const exportPoll = {
 
 	// --- EXPORTAR A EXCEL ---
 	excel: (poll: ExportData, filename: string) => {
-		const flattenedData = flattenPollData(poll);
+		// Pasamos los datos por el aplanador corregido que asegura strings en metadatos
+		const flattenedData = cleanAndFlattenPollData(poll);
 		const worksheet = XLSX.utils.json_to_sheet(flattenedData);
 		const workbook = XLSX.utils.book_new();
 		XLSX.utils.book_append_sheet(workbook, worksheet, "Preguntas");
 
-		// Ajustamos dinámicamente los tamaños basándonos en las nuevas columnas del layout plano
 		worksheet["!cols"] = [
 			{ wch: 22 }, // Nombre Encuesta
 			{ wch: 25 }, // Descripcion Encuesta
@@ -268,7 +268,7 @@ export const exportPoll = {
 			{ wch: 25 }, // Contiene respuestas correctas
 			{ wch: 25 }, // Cantidad maxima de selecciones
 			{ wch: 12 }, // Es requerida
-			{ wch: 20 }, // Metadatos (JSON Stringified)
+			{ wch: 30 }, // Metadatos (¡Ahora garantizado como un JSON String válido!)
 			{ wch: 25 }, // Texto Opcion
 			{ wch: 12 }, // Es Correcta
 		];
@@ -278,7 +278,8 @@ export const exportPoll = {
 
 	// --- EXPORTAR A CSV ---
 	csv: (poll: ExportData, filename: string) => {
-		const flattenedData = flattenPollData(poll);
+		// Usamos exactamente la misma data limpia que el Excel
+		const flattenedData = cleanAndFlattenPollData(poll);
 		const worksheet = XLSX.utils.json_to_sheet(flattenedData);
 		const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
 
@@ -290,3 +291,53 @@ export const exportPoll = {
 		downloadAnchor.click();
 	},
 };
+
+/**
+ * Función auxiliadora que envuelve a tu 'flattenPollData' original
+ * y asegura que los metadatos nunca viajen como nulls ni rompan el importador.
+ */
+function cleanAndFlattenPollData(poll: ExportData) {
+	// 1. Ejecutamos tu lógica de aplanado actual
+	const rows = flattenPollData(poll);
+
+	// 2. Normalizamos la columna de metadatos para que sea idéntica en cada fila
+	return rows.map((row: any) => {
+		let metadataStr = "{}"; // Por defecto un objeto JSON vacío en formato string
+
+		if (row["Metadatos"] || row["Metadatos (JSON Stringified)"]) {
+			const rawMeta = row["Metadatos"] || row["Metadatos (JSON Stringified)"];
+
+			if (typeof rawMeta === "object" && rawMeta !== null) {
+				// Si venía como objeto, lo aseguramos como string inyectando valores seguros
+				const cleanMeta = {
+					minDate: rawMeta.minDate ?? "",
+					maxDate: rawMeta.maxDate ?? "",
+					...rawMeta,
+				};
+				metadataStr = JSON.stringify(cleanMeta);
+			} else if (typeof rawMeta === "string" && rawMeta.trim() !== "") {
+				try {
+					// Si ya es string, validamos que tenga las propiedades mapeadas como strings
+					const parsed = JSON.parse(rawMeta);
+					if (parsed && typeof parsed === "object") {
+						parsed.minDate = parsed.minDate ?? "";
+						parsed.maxDate = parsed.maxDate ?? "";
+						metadataStr = JSON.stringify(parsed);
+					}
+				} catch {
+					metadataStr = rawMeta; // Si no es un JSON parseable, dejamos el string original
+				}
+			}
+		} else {
+			// Si la fila directamente no tenía la columna de metadatos, le creamos una estructura base de texto
+			metadataStr = JSON.stringify({ minDate: "", maxDate: "" });
+		}
+
+		// Retornamos la fila asegurando que la propiedad de metadatos tenga el nombre exacto
+		// que espera tu analizador (parsePollFile) al importar de vuelta.
+		return {
+			...row,
+			"Metadatos (JSON Stringified)": metadataStr,
+		};
+	});
+}

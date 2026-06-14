@@ -106,8 +106,8 @@ export const exportDataSchema = z.object({
 				minRating: z.number().optional(),
 				maxRating: z.number().optional(),
 				distributionAmount: z.number().optional(),
-				minDate: z.string().optional(),
-				maxDate: z.string().optional(),
+				minDate: z.string().nullable().optional(),
+				maxDate: z.string().nullable().optional(),
 			}),
 
 			answers: z.array(

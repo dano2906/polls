@@ -31,14 +31,24 @@ export const CompactUserPolls = ({ polls }: Props) => {
 						Modifique los filtros e inténtelo nuevamente.
 					</EmptyDescription>
 					<EmptyContent>
-						<Link
-							to="/poll/new"
-							className={buttonVariants({
-								variant: "secondary",
-							})}
-						>
-							Crear encuesta
-						</Link>
+						<div className="flex items-center justify-center gap-3">
+							<Link
+								to="/poll/new"
+								className={buttonVariants({
+									variant: "secondary",
+								})}
+							>
+								Crear encuesta
+							</Link>
+							<Link
+								to="/poll/import"
+								className={buttonVariants({
+									variant: "secondary",
+								})}
+							>
+								Importar encuesta
+							</Link>
+						</div>
 					</EmptyContent>
 				</EmptyHeader>
 			</Empty>

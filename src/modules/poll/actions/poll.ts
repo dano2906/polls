@@ -363,21 +363,10 @@ export const createPoll = createServerFn({ method: "POST" })
 	});
 
 export const updatePoll = createServerFn({ method: "POST" })
-	.validator(
-		({
-			slug,
-			values,
-			scenario = "update",
-		}: {
-			slug: string;
-			values: unknown;
-			scenario?: "update" | "status";
-		}) => ({
-			slug,
-			updatedData: editPollInput.parse(values),
-			scenario,
-		}),
-	)
+	.validator(({ slug, values }: { slug: string; values: unknown }) => ({
+		slug,
+		updatedData: editPollInput.parse(values),
+	}))
 	.handler(async ({ data }) => {
 		try {
 			if (!data.slug) {
@@ -393,21 +382,14 @@ export const updatePoll = createServerFn({ method: "POST" })
 				throw new Error("La encuesta especificada no existe");
 			}
 
-			if (
-				data.scenario === "status" &&
-				data.updatedData.status === "published"
-			) {
-				const questionCount = await db
-					.select({ count: sql<number>`count(*)` })
-					.from(pollQuestions)
-					.where(eq(pollQuestions.pollId, currentPoll.id))
-					.get();
+			const questionCount = await db
+				.select({ count: sql<number>`count(*)` })
+				.from(pollQuestions)
+				.where(eq(pollQuestions.pollId, currentPoll.id))
+				.get();
 
-				if (!questionCount || questionCount.count === 0) {
-					throw new Error(
-						"No puedes publicar una encuesta que no tiene preguntas",
-					);
-				}
+			if (!questionCount || questionCount.count === 0) {
+				throw new Error("Las encuestas deben tener al menos una pregunta");
 			}
 			const res = await db
 				.update(poll)

@@ -1,5 +1,6 @@
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router"; // Eliminado useRouter no utilizado
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -35,7 +36,8 @@ const typeLabel: Record<QuestionType, string> = {
 
 export function ImportPollZone() {
 	const qc = useQueryClient();
-	const navigate = useNavigate({ from: "/poll/import" });
+	// Corrección de TanStack Router: useNavigate no recibe parámetros en su inicialización
+	const navigate = useNavigate();
 	const [isDragActive, setIsDragActive] = useState(false);
 	const [localError, setLocalError] = useState<string | null>(null);
 
@@ -128,6 +130,15 @@ export function ImportPollZone() {
 
 	const activeError = localError || mutationError?.message;
 
+	// Función auxiliar para formatear fechas de manera segura si vienen como strings
+	const safeFormatDate = (dateInput: any) => {
+		try {
+			return format(new Date(dateInput), "dd/MM/yyyy", { locale: es });
+		} catch {
+			return "Fecha inválida";
+		}
+	};
+
 	return (
 		<div className="w-full mx-auto space-y-6 font-sgc">
 			{/* --- CASO A: VISTA DE CARGA (ZONA DROP) --- */}
@@ -137,7 +148,7 @@ export function ImportPollZone() {
 					onDragOver={handleDrag}
 					onDragLeave={handleDrag}
 					onDrop={handleDrop}
-					className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl cursor-pointer bg-muted/20 transition-all group relative
+					className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl cursor-pointer bg-muted/20 transition-all group relative py-3
                         ${isDragActive ? "border-primary bg-primary/10 scale-[1.01]" : "border-muted-foreground/30 hover:bg-muted/40"}
                     `}
 				>
@@ -203,9 +214,7 @@ export function ImportPollZone() {
 								<span className="text-muted-foreground">
 									Disponible desde el{" "}
 									<strong className="text-foreground font-normal">
-										{format(previewData.startDate, "dd/MM/yyyy", {
-											locale: es,
-										})}
+										{safeFormatDate(previewData.startDate)}
 									</strong>
 								</span>
 
@@ -214,9 +223,7 @@ export function ImportPollZone() {
 										{" "}
 										hasta el{" "}
 										<strong className="text-foreground font-normal">
-											{format(previewData.endDate, "dd/MM/yyyy", {
-												locale: es,
-											})}
+											{safeFormatDate(previewData.endDate)}
 										</strong>
 									</span>
 								)}
@@ -231,7 +238,6 @@ export function ImportPollZone() {
 
 							{previewData.questions.map((q, idx) => (
 								<div
-									// biome-ignore lint/suspicious/noArrayIndexKey: Dont have a field for key
 									key={idx}
 									className="p-3 border rounded-lg bg-muted/20 space-y-2"
 								>
@@ -244,7 +250,7 @@ export function ImportPollZone() {
 												{q.questionText}
 											</p>
 										</div>
-										<div className="flex gap-1.5">
+										<div className="flex gap-1.5 flex-wrap justify-end">
 											<Badge>{typeLabel[q.type]}</Badge>
 											{q.isRequired && (
 												<Badge variant={"destructive"}>Obligatoria</Badge>
@@ -275,17 +281,7 @@ export function ImportPollZone() {
 													<span>
 														Desde el{" "}
 														<strong className="text-foreground font-medium">
-															{(() => {
-																try {
-																	return format(
-																		new Date((q.metadata as any).minDate),
-																		"dd/MM/yyyy",
-																		{ locale: es },
-																	);
-																} catch {
-																	return (q.metadata as any).minDate; // Fallback por si la fecha no es válida
-																}
-															})()}
+															{safeFormatDate((q.metadata as any).minDate)}
 														</strong>
 													</span>
 												)}
@@ -299,17 +295,7 @@ export function ImportPollZone() {
 													<span>
 														Hasta el{" "}
 														<strong className="text-foreground font-medium">
-															{(() => {
-																try {
-																	return format(
-																		new Date((q.metadata as any).maxDate),
-																		"dd/MM/yyyy",
-																		{ locale: es },
-																	);
-																} catch {
-																	return (q.metadata as any).maxDate; // Fallback por si la fecha no es válida
-																}
-															})()}
+															{safeFormatDate((q.metadata as any).maxDate)}
 														</strong>
 													</span>
 												)}
@@ -321,7 +307,6 @@ export function ImportPollZone() {
 										<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
 											{q.answers.map((ans, aIdx) => (
 												<div
-													// biome-ignore lint/suspicious/noArrayIndexKey: Dont have a field for key
 													key={aIdx}
 													className={`text-xs p-1.5 rounded border flex items-center justify-between ${ans.isCorrect ? "bg-success/5 border-success/20 text-success/70 dark:text-success/40" : "bg-background text-muted-foreground"}`}
 												>
