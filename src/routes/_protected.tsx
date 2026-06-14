@@ -1,29 +1,13 @@
-import {
-	createFileRoute,
-	isRedirect,
-	Outlet,
-	redirect,
-	useRouter,
-} from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import AuthHeader from "@/common/components/partials/auth-header";
+import { ensureSession } from "@/common/lib/auth-functions";
 import { Button } from "@/ui/button";
 
 export const Route = createFileRoute("/_protected")({
 	component: RouteComponent,
-	beforeLoad: async ({ context }) => {
-		try {
-			if (!context.auth?.session) {
-				throw redirect({
-					to: "/",
-				});
-			}
-		} catch (error) {
-			if (isRedirect(error)) throw error;
-			throw redirect({
-				to: "/",
-			});
-		}
+	beforeLoad: async () => {
+		await ensureSession();
 	},
 });
 

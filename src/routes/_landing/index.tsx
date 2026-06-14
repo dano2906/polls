@@ -1,11 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { getPublishedPolls } from "@/poll/actions/poll";
 import ListPublishedPolls from "@/poll/components/list-published-polls";
 import { PollFilterBar } from "@/poll/components/poll-filter-bar";
+import { landingPollsOptions } from "@/poll/lib/query";
 import { pollsSearchFiltershSchema } from "@/poll/lib/validation";
 import {
 	Empty,
@@ -14,23 +14,33 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/ui/empty";
-import { Spinner } from "@/ui/spinner";
 
 export const Route = createFileRoute("/_landing/")({
 	validateSearch: pollsSearchFiltershSchema,
 	component: Home,
+	loaderDeps: ({ search }) => ({
+		q: search.q,
+	}),
+	loader: ({ context, deps }) => {
+		context.queryClient.ensureQueryData(
+			landingPollsOptions({
+				q: deps.q,
+				status: "published",
+			}),
+		);
+	},
 });
 
 function Home() {
 	const search = Route.useSearch();
 	const router = useRouter();
 
-	const { data, status } = useQuery({
-		queryKey: ["polls", { q: search.q, status: "published" }],
-		queryFn: () =>
-			getPublishedPolls({ data: { q: search.q ?? "", status: "published" } }),
-		refetchOnWindowFocus: false,
-	});
+	const { data } = useSuspenseQuery(
+		landingPollsOptions({
+			q: search.q,
+			status: "published",
+		}),
+	);
 
 	useEffect(() => {
 		if (search.error) {
@@ -42,37 +52,27 @@ function Home() {
 		}
 	}, [search.error, router]);
 
-	if (!data && status === "pending") {
-		return (
-			<div className="flex h-auto w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
-	}
-
-	if (data && data.length === 0) {
-		return (
-			<Empty className="border border-dashed">
-				<EmptyHeader>
-					<EmptyMedia variant="icon">
-						<RefreshCcw />
-					</EmptyMedia>
-					<EmptyTitle>
-						No se encuentran resultados que coincidan con los filtros.
-					</EmptyTitle>
-					<EmptyDescription>
-						Modifique los filtros e inténtelo nuevamente.
-					</EmptyDescription>
-				</EmptyHeader>
-			</Empty>
-		);
-	}
-
 	return (
 		<div className="w-full space-y-8 bg-background p-8 text-foreground">
 			<PollFilterBar from={"/_landing/"} />
 
-			{data && <ListPublishedPolls data={data} />}
+			{data && data.length > 0 ? (
+				<ListPublishedPolls data={data} />
+			) : (
+				<Empty className="border border-dashed max-w-lg mx-auto">
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<RefreshCcw />
+						</EmptyMedia>
+						<EmptyTitle>
+							No se encuentran resultados que coincidan con los filtros.
+						</EmptyTitle>
+						<EmptyDescription>
+							Modifique los filtros e inténtelo nuevamente.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
+			)}
 		</div>
 	);
 }

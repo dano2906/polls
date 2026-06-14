@@ -70,10 +70,7 @@ export const editPollInput = z
 
 export const pollsSearchFiltershSchema = z.object({
 	q: z.string().optional().default(""),
-	status: z
-		.enum(["all", "draft", "published", "archived"])
-		.default("all")
-		.optional(),
+	status: z.enum(["all", "draft", "published", "archived"]).default("all"),
 	error: z.string().optional().catch(undefined),
 	view: z.enum(["compact", "list"]).default("compact"),
 });

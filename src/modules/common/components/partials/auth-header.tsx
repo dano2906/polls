@@ -20,12 +20,10 @@ import {
 import { GithubDark } from "@/ui/svgs/githubDark";
 import { GithubLight } from "@/ui/svgs/githubLight.tsx";
 import { Google } from "@/ui/svgs/google";
-import { Spinner } from "../ui/spinner";
 import ThemeToggle from "./theme-toggle";
 
 export default function AuthHeader() {
-	const { data: session, isPending } = authClient.useSession();
-	const { theme } = useRouteContext({ from: "__root__" });
+	const { theme, auth } = useRouteContext({ from: "__root__" });
 	const router = useRouter();
 	const matches = useMatches();
 	const isProtected = matches.some((match) => match.routeId === "/_protected");
@@ -43,18 +41,7 @@ export default function AuthHeader() {
 		await router.invalidate();
 	}
 
-	if (isPending) {
-		return (
-			<Avatar size="lg">
-				<AvatarImage src={undefined} />
-				<AvatarFallback>
-					<Spinner />
-				</AvatarFallback>
-			</Avatar>
-		);
-	}
-
-	if (session?.user) {
+	if (auth.user) {
 		return (
 			<div className="flex items-center gap-2">
 				<DropdownMenu>
@@ -62,12 +49,12 @@ export default function AuthHeader() {
 						<Avatar size="lg">
 							<AvatarImage
 								src={
-									session.user.image ||
-									`https://api.dicebear.com/9.x/glass/svg?seed=${session.user.name}`
+									auth.user.image ||
+									`https://api.dicebear.com/9.x/glass/svg?seed=${auth.user.name}`
 								}
 							/>
 							<AvatarFallback>
-								{session.user.name || session.user.email}
+								{auth.user.name || auth.user.email}
 							</AvatarFallback>
 						</Avatar>
 					</DropdownMenuTrigger>
@@ -75,10 +62,10 @@ export default function AuthHeader() {
 						<DropdownMenuGroup>
 							<DropdownMenuLabel className="flex flex-col items-end justify-center gap-0.5 text-primary">
 								<span className="text-sm font-sg font-semibold">
-									{session.user.name}
+									{auth.user.name}
 								</span>
 								<small className="text-xs font-sg font-normal">
-									{session.user.email}
+									{auth.user.email}
 								</small>
 							</DropdownMenuLabel>
 							<DropdownMenuItem asChild>

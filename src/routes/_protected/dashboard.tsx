@@ -1,14 +1,13 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { FilePlus } from "lucide-react";
-import { Suspense } from "react";
 import { cn } from "@/common/lib/utils";
-import { getCompactUserPolls, getListedUserPolls } from "@/poll/actions/poll";
 import { CompactUserPolls } from "@/poll/components/compact-user-polls";
 import { ListUserPolls } from "@/poll/components/list-user-polls";
 import { PollFilterBar } from "@/poll/components/poll-filter-bar";
+import { compactPollsOptions, listPollsOptions } from "@/poll/lib/query";
 import { pollsSearchFiltershSchema } from "@/poll/lib/validation";
 import { buttonVariants } from "@/ui/button";
-import { Spinner } from "@/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 
 export const Route = createFileRoute("/_protected/dashboard")({
@@ -18,29 +17,42 @@ export const Route = createFileRoute("/_protected/dashboard")({
 		status: search.status,
 	}),
 	component: RouteComponent,
-	loader: ({ context, deps }) => ({
-		compactUserPollsPromise: getCompactUserPolls({
-			data: {
-				userId: context?.auth?.user.id as string,
-				q: deps.q ?? "",
+	loader: ({ context, deps }) => {
+		context.queryClient.ensureQueryData(
+			compactPollsOptions({
+				q: deps.q,
 				status: deps.status,
-			},
-		}),
-		listUserPollsPromise: getListedUserPolls({
-			data: {
-				userId: context?.auth?.user.id as string,
-				q: deps.q ?? "",
+				userId: context.auth.user.id,
+			}),
+		);
+		context.queryClient.ensureQueryData(
+			listPollsOptions({
+				q: deps.q,
 				status: deps.status,
-			},
-		}),
-	}),
+				userId: context.auth.user.id,
+			}),
+		);
+	},
 });
 
 function RouteComponent() {
-	const { listUserPollsPromise, compactUserPollsPromise } =
-		Route.useLoaderData();
 	const search = Route.useSearch();
+	const context = Route.useRouteContext();
 	const navigate = useNavigate({ from: Route.fullPath });
+	const { data: compactData } = useSuspenseQuery(
+		compactPollsOptions({
+			q: search.q,
+			status: search.status,
+			userId: context.auth.user.id,
+		}),
+	);
+	const { data: listData } = useSuspenseQuery(
+		listPollsOptions({
+			q: search.q,
+			status: search.status,
+			userId: context.auth.user.id,
+		}),
+	);
 
 	const handleTabChange = (newView: "compact" | "list") => {
 		navigate({
@@ -62,7 +74,7 @@ function RouteComponent() {
 				onValueChange={(e) => handleTabChange(e as "compact" | "list")}
 			>
 				<TabsList className="gap-2">
-					<PollFilterBar from="/_protected/dashboard" showStateSelector />
+					<PollFilterBar showStateSelector />
 					<TabsTrigger value="list">Listado</TabsTrigger>
 					<TabsTrigger value="compact">Compacto</TabsTrigger>
 					<Link
@@ -80,26 +92,10 @@ function RouteComponent() {
 					</Link>
 				</TabsList>
 				<TabsContent value="list">
-					<Suspense
-						fallback={
-							<div className="flex h-auto w-full items-center justify-center">
-								<Spinner />
-							</div>
-						}
-					>
-						<ListUserPolls dataPromise={listUserPollsPromise} />
-					</Suspense>
+					<ListUserPolls polls={listData} />
 				</TabsContent>
 				<TabsContent value="compact">
-					<Suspense
-						fallback={
-							<div className="flex h-auto w-full items-center justify-center">
-								<Spinner />
-							</div>
-						}
-					>
-						<CompactUserPolls dataPromise={compactUserPollsPromise} />
-					</Suspense>
+					<CompactUserPolls polls={compactData} />
 				</TabsContent>
 			</Tabs>
 		</div>

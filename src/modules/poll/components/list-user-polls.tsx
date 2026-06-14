@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
-import { use } from "react";
 import type { getListedUserPolls } from "@/poll/actions/poll";
 import { buttonVariants } from "@/ui/button";
 import {
@@ -11,26 +10,13 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/ui/empty";
-import { Skeleton } from "@/ui/skeleton";
 import PollCardDashboardList from "./poll-card-dashboard-list";
 
 interface Props {
-	dataPromise: ReturnType<typeof getListedUserPolls>;
+	polls: Awaited<ReturnType<typeof getListedUserPolls>>;
 }
 
-export const ListUserPolls = ({ dataPromise }: Props) => {
-	const polls = use(dataPromise);
-
-	if (!polls) {
-		return (
-			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-				{Array.from({ length: 6 }, (_, index) => index + 1).map((el) => {
-					return <Skeleton key={el} />;
-				})}
-			</ul>
-		);
-	}
-
+export const ListUserPolls = ({ polls }: Props) => {
 	if (polls.length === 0) {
 		return (
 			<Empty className="border border-dashed">

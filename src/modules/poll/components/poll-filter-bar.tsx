@@ -19,7 +19,6 @@ import {
 
 interface Props {
 	showStateSelector?: boolean;
-	from: string;
 }
 
 interface Filter {
@@ -27,8 +26,15 @@ interface Filter {
 	status?: "all" | "draft" | "published" | "archived";
 }
 
-export function PollFilterBar({ showStateSelector = false, from }: Props) {
-	const search = useSearch({ from }) as Filter;
+const STATUS_LABELS = {
+	all: "Todos",
+	draft: "Borrador",
+	published: "Publicado",
+	archived: "Archivado",
+};
+
+export function PollFilterBar({ showStateSelector = false }: Props) {
+	const search = useSearch({ from: "/_protected/dashboard" }) as Filter;
 	const navigate = useNavigate();
 
 	// Valores por defecto si no existen en la URL
@@ -52,7 +58,7 @@ export function PollFilterBar({ showStateSelector = false, from }: Props) {
 			navigate({
 				search: (prev: Filter) => ({
 					...prev,
-					q: debouncedSearchTerm || undefined, // Limpia el parámetro si está vacío
+					q: debouncedSearchTerm,
 				}),
 				replace: true, // Evita llenar el historial del navegador con cada keystroke
 			});
@@ -82,7 +88,9 @@ export function PollFilterBar({ showStateSelector = false, from }: Props) {
 					{showStateSelector && (
 						<Select value={currentStatus} onValueChange={handleStatusChange}>
 							<SelectTrigger className="w-full max-w-28 p-1 text-xs" size="sm">
-								<SelectValue placeholder="Estado" />
+								<SelectValue placeholder="Estado" className="w-28">
+									{STATUS_LABELS[currentStatus as keyof typeof STATUS_LABELS]}
+								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectGroup>

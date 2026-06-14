@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
-import { use } from "react";
 import type { getCompactUserPolls } from "@/poll/actions/poll";
 import { buttonVariants } from "@/ui/button";
 import {
@@ -11,26 +10,13 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/ui/empty";
-import { Skeleton } from "@/ui/skeleton";
 import PollCardDashboardCompact from "./poll-card-dashboard-compact";
 
 interface Props {
-	dataPromise: ReturnType<typeof getCompactUserPolls>;
+	polls: Awaited<ReturnType<typeof getCompactUserPolls>>;
 }
 
-export const CompactUserPolls = ({ dataPromise }: Props) => {
-	const polls = use(dataPromise);
-
-	if (!polls) {
-		return (
-			<ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-				{Array.from({ length: 6 }, (_, index) => index + 1).map((el) => {
-					return <Skeleton key={el} className="h-32 w-full" />;
-				})}
-			</ul>
-		);
-	}
-
+export const CompactUserPolls = ({ polls }: Props) => {
 	if (Object.keys(polls).length === 0) {
 		return (
 			<Empty className="border border-dashed">
