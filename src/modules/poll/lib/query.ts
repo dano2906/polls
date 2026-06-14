@@ -2,7 +2,9 @@ import { queryOptions } from "@tanstack/react-query";
 import {
 	getCompactUserPolls,
 	getListedUserPolls,
+	getPollDetails,
 	getPublishedPolls,
+	getUserPollResults,
 } from "../actions/poll";
 import type { PollStatus } from "../shared/types";
 
@@ -56,6 +58,35 @@ export const listPollsOptions = ({
 					userId,
 					q,
 					status,
+				},
+			}),
+	});
+
+export const pollDetailsOptions = (slug: string) =>
+	queryOptions({
+		queryKey: ["poll", "details", slug],
+		queryFn: () =>
+			getPollDetails({
+				data: {
+					slug,
+				},
+			}),
+	});
+
+export const pollResultOptions = ({
+	slug,
+	userId,
+}: {
+	slug: string;
+	userId: string;
+}) =>
+	queryOptions({
+		queryKey: ["poll", "result", slug, userId],
+		queryFn: () =>
+			getUserPollResults({
+				data: {
+					slug,
+					userId,
 				},
 			}),
 	});

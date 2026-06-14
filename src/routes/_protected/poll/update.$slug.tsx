@@ -23,6 +23,7 @@ function RouteComponent() {
 				userId={auth?.user.id as string}
 				initialData={{
 					...initialData,
+					password: null,
 					slug,
 				}}
 			/>

@@ -412,36 +412,38 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 
 		// ❌ CASO 2: Control de Estados (Draft / Archived)
 		if (currentPoll.status === "draft" && currentPoll.userId !== userId) {
-			return {
-				allowed: false,
-				reason: "UNAUTHORIZED",
-				message: "Esta encuesta aún no ha sido publicada.",
-			};
+			throw redirect({
+				to: "/",
+				search: { error: "Esta encuesta aún no ha sido publicada." },
+			});
 		}
 
 		if (currentPoll.status === "archived") {
-			return {
-				allowed: false,
-				reason: "ARCHIVED",
-				message: "Esta encuesta ha sido archivada y ya no acepta respuestas.",
-			};
+			throw redirect({
+				to: "/",
+				search: {
+					error: "Esta encuesta ha sido archivada y ya no acepta respuestas.",
+				},
+			});
 		}
 
 		// ❌ CASO 3: Plazo de tiempo general (¿Ya empezó? ¿Ya terminó?)
 		if (currentPoll.startDate && now < currentPoll.startDate) {
-			return {
-				allowed: false,
-				reason: "NOT_STARTED",
-				message: `Esta encuesta comenzará el ${currentPoll.startDate.toLocaleString("es")}.`,
-			};
+			throw redirect({
+				to: "/",
+				search: {
+					error: `Esta encuesta comenzará el ${currentPoll.startDate.toLocaleString("es")}.`,
+				},
+			});
 		}
 
 		if (currentPoll.endDate && now > currentPoll.endDate) {
-			return {
-				allowed: false,
-				reason: "EXPIRED",
-				message: "El plazo para responder esta encuesta ha finalizado.",
-			};
+			throw redirect({
+				to: "/",
+				search: {
+					error: "El plazo para responder esta encuesta ha finalizado.",
+				},
+			});
 		}
 
 		// ❌ CASO 4. Tiene contraseña
@@ -518,12 +520,13 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			const count = totalSubmissions[0]?.count ?? 0;
 
 			if (count >= currentPoll.metadata.limitResponses) {
-				return {
-					allowed: false,
-					reason: "CAP_REACHED",
-					message:
-						"Esta encuesta ha alcanzado el límite máximo de respuestas permitidas.",
-				};
+				throw redirect({
+					to: "/",
+					search: {
+						error:
+							"Esta encuesta ha alcanzado el límite máximo de respuestas permitidas.",
+					},
+				});
 			}
 		}
 

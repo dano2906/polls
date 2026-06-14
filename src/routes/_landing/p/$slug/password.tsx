@@ -1,21 +1,11 @@
-import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { ensureSession } from "@/common/lib/auth-functions";
 import PollPasswordForm from "@/poll/components/poll-password-form";
 
 export const Route = createFileRoute("/_landing/p/$slug/password")({
 	component: RouteComponent,
-	beforeLoad: async ({ context }) => {
-		try {
-			if (!context.auth?.session) {
-				throw redirect({
-					to: "/",
-				});
-			}
-		} catch (error) {
-			if (isRedirect(error)) throw error;
-			throw redirect({
-				to: "/",
-			});
-		}
+	beforeLoad: async () => {
+		await ensureSession();
 	},
 });
 

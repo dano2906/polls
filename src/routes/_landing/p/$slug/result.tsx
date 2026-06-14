@@ -1,35 +1,34 @@
-import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { ResponseRenderer } from "@/answers/components/result-response-renderer";
-import { getUserPollResults } from "@/poll/actions/poll";
+import { ensureSession } from "@/common/lib/auth-functions";
+import { pollResultOptions } from "@/poll/lib/query";
 
 export const Route = createFileRoute("/_landing/p/$slug/result")({
 	component: RouteComponent,
-	beforeLoad: async ({ context }) => {
-		try {
-			if (!context.auth?.session) {
-				throw redirect({
-					to: "/",
-				});
-			}
-		} catch (error) {
-			if (isRedirect(error)) throw error;
-			throw redirect({
-				to: "/",
-			});
-		}
+	beforeLoad: async () => {
+		await ensureSession();
 	},
-	loader: async ({ context, params }) => {
-		return await getUserPollResults({
-			data: {
+	loader: ({ context, params }) => {
+		context.queryClient.ensureQueryData(
+			pollResultOptions({
 				slug: params.slug,
-				userId: context?.auth?.session?.userId as string,
-			},
-		});
+				userId: context.auth.user.id,
+			}),
+		);
 	},
 });
 
 function RouteComponent() {
-	const { results, poll } = Route.useLoaderData();
+	const { slug } = Route.useParams();
+	const { auth } = Route.useRouteContext();
+	const { data } = useSuspenseQuery(
+		pollResultOptions({
+			slug,
+			userId: auth.user.id,
+		}),
+	);
+	const { poll, results } = data;
 
 	return (
 		<div className="w-full max-w-4xl mx-auto space-y-6 py-6 px-4">
