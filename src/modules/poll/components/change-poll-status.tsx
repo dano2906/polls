@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { CircleArrowUp } from "lucide-react";
 import { toast } from "sonner";
@@ -52,7 +52,7 @@ export const ChangePollStatus = ({
 	inMenu?: boolean;
 }) => {
 	const router = useRouter();
-
+	const qc = useQueryClient();
 	const currentIndex = POLL_STATUS_FLOW.indexOf(status);
 	const nextStatus = POLL_STATUS_FLOW[currentIndex + 1] as
 		| PollStatus
@@ -70,6 +70,9 @@ export const ChangePollStatus = ({
 		},
 		onSuccess: async () => {
 			await router.invalidate();
+			await qc.invalidateQueries({
+				queryKey: ["poll"],
+			});
 			toast.success(`Estado actualizado`);
 		},
 		onError: () => {

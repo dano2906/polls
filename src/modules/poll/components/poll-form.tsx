@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { Save } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
@@ -31,6 +31,7 @@ interface Props {
 
 const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 	const router = useRouter();
+	const qc = useQueryClient();
 	const isEditing = !!initialData;
 	const createPollMutation = useMutation({
 		mutationKey: [
@@ -54,6 +55,9 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 				onCreatePoll((data as { slug: string }).slug);
 			}
 			router.invalidate();
+			await qc.invalidateQueries({
+				queryKey: ["poll"],
+			});
 			toast.success(isEditing ? "Encuesta actualizada" : "Encuesta creada");
 		},
 	});

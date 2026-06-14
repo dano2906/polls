@@ -1,5 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash } from "lucide-react";
 import { toast } from "sonner";
 import { deletePollBySlug } from "@/poll/actions/poll";
@@ -11,7 +10,7 @@ interface Props {
 }
 
 const DeletePollButton = ({ slug }: Props) => {
-	const router = useRouter();
+	const qc = useQueryClient();
 	const deletePollMutation = useMutation({
 		mutationKey: ["delete", "poll", slug],
 		mutationFn: async () => {
@@ -22,7 +21,9 @@ const DeletePollButton = ({ slug }: Props) => {
 			});
 		},
 		onSuccess: async ({ message, success }) => {
-			await router.invalidate();
+			await qc.invalidateQueries({
+				queryKey: ["poll"],
+			});
 			if (success) {
 				toast.success(message);
 			}

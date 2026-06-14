@@ -14,7 +14,7 @@ export const landingPollsOptions = ({
 	status: PollStatus;
 }) =>
 	queryOptions({
-		queryKey: ["polls", "landing", "published", { q, status }],
+		queryKey: ["poll", "landing", "published", { q, status }],
 		queryFn: () => getPublishedPolls({ data: { q, status } }),
 	});
 
@@ -28,7 +28,7 @@ export const compactPollsOptions = ({
 	userId: string;
 }) =>
 	queryOptions({
-		queryKey: ["polls", "dashboard", "compact", { q, status }],
+		queryKey: ["poll", "dashboard", "compact", { q, status }],
 		queryFn: () =>
 			getCompactUserPolls({
 				data: {
@@ -49,7 +49,7 @@ export const listPollsOptions = ({
 	userId: string;
 }) =>
 	queryOptions({
-		queryKey: ["polls", "dashboard", "list", { q, status }],
+		queryKey: ["poll", "dashboard", "list", { q, status }],
 		queryFn: () =>
 			getListedUserPolls({
 				data: {

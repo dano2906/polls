@@ -1,5 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ListTree } from "lucide-react";
 import { toast } from "sonner";
 import { forkPoll } from "@/poll/actions/poll";
@@ -12,7 +11,7 @@ interface Props {
 }
 
 const ForkVersionButton = ({ slug, version }: Props) => {
-	const router = useRouter();
+	const qc = useQueryClient();
 	const forkPollMutation = useMutation({
 		mutationKey: ["fork", "poll"],
 		mutationFn: async () => {
@@ -23,7 +22,9 @@ const ForkVersionButton = ({ slug, version }: Props) => {
 			});
 		},
 		onSuccess: async () => {
-			await router.invalidate();
+			await qc.invalidateQueries({
+				queryKey: ["poll"],
+			});
 		},
 		onError: () => toast.error("Ha ocurrido un error creando la nueva versión"),
 	});

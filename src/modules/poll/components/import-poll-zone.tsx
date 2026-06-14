@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -29,10 +29,12 @@ const typeLabel: Record<QuestionType, string> = {
 	rating: "Evaluación/Rating",
 	date_single: "Fecha simple",
 	date_range: "Rango de fechas",
+	geolocation: "Geolocalización",
+	point_distribution: "Distribución de puntos",
 };
 
 export function ImportPollZone() {
-	const router = useRouter();
+	const qc = useQueryClient();
 	const navigate = useNavigate({ from: "/poll/import" });
 	const [isDragActive, setIsDragActive] = useState(false);
 	const [localError, setLocalError] = useState<string | null>(null);
@@ -54,8 +56,10 @@ export function ImportPollZone() {
 			}
 			return result;
 		},
-		onSuccess: () => {
-			router.invalidate();
+		onSuccess: async () => {
+			await qc.invalidateQueries({
+				queryKey: ["poll"],
+			});
 			const timeout = setTimeout(() => {
 				navigate({
 					to: "/dashboard",

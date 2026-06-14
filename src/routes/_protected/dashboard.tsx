@@ -74,7 +74,7 @@ function RouteComponent() {
 				onValueChange={(e) => handleTabChange(e as "compact" | "list")}
 			>
 				<TabsList className="gap-2">
-					<PollFilterBar showStateSelector />
+					<PollFilterBar showStateSelector from="/_protected/dashboard" />
 					<TabsTrigger value="list">Listado</TabsTrigger>
 					<TabsTrigger value="compact">Compacto</TabsTrigger>
 					<Link

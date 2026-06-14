@@ -19,6 +19,7 @@ import {
 
 interface Props {
 	showStateSelector?: boolean;
+	from: "/_protected/dashboard" | "/_landing/";
 }
 
 interface Filter {
@@ -33,8 +34,8 @@ const STATUS_LABELS = {
 	archived: "Archivado",
 };
 
-export function PollFilterBar({ showStateSelector = false }: Props) {
-	const search = useSearch({ from: "/_protected/dashboard" }) as Filter;
+export function PollFilterBar({ showStateSelector = false, from }: Props) {
+	const search = useSearch({ from }) as Filter;
 	const navigate = useNavigate();
 
 	// Valores por defecto si no existen en la URL
