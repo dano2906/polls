@@ -9,3 +9,15 @@ export const signInSchema = z.object({
 export const signUpSchema = signInSchema.extend({
 	name: z.string(),
 });
+
+export const updateAvatarSchema = z.object({
+	id: z.string(),
+	publicId: z
+		.string({ error: "El publicId es requerido" })
+		.min(1, "El publicId no puede estar vacío"),
+	url: z
+		.url("Debe ser una URL válida")
+		.refine((val) => val.includes("res.cloudinary.com"), {
+			message: "La URL debe pertenecer a Cloudinary",
+		}),
+});
