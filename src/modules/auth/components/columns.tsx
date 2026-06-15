@@ -32,16 +32,19 @@ export const listUsersColumns: ColumnDef<User>[] = [
 				<span>No image available</span>
 			);
 		},
+		meta: { label: "Avatar" },
 	},
 	{
 		accessorKey: "email",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Correo electrónico" />
 		),
+		meta: { label: "Correo electrónico" },
 	},
 	{
 		accessorKey: "name",
 		header: "Nombre",
+		meta: { label: "Nombre" },
 	},
 
 	{
@@ -51,6 +54,7 @@ export const listUsersColumns: ColumnDef<User>[] = [
 		cell: ({ row }) => {
 			return <UserActionsMenu id={row.original.id} />;
 		},
+		meta: { label: "Acciones" },
 	},
 ];
 
@@ -63,12 +67,14 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 		cell: ({ getValue }) => {
 			return <code className="font-mono">{getValue<string>()}</code>;
 		},
+		meta: { label: "Dirección IP" },
 	},
 	{
 		accessorKey: "userAgent",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Dispositivo / Navegador" />
 		),
+		meta: { label: "DIspositivo / Navegador" },
 		cell: ({ getValue }) => {
 			const rawUserAgent = getValue<string>();
 
@@ -115,6 +121,7 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Fecha de creación" />
 		),
+		meta: { label: "Fecha de creación" },
 		cell: ({ getValue }) => {
 			const rawDate = getValue<string | Date>();
 
@@ -141,6 +148,7 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Fecha de expiración" />
 		),
+		meta: { label: "Fecha de expiración" },
 		cell: ({ getValue }) => {
 			const rawDate = getValue<string | Date>();
 
@@ -183,5 +191,6 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 		cell: ({ row }) => {
 			return "acciones";
 		},
+		meta: { label: "Acciones" },
 	},
 ];

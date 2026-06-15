@@ -4,13 +4,14 @@ import { getUserSessionsOptions } from "../lib/query";
 import { listUserSessionsColumns } from "./columns";
 
 const ListUserSessions = ({ id }: { id: string }) => {
-	const { data } = useQuery(getUserSessionsOptions(id));
+	const { data, isLoading } = useQuery(getUserSessionsOptions(id));
 	return (
 		<DataTable
 			columns={listUserSessionsColumns}
 			data={data?.sessions ?? []}
-			filteringColumns={[]}
-			total={data?.sessions.length ?? 0}
+			filteringColumns={["ipAddress"]}
+			isLoading={isLoading}
+			mode="client"
 		/>
 	);
 };

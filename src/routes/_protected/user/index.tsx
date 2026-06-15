@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_protected/user/")({
 
 function RouteComponent() {
 	const search = Route.useSearch();
-	const { data } = useSuspenseQuery(
+	const { data, isLoading } = useSuspenseQuery(
 		listUserOptions({
 			...search,
 			searchField: search.searchField as "email" | "name" | undefined,
@@ -46,6 +46,8 @@ function RouteComponent() {
 				data={data?.data?.users ?? []}
 				filteringColumns={["email", "name"]}
 				total={data?.data?.total ?? 0}
+				isLoading={isLoading}
+				mode="server"
 			/>
 		</div>
 	);

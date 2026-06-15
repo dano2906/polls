@@ -3,6 +3,9 @@ import {
 	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
+	getFilteredRowModel,
+	getPaginationRowModel,
+	getSortedRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
 import { Eye, X } from "lucide-react";
@@ -38,7 +41,6 @@ import {
 import { Spinner } from "../ui/spinner";
 import { DataTablePagination } from "./data-table-pagination";
 
-// Definimos la interfaz exacta que nos diste
 export interface TableFilters {
 	limit: number;
 	offset: number;
@@ -52,16 +54,18 @@ interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
 	data: TData[];
 	filteringColumns: (keyof TData & string)[];
-	total: number;
+	total?: number;
 	isLoading?: boolean;
+	mode?: "client" | "server";
 }
 
 export function DataTable<TData, TValue>({
 	columns,
 	data,
 	filteringColumns,
-	total,
+	total = 0,
 	isLoading = false,
+	mode = "client",
 }: DataTableProps<TData, TValue>) {
 	const searchParams = useSearch({ strict: false }) as TableFilters;
 	const navigate = useNavigate();
@@ -73,13 +77,23 @@ export function DataTable<TData, TValue>({
 	const searchValue = searchParams.searchValue ?? "";
 	const activeSearchField =
 		searchParams.searchField ?? filteringColumns[0] ?? "";
+
 	const [localSearch, setLocalSearch] = useState(searchValue);
 
 	const pageIndex = Math.floor(offset / limit);
-	const computedPageCount = Math.max(1, Math.ceil((total ?? 0) / limit));
+	const computedPageCount = Math.max(1, Math.ceil(total / limit));
+
 	const sortingState = sortBy
 		? [{ id: sortBy, desc: sortDirection === "desc" }]
 		: [];
+
+	// Preparamos el estado de filtros de columna para TanStack Table
+	const columnFilters =
+		activeSearchField && searchValue
+			? [{ id: activeSearchField, value: searchValue }]
+			: [];
+
+	const isServer = mode === "server";
 
 	useEffect(() => {
 		setLocalSearch(searchValue);
@@ -118,17 +132,27 @@ export function DataTable<TData, TValue>({
 	const table = useReactTable({
 		data,
 		columns,
-		pageCount: computedPageCount,
+		// Si es modo cliente, TanStack calcula el pageCount internamente
+		pageCount: isServer ? computedPageCount : undefined,
 		getCoreRowModel: getCoreRowModel(),
-		manualPagination: true,
-		manualSorting: true,
-		manualFiltering: true,
+
+		// Modelos necesarios para el modo cliente
+		getFilteredRowModel: getFilteredRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+
+		// Banderas que controlan el modo (delegar vs hacer internamente)
+		manualPagination: isServer,
+		manualSorting: isServer,
+		manualFiltering: isServer,
+
 		state: {
 			pagination: {
 				pageIndex,
 				pageSize: limit,
 			},
 			sorting: sortingState,
+			columnFilters, // <-- Inyectamos el estado del filtro de la URL a la tabla
 		},
 		onPaginationChange: (updater) => {
 			const nextState =
@@ -154,24 +178,27 @@ export function DataTable<TData, TValue>({
 				to: ".",
 				search: (prev: any) => ({
 					...prev,
-					// Si hay ordenación, mandamos el ID limpio (ej: "image")
 					sortBy: firstSort ? firstSort.id : undefined,
-					// Evaluamos el booleano 'desc' para mandar "desc" o "asc"
 					sortDirection: firstSort
 						? firstSort.desc
 							? "desc"
 							: "asc"
 						: undefined,
-					offset: 0, // Reiniciamos la página al cambiar el orden
+					offset: 0,
 				}),
 			});
 		},
 	});
 
+	// En modo cliente, el total de filas filtradas cambia dinámicamente
+	const currentTotalRows = isServer
+		? total
+		: table.getFilteredRowModel().rows.length;
+
 	return (
-		<div className="w-full flex flex-col items-center justify-center gap-4">
-			<div className="w-full flex items-center">
-				<InputGroup className="max-w-md w-full px-1">
+		<div className="flex w-full flex-col items-center justify-center gap-4">
+			<div className="flex w-full items-center gap-0.5">
+				<InputGroup className="w-full max-w-md px-1">
 					{filteringColumns.length > 1 && (
 						<InputGroupAddon align={"inline-end"}>
 							<Select
@@ -182,14 +209,14 @@ export function DataTable<TData, TValue>({
 									className="w-full max-w-28 p-1 text-xs"
 									size="sm"
 								>
-									<SelectValue placeholder="Filtrar por" className="w-28" />
+									<SelectValue placeholder="Filtrar por..." className="w-28" />
 								</SelectTrigger>
 								<SelectContent>
 									{filteringColumns.map((col) => (
 										<SelectItem
 											key={col}
 											value={col}
-											className="capitalize text-xs"
+											className="text-xs capitalize"
 										>
 											{col}
 										</SelectItem>
@@ -200,7 +227,11 @@ export function DataTable<TData, TValue>({
 					)}
 
 					<InputGroupInput
-						placeholder="Buscar..."
+						placeholder={
+							filteringColumns.length === 1
+								? `Filtrar por ${filteringColumns[0]}`
+								: "Filtrar por..."
+						}
 						value={localSearch}
 						onChange={(event) => setLocalSearch(event.target.value)}
 						className={filteringColumns.length > 1 ? "rounded-l-none" : ""}
@@ -242,16 +273,23 @@ export function DataTable<TData, TValue>({
 						{table
 							.getAllColumns()
 							.filter((column) => column.getCanHide())
-							.map((column) => (
-								<DropdownMenuCheckboxItem
-									key={column.id}
-									className="capitalize"
-									checked={column.getIsVisible()}
-									onCheckedChange={(value) => column.toggleVisibility(!!value)}
-								>
-									{column.id}
-								</DropdownMenuCheckboxItem>
-							))}
+							.map((column) => {
+								const meta = column.columnDef.meta as
+									| { label?: string }
+									| undefined;
+								const label = meta?.label ?? column.id;
+								return (
+									<DropdownMenuCheckboxItem
+										key={column.id}
+										checked={column.getIsVisible()}
+										onCheckedChange={(value) =>
+											column.toggleVisibility(!!value)
+										}
+									>
+										{label}
+									</DropdownMenuCheckboxItem>
+								);
+							})}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</div>
@@ -302,7 +340,9 @@ export function DataTable<TData, TValue>({
 					</TableBody>
 				</Table>
 			</div>
-			<DataTablePagination table={table} totalRows={total} />
+
+			{/* Usamos currentTotalRows para que la paginación funcione correctamente en ambos modos */}
+			<DataTablePagination table={table} totalRows={currentTotalRows} />
 		</div>
 	);
 }

@@ -31,26 +31,7 @@ export function DataTablePagination<TData>({
 				{table.getFilteredSelectedRowModel().rows.length} de {total} fila(s)
 				seleccionadas.
 			</div>
-			<div className="w-full flex items-center space-x-6 lg:space-x-8">
-				<div className="flex items-center space-x-2">
-					<Select
-						value={`${table.getState().pagination.pageSize}`}
-						onValueChange={(value) => {
-							table.setPageSize(Number(value));
-						}}
-					>
-						<SelectTrigger className="text-xs">
-							<SelectValue placeholder={table.getState().pagination.pageSize} />
-						</SelectTrigger>
-						<SelectContent side="top">
-							{[10, 20, 25, 30, 40, 50].map((pageSize) => (
-								<SelectItem key={pageSize} value={`${pageSize}`}>
-									{pageSize}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
+			<div className="w-full flex items-center justify-end space-x-2 lg:space-x-4">
 				<div className="flex w-[100px] items-center justify-center text-xs font-medium">
 					Página {table.getState().pagination.pageIndex + 1} de{" "}
 					{Math.max(1, table.getPageCount())}
@@ -96,6 +77,25 @@ export function DataTablePagination<TData>({
 						<span className="sr-only">Página final</span>
 						<ChevronsRight />
 					</Button>
+				</div>
+				<div className="flex items-center  space-x-2">
+					<Select
+						value={`${table.getState().pagination.pageSize}`}
+						onValueChange={(value) => {
+							table.setPageSize(Number(value));
+						}}
+					>
+						<SelectTrigger className="text-xs">
+							<SelectValue placeholder={table.getState().pagination.pageSize} />
+						</SelectTrigger>
+						<SelectContent side="top">
+							{[10, 20, 25, 30, 40, 50].map((pageSize) => (
+								<SelectItem key={pageSize} value={`${pageSize}`}>
+									{pageSize}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 			</div>
 		</div>
