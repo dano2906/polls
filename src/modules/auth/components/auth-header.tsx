@@ -1,10 +1,6 @@
+import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import {
-	Link,
-	useMatches,
-	useRouteContext,
-	useRouter,
-} from "@tanstack/react-router";
-import {
+	Eye,
 	File,
 	FilePlus,
 	Import,
@@ -21,16 +17,18 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuPortal,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 import { authClient } from "../lib/auth-client";
 
 export default function AuthHeader() {
 	const { auth } = useRouteContext({ from: "__root__" });
-	const matches = useMatches();
 	const router = useRouter();
-	const isProtected = matches.some((match) => match.routeId === "/_protected");
 
 	async function signOut() {
 		authClient.signOut();
@@ -86,32 +84,56 @@ export default function AuthHeader() {
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
 						<DropdownMenuSeparator />
-						{isProtected && (
-							<DropdownMenuGroup>
-								<DropdownMenuItem asChild>
-									<Link
-										to="/poll/new"
-										className="w-full flex items-center justify-start gap-1"
-										preload={false}
-									>
-										<FilePlus />
-										Crear encuesta
-									</Link>
-								</DropdownMenuItem>
-								<DropdownMenuItem asChild>
-									<Link
-										to="/poll/import"
-										preload={false}
-										className="w-full flex items-center justify-start gap-1"
-									>
-										<Import />
-										Importar encuesta
-									</Link>
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
+						{auth && (
+							<DropdownMenuSub>
+								<DropdownMenuSubTrigger>Encuesta</DropdownMenuSubTrigger>
+								<DropdownMenuPortal>
+									<DropdownMenuSubContent>
+										<DropdownMenuItem asChild>
+											<Link
+												to="/poll/new"
+												className="w-full flex items-center justify-start gap-1"
+												preload={false}
+											>
+												<FilePlus />
+												Crear encuesta
+											</Link>
+										</DropdownMenuItem>
+										<DropdownMenuItem asChild>
+											<Link
+												to="/poll/import"
+												preload={false}
+												className="w-full flex items-center justify-start gap-1"
+											>
+												<Import />
+												Importar encuesta
+											</Link>
+										</DropdownMenuItem>
+									</DropdownMenuSubContent>
+								</DropdownMenuPortal>
+							</DropdownMenuSub>
+						)}
+						{auth && auth.user.role === "admin" && (
+							<DropdownMenuSub>
+								<DropdownMenuSubTrigger>Usuarios</DropdownMenuSubTrigger>
+								<DropdownMenuPortal>
+									<DropdownMenuSubContent>
+										<DropdownMenuItem asChild>
+											<Link
+												to="/user"
+												className="w-full flex items-center justify-start gap-1"
+												preload={false}
+											>
+												<Eye />
+												Ver usuarios
+											</Link>
+										</DropdownMenuItem>
+									</DropdownMenuSubContent>
+								</DropdownMenuPortal>
+							</DropdownMenuSub>
 						)}
 
-						{isProtected && <DropdownMenuSeparator />}
+						{auth && <DropdownMenuSeparator />}
 						<DropdownMenuGroup>
 							<DropdownMenuItem asChild>
 								<ThemeToggle />

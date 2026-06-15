@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { auth } from "@/auth/lib/auth";
@@ -18,7 +19,9 @@ export const ensureSession = createServerFn({ method: "GET" }).handler(
 		const session = await auth.api.getSession({ headers });
 
 		if (!session) {
-			throw new Error("Unauthorized");
+			throw redirect({
+				to: "/",
+			});
 		}
 
 		return session;

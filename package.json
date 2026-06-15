@@ -35,6 +35,7 @@
     "@tanstack/react-router-devtools": "latest",
     "@tanstack/react-router-ssr-query": "latest",
     "@tanstack/react-start": "latest",
+    "@tanstack/react-table": "^8.21.3",
     "@tanstack/router-generator": "^1.167.17",
     "@tanstack/router-plugin": "^1.168.18",
     "@vitejs/plugin-rsc": "^0.5.27",

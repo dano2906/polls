@@ -22,14 +22,14 @@ export const Route = createFileRoute("/_protected/dashboard")({
 			compactPollsOptions({
 				q: deps.q,
 				status: deps.status,
-				userId: context.auth.user.id,
+				userId: context?.auth?.user.id,
 			}),
 		);
 		context.queryClient.ensureQueryData(
 			listPollsOptions({
 				q: deps.q,
 				status: deps.status,
-				userId: context.auth.user.id,
+				userId: context?.auth?.user.id,
 			}),
 		);
 	},
@@ -50,7 +50,7 @@ function RouteComponent() {
 		listPollsOptions({
 			q: search.q,
 			status: search.status,
-			userId: context.auth.user.id,
+			userId: context?.auth?.user.id,
 		}),
 	);
 

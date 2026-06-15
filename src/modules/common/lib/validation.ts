@@ -16,3 +16,12 @@ export const passwordSchema = z
 		message:
 			"Debe incluir al menos un carácter especial (ej. @, $, !, #, etc.).",
 	});
+
+export const filtersSchema = z.object({
+	limit: z.number().catch(10),
+	offset: z.number().catch(0),
+	sortBy: z.string().optional(),
+	sortDirection: z.union([z.literal("asc"), z.literal("desc")]).catch("desc"),
+	searchField: z.string().optional(),
+	searchValue: z.string().optional(),
+});
