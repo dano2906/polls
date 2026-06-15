@@ -4,10 +4,17 @@ import {
 	useRouteContext,
 	useRouter,
 } from "@tanstack/react-router";
-import { File, FilePlus, Import, LayoutDashboard, LogOut } from "lucide-react";
-import { authClient } from "@/auth/lib/auth-client";
+import {
+	File,
+	FilePlus,
+	Import,
+	Key,
+	LayoutDashboard,
+	LogOut,
+} from "lucide-react";
+import ThemeToggle from "@/common/components/partials/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
-import { Button } from "@/ui/button";
+import { Button, buttonVariants } from "@/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -17,24 +24,13 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
-import { GithubDark } from "@/ui/svgs/githubDark";
-import { GithubLight } from "@/ui/svgs/githubLight.tsx";
-import { Google } from "@/ui/svgs/google";
-import ThemeToggle from "../../common/components/partials/theme-toggle";
+import { authClient } from "../lib/auth-client";
 
 export default function AuthHeader() {
-	const { theme, auth } = useRouteContext({ from: "__root__" });
-	const router = useRouter();
+	const { auth } = useRouteContext({ from: "__root__" });
 	const matches = useMatches();
+	const router = useRouter();
 	const isProtected = matches.some((match) => match.routeId === "/_protected");
-
-	async function signInWithProvider(provider: "github" | "google") {
-		await authClient.signIn.social({
-			provider,
-			callbackURL: "/",
-		});
-		router.invalidate();
-	}
 
 	async function signOut() {
 		authClient.signOut();
@@ -139,20 +135,10 @@ export default function AuthHeader() {
 
 	return (
 		<div className="flex items-center justify-center gap-2">
-			<Button
-				variant={"secondary"}
-				size={"icon"}
-				onClick={() => signInWithProvider("github")}
-			>
-				{theme === "dark" ? <GithubDark /> : <GithubLight />}
-			</Button>
-			<Button
-				variant={"secondary"}
-				size={"icon"}
-				onClick={() => signInWithProvider("google")}
-			>
-				<Google />
-			</Button>
+			<Link to="/auth" className={buttonVariants({ variant: "secondary" })}>
+				<Key />
+				Iniciar sesión
+			</Link>
 		</div>
 	);
 }

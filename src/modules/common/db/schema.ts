@@ -17,7 +17,10 @@ export const user = sqliteTable("user", {
 		.default(false)
 		.notNull(),
 	image: text("image"),
-	role: text("role").$type<"admin" | "user" | "anon">().default("user"),
+	banned: integer("banned"),
+	banReason: text("ban_reason"),
+	banExpires: integer("ban_expires", { mode: "timestamp_ms" }),
+	role: text("role").$type<"admin" | "user" | "org_admin">().default("user"),
 	createdAt: integer("created_at", { mode: "timestamp_ms" })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),
@@ -41,6 +44,7 @@ export const session = sqliteTable(
 			.notNull(),
 		ipAddress: text("ip_address"),
 		userAgent: text("user_agent"),
+		impersonatedBy: text("impersonated_by"),
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),

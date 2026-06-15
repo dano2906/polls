@@ -13,6 +13,7 @@ import { Route as ProtectedRouteImport } from './routes/_protected'
 import { Route as LandingRouteImport } from './routes/_landing'
 import { Route as LandingIndexRouteImport } from './routes/_landing/index'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
+import { Route as LandingAuthRouteImport } from './routes/_landing/auth'
 import { Route as ApiPollGenerateQuestionsRouteImport } from './routes/api/poll/generate-questions'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
@@ -39,6 +40,11 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => ProtectedRoute,
+} as any)
+const LandingAuthRoute = LandingAuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => LandingRoute,
 } as any)
 const ApiPollGenerateQuestionsRoute =
   ApiPollGenerateQuestionsRouteImport.update({
@@ -84,6 +90,7 @@ const LandingPSlugPasswordRoute = LandingPSlugPasswordRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof LandingIndexRoute
+  '/auth': typeof LandingAuthRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof LandingIndexRoute
+  '/auth': typeof LandingAuthRoute
   '/dashboard': typeof ProtectedDashboardRoute
   '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_landing': typeof LandingRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
+  '/_landing/auth': typeof LandingAuthRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_landing/': typeof LandingIndexRoute
   '/_protected/poll/import': typeof ProtectedPollImportRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/dashboard'
     | '/poll/import'
     | '/poll/new'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/dashboard'
     | '/poll/import'
     | '/poll/new'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_landing'
     | '/_protected'
+    | '/_landing/auth'
     | '/_protected/dashboard'
     | '/_landing/'
     | '/_protected/poll/import'
@@ -198,6 +210,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof ProtectedDashboardRouteImport
       parentRoute: typeof ProtectedRoute
+    }
+    '/_landing/auth': {
+      id: '/_landing/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof LandingAuthRouteImport
+      parentRoute: typeof LandingRoute
     }
     '/api/poll/generate-questions': {
       id: '/api/poll/generate-questions'
@@ -259,6 +278,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface LandingRouteChildren {
+  LandingAuthRoute: typeof LandingAuthRoute
   LandingIndexRoute: typeof LandingIndexRoute
   LandingPSlugPasswordRoute: typeof LandingPSlugPasswordRoute
   LandingPSlugResultRoute: typeof LandingPSlugResultRoute
@@ -266,6 +286,7 @@ interface LandingRouteChildren {
 }
 
 const LandingRouteChildren: LandingRouteChildren = {
+  LandingAuthRoute: LandingAuthRoute,
   LandingIndexRoute: LandingIndexRoute,
   LandingPSlugPasswordRoute: LandingPSlugPasswordRoute,
   LandingPSlugResultRoute: LandingPSlugResultRoute,

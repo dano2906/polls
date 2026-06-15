@@ -1,8 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { db } from "@/common/db";
 import * as schemas from "@/common/db/schema";
-import { db } from "../../common/db";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -14,7 +15,11 @@ export const auth = betterAuth({
 			session: schemas.session,
 		},
 	}),
-	plugins: [tanstackStartCookies()],
+	emailAndPassword: {
+		enabled: true,
+		autoSignIn: false,
+	},
+	plugins: [admin(), tanstackStartCookies()],
 	experimental: { joins: true },
 	baseURL: process.env.BETTER_AUTH_URL as string,
 	socialProviders: {
