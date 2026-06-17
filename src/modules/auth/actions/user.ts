@@ -4,6 +4,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { auth } from "../lib/auth";
 import {
 	banUserSchema,
+	createUserSchema,
 	revokeSessionSchema,
 	updateAvatarSchema,
 } from "../lib/validation";
@@ -96,6 +97,22 @@ export const unbanUser = createServerFn({ method: "POST" })
 				userId: data.id,
 			},
 			headers,
+		});
+		return {
+			success: true,
+		};
+	});
+
+export const createUser = createServerFn({ method: "POST" })
+	.validator(createUserSchema)
+	.handler(async ({ data }) => {
+		await auth.api.createUser({
+			body: {
+				...data,
+				data: {
+					image: data.avatar,
+				},
+			},
 		});
 		return {
 			success: true,

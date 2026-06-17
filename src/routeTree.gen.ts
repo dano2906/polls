@@ -17,6 +17,7 @@ import { Route as LandingAuthRouteImport } from './routes/_landing/auth'
 import { Route as ProtectedUserIndexRouteImport } from './routes/_protected/user/index'
 import { Route as ApiPollGenerateQuestionsRouteImport } from './routes/api/poll/generate-questions'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ProtectedUserNewRouteImport } from './routes/_protected/user/new'
 import { Route as ProtectedUserIdRouteImport } from './routes/_protected/user/$id'
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
 import { Route as ProtectedPollImportRouteImport } from './routes/_protected/poll/import'
@@ -64,6 +65,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProtectedUserNewRoute = ProtectedUserNewRouteImport.update({
+  id: '/user/new',
+  path: '/user/new',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedUserIdRoute = ProtectedUserIdRouteImport.update({
   id: '/user/$id',
   path: '/user/$id',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/user/$id': typeof ProtectedUserIdRoute
+  '/user/new': typeof ProtectedUserNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/user/': typeof ProtectedUserIndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/user/$id': typeof ProtectedUserIdRoute
+  '/user/new': typeof ProtectedUserNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/user': typeof ProtectedUserIndexRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/_protected/poll/import': typeof ProtectedPollImportRoute
   '/_protected/poll/new': typeof ProtectedPollNewRoute
   '/_protected/user/$id': typeof ProtectedUserIdRoute
+  '/_protected/user/new': typeof ProtectedUserNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/_protected/user/': typeof ProtectedUserIndexRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/poll/import'
     | '/poll/new'
     | '/user/$id'
+    | '/user/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
     | '/user/'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/poll/import'
     | '/poll/new'
     | '/user/$id'
+    | '/user/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
     | '/user'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/_protected/poll/import'
     | '/_protected/poll/new'
     | '/_protected/user/$id'
+    | '/_protected/user/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
     | '/_protected/user/'
@@ -262,6 +274,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_protected/user/new': {
+      id: '/_protected/user/new'
+      path: '/user/new'
+      fullPath: '/user/new'
+      preLoaderRoute: typeof ProtectedUserNewRouteImport
+      parentRoute: typeof ProtectedRoute
     }
     '/_protected/user/$id': {
       id: '/_protected/user/$id'
@@ -339,6 +358,7 @@ interface ProtectedRouteChildren {
   ProtectedPollImportRoute: typeof ProtectedPollImportRoute
   ProtectedPollNewRoute: typeof ProtectedPollNewRoute
   ProtectedUserIdRoute: typeof ProtectedUserIdRoute
+  ProtectedUserNewRoute: typeof ProtectedUserNewRoute
   ProtectedUserIndexRoute: typeof ProtectedUserIndexRoute
   ProtectedPollUpdateSlugRoute: typeof ProtectedPollUpdateSlugRoute
 }
@@ -348,6 +368,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedPollImportRoute: ProtectedPollImportRoute,
   ProtectedPollNewRoute: ProtectedPollNewRoute,
   ProtectedUserIdRoute: ProtectedUserIdRoute,
+  ProtectedUserNewRoute: ProtectedUserNewRoute,
   ProtectedUserIndexRoute: ProtectedUserIndexRoute,
   ProtectedPollUpdateSlugRoute: ProtectedPollUpdateSlugRoute,
 }

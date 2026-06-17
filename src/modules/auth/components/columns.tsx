@@ -14,7 +14,7 @@ import {
 } from "@/common/components/ui/avatar";
 import { addChecboxSelectColumn } from "@/common/lib/table";
 import SessionActionsMenu from "./session-actions";
-import UserActionsMenu from "./user-actions";
+import UserColumnActions from "./user-column-actions";
 
 export const listUsersColumns: ColumnDef<UserWithRole>[] = [
 	addChecboxSelectColumn(),
@@ -90,7 +90,7 @@ export const listUsersColumns: ColumnDef<UserWithRole>[] = [
 		header: "Acciones",
 		cell: ({ row }) => {
 			return (
-				<UserActionsMenu
+				<UserColumnActions
 					id={row.original.id}
 					isBanned={Boolean(row.original.banned)}
 				/>

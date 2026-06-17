@@ -1,4 +1,5 @@
 import z from "zod";
+import { ACCEPTED_IMAGE_TYPES, MAX_FILE_SIZE } from "@/common/lib/constants";
 import { passwordSchema } from "@/common/lib/validation";
 
 export const signInSchema = z.object({
@@ -39,5 +40,23 @@ export const banUserSchema = z.object({
 		z.literal(7),
 		z.literal(15),
 		z.literal(31),
+	]),
+});
+
+export const createUserSchema = signUpSchema.extend({
+	avatar: z
+		.instanceof(File, { message: "Debe seleccionar un archivo válido" })
+		.refine((file) => file.size <= MAX_FILE_SIZE, {
+			message: "La imagen no debe superar los 2MB",
+		})
+		.refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type), {
+			message: "Solo se permiten formatos .jpg, .jpeg, .png y .webp",
+		})
+		.optional()
+		.or(z.string().optional()),
+	role: z.union([
+		z.literal("admin"),
+		z.literal("org_admin"),
+		z.literal("user"),
 	]),
 });

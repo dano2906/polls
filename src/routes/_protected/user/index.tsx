@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { listUsersColumns } from "@/auth/components/columns";
+import UserTableActions from "@/auth/components/user-table-actions";
 import { listUserOptions } from "@/auth/lib/query";
 import { DataTable } from "@/common/components/partials/data-table";
 import { filtersSchema } from "@/common/lib/validation";
@@ -48,7 +49,9 @@ function RouteComponent() {
 				total={data?.data?.total ?? 0}
 				isLoading={isLoading}
 				mode="server"
-			/>
+			>
+				<UserTableActions />
+			</DataTable>
 		</div>
 	);
 }

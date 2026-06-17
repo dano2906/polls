@@ -16,7 +16,7 @@ interface Props {
 	id: string;
 	isBanned: boolean;
 }
-const UserActionsMenu = ({ id, isBanned }: Props) => {
+const UserColumnActions = ({ id, isBanned }: Props) => {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -57,4 +57,4 @@ const UserActionsMenu = ({ id, isBanned }: Props) => {
 	);
 };
 
-export default UserActionsMenu;
+export default UserColumnActions;

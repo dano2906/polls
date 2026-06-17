@@ -57,6 +57,7 @@ interface DataTableProps<TData, TValue> {
 	total?: number;
 	isLoading?: boolean;
 	mode?: "client" | "server";
+	children?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -66,6 +67,7 @@ export function DataTable<TData, TValue>({
 	total = 0,
 	isLoading = false,
 	mode = "client",
+	children,
 }: DataTableProps<TData, TValue>) {
 	const searchParams = useSearch({ strict: false }) as TableFilters;
 	const navigate = useNavigate();
@@ -262,36 +264,39 @@ export function DataTable<TData, TValue>({
 					</InputGroupAddon>
 				</InputGroup>
 
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" className="ml-auto">
-							<Eye />
-							Visibilidad
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						{table
-							.getAllColumns()
-							.filter((column) => column.getCanHide())
-							.map((column) => {
-								const meta = column.columnDef.meta as
-									| { label?: string }
-									| undefined;
-								const label = meta?.label ?? column.id;
-								return (
-									<DropdownMenuCheckboxItem
-										key={column.id}
-										checked={column.getIsVisible()}
-										onCheckedChange={(value) =>
-											column.toggleVisibility(!!value)
-										}
-									>
-										{label}
-									</DropdownMenuCheckboxItem>
-								);
-							})}
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<div className="ml-auto flex items-center gap-2">
+					{children}
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline">
+								<Eye />
+								Visibilidad
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							{table
+								.getAllColumns()
+								.filter((column) => column.getCanHide())
+								.map((column) => {
+									const meta = column.columnDef.meta as
+										| { label?: string }
+										| undefined;
+									const label = meta?.label ?? column.id;
+									return (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{label}
+										</DropdownMenuCheckboxItem>
+									);
+								})}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 			</div>
 
 			<div className="w-full overflow-hidden rounded-md border">
