@@ -21,3 +21,12 @@ export const updateAvatarSchema = z.object({
 			message: "La URL debe pertenecer a Cloudinary",
 		}),
 });
+
+export const revokeSessionSchema = z.union([
+	z.object({ mode: z.literal("single"), token: z.string(), id: z.string() }),
+	z.object({
+		mode: z.literal("all"),
+		id: z.string(),
+		token: z.string().optional(),
+	}),
+]);

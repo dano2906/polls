@@ -11,6 +11,7 @@ import {
 	AvatarImage,
 } from "@/common/components/ui/avatar";
 import { addChecboxSelectColumn } from "@/common/lib/table";
+import SessionActionsMenu from "./session-actions";
 import UserActionsMenu from "./user-actions";
 
 export const listUsersColumns: ColumnDef<User>[] = [
@@ -117,33 +118,6 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 		},
 	},
 	{
-		accessorKey: "createdAt",
-		header: ({ column }) => (
-			<DataTableColumnHeader column={column} title="Fecha de creación" />
-		),
-		meta: { label: "Fecha de creación" },
-		cell: ({ getValue }) => {
-			const rawDate = getValue<string | Date>();
-
-			if (!rawDate) {
-				return <span className="text-muted-foreground text-sm">Nunca</span>;
-			}
-
-			const date = new Date(rawDate);
-			const formattedDate = format(date, "d 'de' MMMM, yyyy - HH:mm", {
-				locale: es,
-			});
-
-			return (
-				<div className="flex flex-col gap-0.5 min-w-[180px]">
-					<span className="text-sm font-medium text-foreground">
-						{formattedDate}
-					</span>
-				</div>
-			);
-		},
-	},
-	{
 		accessorKey: "expiresAt",
 		header: ({ column }) => (
 			<DataTableColumnHeader column={column} title="Fecha de expiración" />
@@ -189,7 +163,9 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 		accessorKey: "actions",
 		header: "Acciones",
 		cell: ({ row }) => {
-			return "acciones";
+			return (
+				<SessionActionsMenu token={row.original.token} id={row.original.id} />
+			);
 		},
 		meta: { label: "Acciones" },
 	},

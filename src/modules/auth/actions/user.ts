@@ -1,7 +1,9 @@
+import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { auth } from "../lib/auth";
-import { updateAvatarSchema } from "../lib/validation";
+import { revokeSessionSchema, updateAvatarSchema } from "../lib/validation";
+import { getSession } from "./auth";
 
 export const updateAvatarAction = createServerFn({ method: "POST" })
 	.validator(updateAvatarSchema)
@@ -30,4 +32,36 @@ export const listUserSessions = createServerFn({ method: "POST" })
 		});
 
 		return { sessions };
+	});
+
+export const revokeUserSession = createServerFn({ method: "POST" })
+	.validator(revokeSessionSchema)
+	.handler(async ({ data }) => {
+		const headers = getRequestHeaders();
+		const session = await getSession();
+
+		let success = false;
+		let shouldRedirect = false;
+
+		if (data.mode === "single") {
+			const response = await auth.api.revokeUserSession({
+				body: { sessionToken: data.token },
+				headers,
+			});
+			success = response.success;
+			shouldRedirect = success && session?.session.token === data.token;
+		} else {
+			const response = await auth.api.revokeUserSessions({
+				body: { userId: data.id },
+				headers,
+			});
+			success = response.success;
+			shouldRedirect = success && session?.session.userId === data.id;
+		}
+
+		if (shouldRedirect) {
+			throw redirect({ to: "/" });
+		}
+
+		return { success };
 	});
