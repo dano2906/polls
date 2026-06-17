@@ -22,6 +22,7 @@ import { Route as ProtectedUserIdRouteImport } from './routes/_protected/user/$i
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
 import { Route as ProtectedPollImportRouteImport } from './routes/_protected/poll/import'
 import { Route as LandingPSlugIndexRouteImport } from './routes/_landing/p/$slug/index'
+import { Route as ProtectedUserUpdateIdRouteImport } from './routes/_protected/user/update.$id'
 import { Route as ProtectedPollUpdateSlugRouteImport } from './routes/_protected/poll/update.$slug'
 import { Route as LandingPSlugResultRouteImport } from './routes/_landing/p/$slug/result'
 import { Route as LandingPSlugPasswordRouteImport } from './routes/_landing/p/$slug/password'
@@ -90,6 +91,11 @@ const LandingPSlugIndexRoute = LandingPSlugIndexRouteImport.update({
   path: '/p/$slug/',
   getParentRoute: () => LandingRoute,
 } as any)
+const ProtectedUserUpdateIdRoute = ProtectedUserUpdateIdRouteImport.update({
+  id: '/user/update/$id',
+  path: '/user/update/$id',
+  getParentRoute: () => ProtectedRoute,
+} as any)
 const ProtectedPollUpdateSlugRoute = ProtectedPollUpdateSlugRouteImport.update({
   id: '/poll/update/$slug',
   path: '/poll/update/$slug',
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/p/$slug/result': typeof LandingPSlugResultRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
+  '/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/p/$slug/': typeof LandingPSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/p/$slug/result': typeof LandingPSlugResultRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
+  '/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/p/$slug': typeof LandingPSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/_landing/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/_landing/p/$slug/result': typeof LandingPSlugResultRoute
   '/_protected/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
+  '/_protected/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/_landing/p/$slug/': typeof LandingPSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/p/$slug/password'
     | '/p/$slug/result'
     | '/poll/update/$slug'
+    | '/user/update/$id'
     | '/p/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/p/$slug/password'
     | '/p/$slug/result'
     | '/poll/update/$slug'
+    | '/user/update/$id'
     | '/p/$slug'
   id:
     | '__root__'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/_landing/p/$slug/password'
     | '/_landing/p/$slug/result'
     | '/_protected/poll/update/$slug'
+    | '/_protected/user/update/$id'
     | '/_landing/p/$slug/'
   fileRoutesById: FileRoutesById
 }
@@ -310,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LandingPSlugIndexRouteImport
       parentRoute: typeof LandingRoute
     }
+    '/_protected/user/update/$id': {
+      id: '/_protected/user/update/$id'
+      path: '/user/update/$id'
+      fullPath: '/user/update/$id'
+      preLoaderRoute: typeof ProtectedUserUpdateIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/poll/update/$slug': {
       id: '/_protected/poll/update/$slug'
       path: '/poll/update/$slug'
@@ -361,6 +380,7 @@ interface ProtectedRouteChildren {
   ProtectedUserNewRoute: typeof ProtectedUserNewRoute
   ProtectedUserIndexRoute: typeof ProtectedUserIndexRoute
   ProtectedPollUpdateSlugRoute: typeof ProtectedPollUpdateSlugRoute
+  ProtectedUserUpdateIdRoute: typeof ProtectedUserUpdateIdRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -371,6 +391,7 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedUserNewRoute: ProtectedUserNewRoute,
   ProtectedUserIndexRoute: ProtectedUserIndexRoute,
   ProtectedPollUpdateSlugRoute: ProtectedPollUpdateSlugRoute,
+  ProtectedUserUpdateIdRoute: ProtectedUserUpdateIdRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

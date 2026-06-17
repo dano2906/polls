@@ -5,9 +5,11 @@ import { auth } from "../lib/auth";
 import {
 	banUserSchema,
 	createUserSchema,
+	editUserSchema,
 	revokeSessionSchema,
 	updateAvatarSchema,
 } from "../lib/validation";
+import type { EditUser } from "../shared/types";
 import { getSession } from "./auth";
 
 export const updateAvatarAction = createServerFn({ method: "POST" })
@@ -130,6 +132,40 @@ export const removeUser = createServerFn({ method: "POST" })
 		await auth.api.removeUser({
 			body: {
 				userId: data.id,
+			},
+			headers,
+		});
+		return {
+			success: true,
+		};
+	});
+
+export const getUser = createServerFn({ method: "GET" })
+	.validator((data: { id: string }) => data)
+	.handler(async ({ data }) => {
+		const headers = getRequestHeaders();
+		return await auth.api.getUser({
+			query: {
+				id: data.id,
+			},
+			headers,
+		});
+	});
+
+export const editUser = createServerFn({ method: "POST" })
+	.validator((data: { id: string; user: any }) => ({
+		id: data.id,
+		user: editUserSchema.parse(data.user),
+	}))
+	.handler(async ({ data }) => {
+		const headers = getRequestHeaders();
+		await auth.api.adminUpdateUser({
+			body: {
+				userId: data.id,
+				data: {
+					...data.user,
+					image: data.user.avatar,
+				},
 			},
 			headers,
 		});

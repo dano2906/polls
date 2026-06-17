@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { listUserSessions } from "../actions/user";
+import { getUser, listUserSessions } from "../actions/user";
 import { authClient } from "./auth-client";
 
 export const listUserOptions = (filters: {
@@ -21,12 +21,7 @@ export const listUserOptions = (filters: {
 export const getUserOptions = (id: string) =>
 	queryOptions({
 		queryKey: ["user", "details", id],
-		queryFn: async () =>
-			await authClient.admin.getUser({
-				query: {
-					id,
-				},
-			}),
+		queryFn: () => getUser({ data: { id } }),
 	});
 
 export const getUserSessionsOptions = (id: string) =>

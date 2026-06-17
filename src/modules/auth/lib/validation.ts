@@ -60,3 +60,26 @@ export const createUserSchema = signUpSchema.extend({
 		z.literal("user"),
 	]),
 });
+
+export const editUserSchema = signUpSchema
+	.omit({
+		password: true,
+	})
+	.extend({
+		avatar: z
+			.instanceof(File, { message: "Debe seleccionar un archivo válido" })
+			.refine((file) => file.size <= MAX_FILE_SIZE, {
+				message: "La imagen no debe superar los 2MB",
+			})
+			.refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type), {
+				message: "Solo se permiten formatos .jpg, .jpeg, .png y .webp",
+			})
+			.optional()
+			.or(z.string().optional()),
+
+		role: z.union([
+			z.literal("admin"),
+			z.literal("org_admin"),
+			z.literal("user"),
+		]),
+	});

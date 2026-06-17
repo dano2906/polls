@@ -41,6 +41,22 @@ const UserColumnActions = ({ id, isBanned }: Props) => {
 						Detalles
 					</Link>
 				</DropdownMenuItem>
+				<DropdownMenuItem asChild>
+					<Link
+						to="/user/update/$id"
+						params={{
+							id,
+						}}
+						className={cn(
+							buttonVariants({
+								variant: "ghostContext",
+							}),
+							"w-full flex items-start justify-start",
+						)}
+					>
+						Editar
+					</Link>
+				</DropdownMenuItem>
 				{isBanned && (
 					<DropdownMenuItem asChild>
 						<UnbanUserButton id={id} />

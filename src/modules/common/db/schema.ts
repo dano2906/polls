@@ -7,6 +7,7 @@ import {
 	uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import type { UserAnswerValue } from "@/answers/shared/types";
+import type { UserRole } from "@/auth/shared/types";
 import { QUESTION_TYPES, type QuestionMetadata } from "@/question/shared/types";
 
 export const user = sqliteTable("user", {
@@ -20,7 +21,7 @@ export const user = sqliteTable("user", {
 	banned: integer("banned"),
 	banReason: text("ban_reason"),
 	banExpires: integer("ban_expires", { mode: "timestamp_ms" }),
-	role: text("role").$type<"admin" | "user" | "org_admin">().default("user"),
+	role: text("role").$type<UserRole>().default("user"),
 	createdAt: integer("created_at", { mode: "timestamp_ms" })
 		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 		.notNull(),
