@@ -2,7 +2,11 @@ import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { auth } from "../lib/auth";
-import { revokeSessionSchema, updateAvatarSchema } from "../lib/validation";
+import {
+	banUserSchema,
+	revokeSessionSchema,
+	updateAvatarSchema,
+} from "../lib/validation";
 import { getSession } from "./auth";
 
 export const updateAvatarAction = createServerFn({ method: "POST" })
@@ -64,4 +68,36 @@ export const revokeUserSession = createServerFn({ method: "POST" })
 		}
 
 		return { success };
+	});
+
+export const banUser = createServerFn({ method: "POST" })
+	.validator(banUserSchema)
+	.handler(async ({ data }) => {
+		const headers = getRequestHeaders();
+		await auth.api.banUser({
+			body: {
+				userId: data.id,
+				banReason: data.banReason,
+				banExpiresIn: 60 * 60 * 24 * data.banExpiresIn,
+			},
+			headers,
+		});
+		return {
+			success: true,
+		};
+	});
+
+export const unbanUser = createServerFn({ method: "POST" })
+	.validator((data: { id: string }) => data)
+	.handler(async ({ data }) => {
+		const headers = getRequestHeaders();
+		await auth.api.unbanUser({
+			body: {
+				userId: data.id,
+			},
+			headers,
+		});
+		return {
+			success: true,
+		};
 	});

@@ -1,6 +1,8 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import type { User } from "better-auth";
-import type { SessionWithImpersonatedBy } from "better-auth/plugins";
+import type {
+	SessionWithImpersonatedBy,
+	UserWithRole,
+} from "better-auth/plugins";
 import { format, formatDistanceToNow, isPast } from "date-fns";
 import { es } from "date-fns/locale";
 import { UAParser } from "ua-parser-js";
@@ -14,7 +16,7 @@ import { addChecboxSelectColumn } from "@/common/lib/table";
 import SessionActionsMenu from "./session-actions";
 import UserActionsMenu from "./user-actions";
 
-export const listUsersColumns: ColumnDef<User>[] = [
+export const listUsersColumns: ColumnDef<UserWithRole>[] = [
 	addChecboxSelectColumn(),
 	{
 		accessorKey: "image",
@@ -47,13 +49,52 @@ export const listUsersColumns: ColumnDef<User>[] = [
 		header: "Nombre",
 		meta: { label: "Nombre" },
 	},
+	{
+		accessorKey: "banned",
+		header: "Estado",
+		meta: { label: "Estado" },
+		cell: ({ row }) => {
+			const isBanned = row.getValue<boolean>("banned");
+			const banExpires = row.original.banExpires;
 
+			if (!isBanned) {
+				return (
+					<span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-500/10 dark:text-green-400 dark:ring-green-500/20">
+						Activo
+					</span>
+				);
+			}
+
+			let banMessage = "Baneado permanentemente";
+
+			if (banExpires) {
+				const date = new Date(banExpires);
+				if (!Number.isNaN(date.getTime())) {
+					banMessage = `Baneado hasta ${format(date, "d 'de' MMMM, yyyy", { locale: es })}`;
+				}
+			}
+
+			return (
+				<span
+					className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/20"
+					title={banMessage}
+				>
+					{banMessage}
+				</span>
+			);
+		},
+	},
 	{
 		id: "actions",
 		accessorKey: "actions",
 		header: "Acciones",
 		cell: ({ row }) => {
-			return <UserActionsMenu id={row.original.id} />;
+			return (
+				<UserActionsMenu
+					id={row.original.id}
+					isBanned={Boolean(row.original.banned)}
+				/>
+			);
 		},
 		meta: { label: "Acciones" },
 	},

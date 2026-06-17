@@ -2,15 +2,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import { revokeUserSession } from "../actions/user";
-import type { RevokeSessionAction } from "../shared/types";
 
 const RevokeSessionsButton = ({
 	token,
 	id,
 	mode = "single",
 	buttonVariant = "ghostDestructive",
-}: RevokeSessionAction & {
-	buttonVariant: "ghostDestructive" | "secondary";
+}: {
+	token?: string;
+	id: string;
+	mode: "single" | "all";
+	buttonVariant?: "ghostDestructive" | "secondary";
 }) => {
 	const qc = useQueryClient();
 	const { mutate: revoke } = useMutation({
@@ -31,7 +33,8 @@ const RevokeSessionsButton = ({
 			}),
 		onSuccess: async (data) => {
 			await qc.invalidateQueries({
-				queryKey: ["user", "sessions", id],
+				queryKey: ["user"],
+				exact: false,
 			});
 			if (!data.success) {
 				toast.error("Ha ocurrido un error");
@@ -41,7 +44,11 @@ const RevokeSessionsButton = ({
 		},
 	});
 	return (
-		<Button variant={buttonVariant} onClick={() => revoke()}>
+		<Button
+			variant={buttonVariant}
+			className={"w-full max-w-fit flex justify-start"}
+			onClick={() => revoke()}
+		>
 			{mode === "all" ? "Cerrar todas las sesiones" : "Cerrar sesión"}
 		</Button>
 	);

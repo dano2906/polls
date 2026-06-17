@@ -30,3 +30,14 @@ export const revokeSessionSchema = z.union([
 		token: z.string().optional(),
 	}),
 ]);
+
+export const banUserSchema = z.object({
+	id: z.string(),
+	banReason: z.string(),
+	banExpiresIn: z.union([
+		z.literal(1),
+		z.literal(7),
+		z.literal(15),
+		z.literal(31),
+	]),
+});

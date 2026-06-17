@@ -9,11 +9,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 import RevokeSessionsButton from "./revoke-sessions-button";
+import UnbanUserButton from "./unban-user-button";
 
 interface Props {
 	id: string;
+	isBanned: boolean;
 }
-const UserActionsMenu = ({ id }: Props) => {
+const UserActionsMenu = ({ id, isBanned }: Props) => {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -38,6 +40,11 @@ const UserActionsMenu = ({ id }: Props) => {
 						Detalles
 					</Link>
 				</DropdownMenuItem>
+				{isBanned && (
+					<DropdownMenuItem asChild>
+						<UnbanUserButton id={id} />
+					</DropdownMenuItem>
+				)}
 				<DropdownMenuItem asChild>
 					<RevokeSessionsButton id={id} mode="all" />
 				</DropdownMenuItem>
