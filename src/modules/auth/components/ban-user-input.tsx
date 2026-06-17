@@ -57,7 +57,7 @@ const BanUserInput = ({ id }: { id: string }) => {
 		onError: (error) => toast.error(error.message),
 	});
 	return (
-		<InputGroup className="px-1 max-w-sm w-full">
+		<InputGroup className="px-1 max-w-xs w-full">
 			<InputGroupInput
 				placeholder="Banear por..."
 				value={banReason}

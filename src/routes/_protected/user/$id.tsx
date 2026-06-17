@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import BanUserInput from "@/auth/components/ban-user-input";
+import ChangePasswordInput from "@/auth/components/change-password-input";
 import ChangeUserAvatar from "@/auth/components/change-user-avatar";
 import EditUserForm from "@/auth/components/edit-user-form";
 import ListUserSessions from "@/auth/components/list-user-sessions";
@@ -26,6 +27,7 @@ function RouteComponent() {
 			<PageHeading>Acciones</PageHeading>
 			<div className="w-full flex flex-wrap items-center justify-start gap-1">
 				<BanUserInput id={id} />
+				<ChangePasswordInput id={id} />
 				<RevokeSessionsButton mode="all" id={id} buttonVariant="secondary" />
 				<div className="max-w-fit">
 					<RemoveUserButton id={id} buttonVariant="destructive" />

@@ -1,6 +1,7 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import { passwordSchema } from "@/common/lib/validation";
 import { auth } from "../lib/auth";
 import {
 	banUserSchema,
@@ -9,7 +10,6 @@ import {
 	revokeSessionSchema,
 	updateAvatarSchema,
 } from "../lib/validation";
-import type { EditUser } from "../shared/types";
 import { getSession } from "./auth";
 
 export const updateAvatarAction = createServerFn({ method: "POST" })
@@ -171,5 +171,33 @@ export const editUser = createServerFn({ method: "POST" })
 		});
 		return {
 			success: true,
+		};
+	});
+
+export const changeUserPassword = createServerFn({ method: "POST" })
+	.validator((data: { id: string; newPassword: string }) => ({
+		id: data.id,
+		newPassword: passwordSchema.parse(data.newPassword),
+	}))
+	.handler(async ({ data }) => {
+		const headers = getRequestHeaders();
+		const { status } = await auth.api.setUserPassword({
+			body: {
+				newPassword: data.newPassword,
+				userId: data.id,
+			},
+			headers,
+		});
+		if (!status) {
+			throw new Error("Error al cambiar la contraseña");
+		}
+		const { success } = await revokeUserSession({
+			data: {
+				mode: "all",
+				id: data.id,
+			},
+		});
+		return {
+			success,
 		};
 	});

@@ -7,6 +7,7 @@ import {
 	Key,
 	LayoutDashboard,
 	LogOut,
+	User,
 } from "lucide-react";
 import ThemeToggle from "@/common/components/partials/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
@@ -62,6 +63,19 @@ export default function AuthHeader() {
 									{auth.user.email}
 								</small>
 							</DropdownMenuLabel>
+							{auth && (
+								<DropdownMenuItem asChild>
+									<Link
+										to="/user/me"
+										className="w-full flex items-center justify-start gap-1"
+										preload={false}
+									>
+										<User />
+										Mi perfil
+									</Link>
+								</DropdownMenuItem>
+							)}
+
 							<DropdownMenuItem asChild>
 								<Link
 									to="/"
@@ -121,6 +135,11 @@ export default function AuthHeader() {
 										<DropdownMenuItem asChild>
 											<Link
 												to="/user"
+												search={{
+													limit: 10,
+													offset: 0,
+													sortDirection: "desc",
+												}}
 												className="w-full flex items-center justify-start gap-1"
 												preload={false}
 											>
