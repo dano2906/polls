@@ -8,6 +8,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
+import RemoveUserButton from "./remove-user-button";
 import RevokeSessionsButton from "./revoke-sessions-button";
 import UnbanUserButton from "./unban-user-button";
 
@@ -47,6 +48,9 @@ const UserActionsMenu = ({ id, isBanned }: Props) => {
 				)}
 				<DropdownMenuItem asChild>
 					<RevokeSessionsButton id={id} mode="all" />
+				</DropdownMenuItem>
+				<DropdownMenuItem asChild>
+					<RemoveUserButton id={id} />
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

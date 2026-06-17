@@ -25,7 +25,7 @@
 [x] Agregar encuestas con contrasena
 [X] Quitar la validacion de requeridas si es un autosubmit obligatorio
 [] En csv le resta un dia a las fechas
-[] Gestion de equipos y colaboracion Remove user - Create - Edit - Set role - Set pass -
+[] Gestion de equipos y colaboracion Create - Edit - Set role - Set pass -
 
 ---
 

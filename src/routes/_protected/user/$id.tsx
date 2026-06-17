@@ -1,8 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import BanUserInput from "@/auth/components/ban-user-input";
 import ChangeUserAvatar from "@/auth/components/change-user-avatar";
 import ListUserSessions from "@/auth/components/list-user-sessions";
+import RemoveUserButton from "@/auth/components/remove-user-button";
+import RevokeSessionsButton from "@/auth/components/revoke-sessions-button";
 import { getUserOptions, getUserSessionsOptions } from "@/auth/lib/query";
+import PageHeading from "@/common/components/partials/page-heading";
 
 export const Route = createFileRoute("/_protected/user/$id")({
 	component: RouteComponent,
@@ -16,12 +20,21 @@ function RouteComponent() {
 	const { id } = Route.useParams();
 	const { data } = useQuery(getUserOptions(id));
 	return (
-		<section className="container mx-auto flex flex-col items-center justify-center gap-4">
+		<section className="container mx-auto flex flex-col items-start justify-center gap-6">
 			<ChangeUserAvatar
 				avatarUrl={data?.data?.image}
 				email={data?.data?.email}
 				id={id}
 			/>
+			<PageHeading>Acciones</PageHeading>
+			<div className="w-full flex flex-wrap items-center justify-start gap-1">
+				<BanUserInput id={id} />
+				<RevokeSessionsButton mode="all" id={id} buttonVariant="secondary" />
+				<div className="max-w-fit">
+					<RemoveUserButton id={id} buttonVariant="destructive" />
+				</div>
+			</div>
+			<PageHeading>Sesiones</PageHeading>
 			<ListUserSessions id={id} />
 		</section>
 	);

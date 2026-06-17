@@ -93,7 +93,7 @@ export default function ChangeUserAvatar({ avatarUrl, email, id }: Props) {
 	const currentDisplaySrc = previewUrl || avatarUrl || undefined;
 
 	return (
-		<div className="flex flex-col items-center">
+		<div className="w-full flex flex-col items-center">
 			{/* Contenedor relativo que agrupa el avatar y sus controles flotantes */}
 			<div className="relative size-40">
 				<button

@@ -101,3 +101,22 @@ export const unbanUser = createServerFn({ method: "POST" })
 			success: true,
 		};
 	});
+
+export const removeUser = createServerFn({ method: "POST" })
+	.validator((data: { id: string }) => data)
+	.handler(async ({ data }) => {
+		const headers = getRequestHeaders();
+		const session = await getSession();
+		if (session?.user.id === data.id) {
+			throw new Error("No se pudo completar la acción");
+		}
+		await auth.api.removeUser({
+			body: {
+				userId: data.id,
+			},
+			headers,
+		});
+		return {
+			success: true,
+		};
+	});
