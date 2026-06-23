@@ -54,11 +54,7 @@ export const createUserSchema = signUpSchema.extend({
 		})
 		.optional()
 		.or(z.string().optional()),
-	role: z.union([
-		z.literal("admin"),
-		z.literal("org_admin"),
-		z.literal("user"),
-	]),
+	role: z.union([z.literal("admin"), z.literal("user")]),
 });
 
 export const editUserSchema = signUpSchema
@@ -77,9 +73,5 @@ export const editUserSchema = signUpSchema
 			.optional()
 			.or(z.string().optional()),
 
-		role: z.union([
-			z.literal("admin"),
-			z.literal("org_admin"),
-			z.literal("user"),
-		]),
+		role: z.union([z.literal("admin"), z.literal("user")]),
 	});

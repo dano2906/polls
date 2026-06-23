@@ -113,6 +113,27 @@
       "when": 1781534431902,
       "tag": "0015_legal_king_bedlam",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1782161120202,
+      "tag": "0016_loud_nico_minoru",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1782230692627,
+      "tag": "0017_thin_terror",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1782230825722,
+      "tag": "0018_warm_mindworm",
+      "breakpoints": true
     }
   ]
 }

@@ -24,8 +24,9 @@
 [X] Examenes x tiempo
 [x] Agregar encuestas con contrasena
 [X] Quitar la validacion de requeridas si es un autosubmit obligatorio
+[] Gestion de equipos y colaboracion - Pasar las los miembros a formato tabular - Invitar miembro en tabla para el admin
+[] My profile
 [] En csv le resta un dia a las fechas
-[] Gestion de equipos y colaboracion My profile
 
 ---
 

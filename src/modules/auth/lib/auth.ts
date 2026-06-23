@@ -1,10 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin as adminPlugin } from "better-auth/plugins";
+import { admin as adminPlugin, organization } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "@/common/db";
 import * as schemas from "@/common/db/schema";
-import { ac, admin, org_admin, user } from "./permissions";
+import { ac, admin, user } from "./permissions";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -14,6 +14,12 @@ export const auth = betterAuth({
 			account: schemas.account,
 			verification: schemas.verification,
 			session: schemas.session,
+			organization: schemas.organization,
+			member: schemas.member,
+			invitation: schemas.invitation,
+			organizationRole: schemas.organizationRole,
+			team: schemas.team,
+			teamMember: schemas.teamMember,
 		},
 	}),
 	emailAndPassword: {
@@ -25,9 +31,13 @@ export const auth = betterAuth({
 			ac,
 			roles: {
 				admin,
-				org_admin,
 				user,
 			},
+		}),
+		organization({
+			allowUserToCreateOrganization: true,
+			creatorRole: "owner",
+			invitationExpiresIn: 60 * 60 * 27 * 7,
 		}),
 		tanstackStartCookies(),
 	],

@@ -49,6 +49,8 @@ export const session = sqliteTable(
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
+		activeOrganizationId: text("active_organization_id"),
+		activeTeamId: text("active_team_id"),
 	},
 	(table) => [index("session_userId_idx").on(table.userId)],
 );
@@ -101,6 +103,75 @@ export const verification = sqliteTable(
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const organization = sqliteTable("organization", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	slug: text("slug").notNull().unique(),
+	logo: text("logo"),
+	metadata: text("metadata"),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const member = sqliteTable("member", {
+	id: text("id").primaryKey(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	organizationId: text("organization_id")
+		.notNull()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	role: text("role").notNull(),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const invitation = sqliteTable("invitation", {
+	id: text("id").primaryKey(),
+	email: text("email").notNull(),
+	inviterId: text("inviter_id")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	organizationId: text("organization_id")
+		.notNull()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	role: text("role"),
+	status: text("status").notNull(),
+	teamId: text("team_id"),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+	expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const organizationRole = sqliteTable("organization_role", {
+	id: text("id").primaryKey(),
+	organizationId: text("organization_id")
+		.notNull()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	role: text("role").notNull(),
+	permission: text("permission").notNull(),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+	updatedAt: integer("updated_at", { mode: "timestamp_ms" }),
+});
+
+export const team = sqliteTable("team", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	organizationId: text("organization_id")
+		.notNull()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+	updatedAt: integer("updated_at", { mode: "timestamp_ms" }),
+});
+
+export const teamMember = sqliteTable("team_member", {
+	id: text("id").primaryKey(),
+	teamId: text("team_id")
+		.notNull()
+		.references(() => team.id, { onDelete: "cascade" }),
+	userId: text("user_id")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	createdAt: integer("created_at", { mode: "timestamp_ms" }),
+});
+
 export const poll = sqliteTable("poll", {
 	id: text("id")
 		.primaryKey()
@@ -116,7 +187,7 @@ export const poll = sqliteTable("poll", {
 		"draft",
 	),
 	version: integer("version").default(1),
-	timeLimit: integer("time-limit"),
+	timeLimit: integer("time_limit"),
 	password: text("password"),
 	startDate: integer("start_date", { mode: "timestamp" })
 		.default(sql`CURRENT_TIMESTAMP`)
@@ -128,6 +199,9 @@ export const poll = sqliteTable("poll", {
 	updatedAt: integer("updated_at", { mode: "timestamp" }).default(
 		sql`CURRENT_TIMESTAMP`,
 	),
+	organizationId: text("organization_id").references(() => organization.id, {
+		onDelete: "set null",
+	}),
 	metadata: text("metadata", { mode: "json" }).$type<{
 		theme?: string;
 		limitResponses?: number;
@@ -231,6 +305,8 @@ export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),
 	accounts: many(account),
 	polls: many(poll),
+	members: many(member),
+	invitations: many(invitation),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -253,6 +329,10 @@ export const pollRelations = relations(poll, ({ many, one }) => ({
 	user: one(user, {
 		fields: [poll.userId],
 		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [poll.organizationId],
+		references: [organization.id],
 	}),
 }));
 
@@ -283,5 +363,62 @@ export const submissionRelations = relations(submission, ({ one }) => ({
 	poll: one(poll, {
 		fields: [submission.pollId],
 		references: [poll.id],
+	}),
+}));
+
+export const organizationRelations = relations(organization, ({ many }) => ({
+	members: many(member),
+	invitations: many(invitation),
+	teams: many(team),
+}));
+
+export const memberRelations = relations(member, ({ one }) => ({
+	user: one(user, {
+		fields: [member.userId],
+		references: [user.id],
+	}),
+	organization: one(organization, {
+		fields: [member.organizationId],
+		references: [organization.id],
+	}),
+}));
+
+export const invitationRelations = relations(invitation, ({ one }) => ({
+	organization: one(organization, {
+		fields: [invitation.organizationId],
+		references: [organization.id],
+	}),
+	inviter: one(user, {
+		fields: [invitation.inviterId],
+		references: [user.id],
+	}),
+}));
+
+export const organizationRoleRelations = relations(
+	organizationRole,
+	({ one }) => ({
+		organization: one(organization, {
+			fields: [organizationRole.organizationId],
+			references: [organization.id],
+		}),
+	}),
+);
+
+export const teamRelations = relations(team, ({ one, many }) => ({
+	organization: one(organization, {
+		fields: [team.organizationId],
+		references: [organization.id],
+	}),
+	members: many(teamMember),
+}));
+
+export const teamMemberRelations = relations(teamMember, ({ one }) => ({
+	team: one(team, {
+		fields: [teamMember.teamId],
+		references: [team.id],
+	}),
+	user: one(user, {
+		fields: [teamMember.userId],
+		references: [user.id],
 	}),
 }));

@@ -1,6 +1,6 @@
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import {
-	Eye,
+	Building2,
 	File,
 	FilePlus,
 	Import,
@@ -100,7 +100,7 @@ export default function AuthHeader() {
 						<DropdownMenuSeparator />
 						{auth && (
 							<DropdownMenuSub>
-								<DropdownMenuSubTrigger>Encuesta</DropdownMenuSubTrigger>
+								<DropdownMenuSubTrigger>Encuestas</DropdownMenuSubTrigger>
 								<DropdownMenuPortal>
 									<DropdownMenuSubContent>
 										<DropdownMenuItem asChild>
@@ -129,7 +129,7 @@ export default function AuthHeader() {
 						)}
 						{auth && auth.user.role === "admin" && (
 							<DropdownMenuSub>
-								<DropdownMenuSubTrigger>Usuarios</DropdownMenuSubTrigger>
+								<DropdownMenuSubTrigger>Entidades</DropdownMenuSubTrigger>
 								<DropdownMenuPortal>
 									<DropdownMenuSubContent>
 										<DropdownMenuItem asChild>
@@ -143,8 +143,18 @@ export default function AuthHeader() {
 												className="w-full flex items-center justify-start gap-1"
 												preload={false}
 											>
-												<Eye />
-												Ver usuarios
+												<User />
+												Usuarios
+											</Link>
+										</DropdownMenuItem>
+										<DropdownMenuItem asChild>
+											<Link
+												to="/org"
+												className="w-full flex items-center justify-start gap-1"
+												preload={false}
+											>
+												<Building2 />
+												Organizaciones
 											</Link>
 										</DropdownMenuItem>
 									</DropdownMenuSubContent>

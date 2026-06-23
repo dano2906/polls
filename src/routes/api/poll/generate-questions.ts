@@ -35,7 +35,7 @@ You must output your response to fit the requested JSON schema perfectly. Do not
 					});
 					return Response.json(result.output);
 				} catch (error) {
-					console.log(error);
+					console.error(error);
 				}
 			},
 		},

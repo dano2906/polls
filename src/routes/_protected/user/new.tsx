@@ -1,8 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { ensureSession } from "@/auth/actions/auth";
 import CreateUserForm from "@/auth/components/create-user-form";
 import PageHeading from "@/common/components/partials/page-heading";
 
 export const Route = createFileRoute("/_protected/user/new")({
+	beforeLoad: async () => {
+		const session = await ensureSession();
+		if (session?.user.role !== "admin") {
+			throw redirect({ to: "/dashboard" });
+		}
+	},
 	component: RouteComponent,
 });
 

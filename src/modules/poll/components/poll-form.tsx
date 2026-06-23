@@ -15,6 +15,7 @@ import { TimeLimitPicker } from "./time-limit-input";
 
 interface Props {
 	userId: string;
+	organizationId?: string;
 	initialData?: Pick<
 		Poll,
 		| "name"
@@ -29,7 +30,7 @@ interface Props {
 	onCreatePoll?: Dispatch<SetStateAction<string | null>>;
 }
 
-const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
+const PollForm = ({ userId, organizationId, onCreatePoll, initialData }: Props) => {
 	const router = useRouter();
 	const qc = useQueryClient();
 	const isEditing = !!initialData;
@@ -72,6 +73,7 @@ const PollForm = ({ userId, onCreatePoll, initialData }: Props) => {
 			timeLimit: initialData?.timeLimit ?? undefined,
 			password: initialData?.password ?? undefined,
 			userId,
+			organizationId,
 		},
 		validators: {
 			onChange: isEditing ? editPollInput : createPollInput,

@@ -51,7 +51,6 @@ const EditUserForm = ({ user, isolated = true }: EditUserFormProps) => {
 				} else if (isImageCleared) {
 					finalAvatarUrl = undefined;
 				}
-				console.log(finalAvatarUrl);
 				const result = await editUser({
 					data: {
 						id: user.id,

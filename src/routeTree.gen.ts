@@ -15,6 +15,7 @@ import { Route as LandingIndexRouteImport } from './routes/_landing/index'
 import { Route as ProtectedDashboardRouteImport } from './routes/_protected/dashboard'
 import { Route as LandingAuthRouteImport } from './routes/_landing/auth'
 import { Route as ProtectedUserIndexRouteImport } from './routes/_protected/user/index'
+import { Route as ProtectedOrgIndexRouteImport } from './routes/_protected/org/index'
 import { Route as ApiPollGenerateQuestionsRouteImport } from './routes/api/poll/generate-questions'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ProtectedUserNewRouteImport } from './routes/_protected/user/new'
@@ -22,11 +23,16 @@ import { Route as ProtectedUserMeRouteImport } from './routes/_protected/user/me
 import { Route as ProtectedUserIdRouteImport } from './routes/_protected/user/$id'
 import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/new'
 import { Route as ProtectedPollImportRouteImport } from './routes/_protected/poll/import'
+import { Route as ProtectedOrgNewRouteImport } from './routes/_protected/org/new'
+import { Route as ProtectedOrgOrgSlugIndexRouteImport } from './routes/_protected/org/$orgSlug/index'
 import { Route as LandingPSlugIndexRouteImport } from './routes/_landing/p/$slug/index'
 import { Route as ProtectedUserUpdateIdRouteImport } from './routes/_protected/user/update.$id'
 import { Route as ProtectedPollUpdateSlugRouteImport } from './routes/_protected/poll/update.$slug'
+import { Route as ProtectedOrgOrgSlugMembersRouteImport } from './routes/_protected/org/$orgSlug/members'
+import { Route as ProtectedOrgOrgSlugInviteRouteImport } from './routes/_protected/org/$orgSlug/invite'
 import { Route as LandingPSlugResultRouteImport } from './routes/_landing/p/$slug/result'
 import { Route as LandingPSlugPasswordRouteImport } from './routes/_landing/p/$slug/password'
+import { Route as ProtectedOrgOrgSlugPollsNewRouteImport } from './routes/_protected/org/$orgSlug/polls.new'
 
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
@@ -54,6 +60,11 @@ const LandingAuthRoute = LandingAuthRouteImport.update({
 const ProtectedUserIndexRoute = ProtectedUserIndexRouteImport.update({
   id: '/user/',
   path: '/user/',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedOrgIndexRoute = ProtectedOrgIndexRouteImport.update({
+  id: '/org/',
+  path: '/org/',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ApiPollGenerateQuestionsRoute =
@@ -92,6 +103,17 @@ const ProtectedPollImportRoute = ProtectedPollImportRouteImport.update({
   path: '/poll/import',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedOrgNewRoute = ProtectedOrgNewRouteImport.update({
+  id: '/org/new',
+  path: '/org/new',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedOrgOrgSlugIndexRoute =
+  ProtectedOrgOrgSlugIndexRouteImport.update({
+    id: '/org/$orgSlug/',
+    path: '/org/$orgSlug/',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const LandingPSlugIndexRoute = LandingPSlugIndexRouteImport.update({
   id: '/p/$slug/',
   path: '/p/$slug/',
@@ -107,6 +129,18 @@ const ProtectedPollUpdateSlugRoute = ProtectedPollUpdateSlugRouteImport.update({
   path: '/poll/update/$slug',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedOrgOrgSlugMembersRoute =
+  ProtectedOrgOrgSlugMembersRouteImport.update({
+    id: '/org/$orgSlug/members',
+    path: '/org/$orgSlug/members',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
+const ProtectedOrgOrgSlugInviteRoute =
+  ProtectedOrgOrgSlugInviteRouteImport.update({
+    id: '/org/$orgSlug/invite',
+    path: '/org/$orgSlug/invite',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const LandingPSlugResultRoute = LandingPSlugResultRouteImport.update({
   id: '/p/$slug/result',
   path: '/p/$slug/result',
@@ -117,11 +151,18 @@ const LandingPSlugPasswordRoute = LandingPSlugPasswordRouteImport.update({
   path: '/p/$slug/password',
   getParentRoute: () => LandingRoute,
 } as any)
+const ProtectedOrgOrgSlugPollsNewRoute =
+  ProtectedOrgOrgSlugPollsNewRouteImport.update({
+    id: '/org/$orgSlug/polls/new',
+    path: '/org/$orgSlug/polls/new',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LandingIndexRoute
   '/auth': typeof LandingAuthRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/org/new': typeof ProtectedOrgNewRoute
   '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/user/$id': typeof ProtectedUserIdRoute
@@ -129,17 +170,23 @@ export interface FileRoutesByFullPath {
   '/user/new': typeof ProtectedUserNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
+  '/org/': typeof ProtectedOrgIndexRoute
   '/user/': typeof ProtectedUserIndexRoute
   '/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/p/$slug/result': typeof LandingPSlugResultRoute
+  '/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
+  '/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
   '/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/p/$slug/': typeof LandingPSlugIndexRoute
+  '/org/$orgSlug/': typeof ProtectedOrgOrgSlugIndexRoute
+  '/org/$orgSlug/polls/new': typeof ProtectedOrgOrgSlugPollsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof LandingIndexRoute
   '/auth': typeof LandingAuthRoute
   '/dashboard': typeof ProtectedDashboardRoute
+  '/org/new': typeof ProtectedOrgNewRoute
   '/poll/import': typeof ProtectedPollImportRoute
   '/poll/new': typeof ProtectedPollNewRoute
   '/user/$id': typeof ProtectedUserIdRoute
@@ -147,12 +194,17 @@ export interface FileRoutesByTo {
   '/user/new': typeof ProtectedUserNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
+  '/org': typeof ProtectedOrgIndexRoute
   '/user': typeof ProtectedUserIndexRoute
   '/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/p/$slug/result': typeof LandingPSlugResultRoute
+  '/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
+  '/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
   '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
   '/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/p/$slug': typeof LandingPSlugIndexRoute
+  '/org/$orgSlug': typeof ProtectedOrgOrgSlugIndexRoute
+  '/org/$orgSlug/polls/new': typeof ProtectedOrgOrgSlugPollsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,6 +213,7 @@ export interface FileRoutesById {
   '/_landing/auth': typeof LandingAuthRoute
   '/_protected/dashboard': typeof ProtectedDashboardRoute
   '/_landing/': typeof LandingIndexRoute
+  '/_protected/org/new': typeof ProtectedOrgNewRoute
   '/_protected/poll/import': typeof ProtectedPollImportRoute
   '/_protected/poll/new': typeof ProtectedPollNewRoute
   '/_protected/user/$id': typeof ProtectedUserIdRoute
@@ -168,12 +221,17 @@ export interface FileRoutesById {
   '/_protected/user/new': typeof ProtectedUserNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
+  '/_protected/org/': typeof ProtectedOrgIndexRoute
   '/_protected/user/': typeof ProtectedUserIndexRoute
   '/_landing/p/$slug/password': typeof LandingPSlugPasswordRoute
   '/_landing/p/$slug/result': typeof LandingPSlugResultRoute
+  '/_protected/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
+  '/_protected/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
   '/_protected/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
   '/_protected/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/_landing/p/$slug/': typeof LandingPSlugIndexRoute
+  '/_protected/org/$orgSlug/': typeof ProtectedOrgOrgSlugIndexRoute
+  '/_protected/org/$orgSlug/polls/new': typeof ProtectedOrgOrgSlugPollsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,6 +239,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/org/new'
     | '/poll/import'
     | '/poll/new'
     | '/user/$id'
@@ -188,17 +247,23 @@ export interface FileRouteTypes {
     | '/user/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
+    | '/org/'
     | '/user/'
     | '/p/$slug/password'
     | '/p/$slug/result'
+    | '/org/$orgSlug/invite'
+    | '/org/$orgSlug/members'
     | '/poll/update/$slug'
     | '/user/update/$id'
     | '/p/$slug/'
+    | '/org/$orgSlug/'
+    | '/org/$orgSlug/polls/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/org/new'
     | '/poll/import'
     | '/poll/new'
     | '/user/$id'
@@ -206,12 +271,17 @@ export interface FileRouteTypes {
     | '/user/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
+    | '/org'
     | '/user'
     | '/p/$slug/password'
     | '/p/$slug/result'
+    | '/org/$orgSlug/invite'
+    | '/org/$orgSlug/members'
     | '/poll/update/$slug'
     | '/user/update/$id'
     | '/p/$slug'
+    | '/org/$orgSlug'
+    | '/org/$orgSlug/polls/new'
   id:
     | '__root__'
     | '/_landing'
@@ -219,6 +289,7 @@ export interface FileRouteTypes {
     | '/_landing/auth'
     | '/_protected/dashboard'
     | '/_landing/'
+    | '/_protected/org/new'
     | '/_protected/poll/import'
     | '/_protected/poll/new'
     | '/_protected/user/$id'
@@ -226,12 +297,17 @@ export interface FileRouteTypes {
     | '/_protected/user/new'
     | '/api/auth/$'
     | '/api/poll/generate-questions'
+    | '/_protected/org/'
     | '/_protected/user/'
     | '/_landing/p/$slug/password'
     | '/_landing/p/$slug/result'
+    | '/_protected/org/$orgSlug/invite'
+    | '/_protected/org/$orgSlug/members'
     | '/_protected/poll/update/$slug'
     | '/_protected/user/update/$id'
     | '/_landing/p/$slug/'
+    | '/_protected/org/$orgSlug/'
+    | '/_protected/org/$orgSlug/polls/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -285,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedUserIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/org/': {
+      id: '/_protected/org/'
+      path: '/org'
+      fullPath: '/org/'
+      preLoaderRoute: typeof ProtectedOrgIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/api/poll/generate-questions': {
       id: '/api/poll/generate-questions'
       path: '/api/poll/generate-questions'
@@ -334,6 +417,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPollImportRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/org/new': {
+      id: '/_protected/org/new'
+      path: '/org/new'
+      fullPath: '/org/new'
+      preLoaderRoute: typeof ProtectedOrgNewRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/org/$orgSlug/': {
+      id: '/_protected/org/$orgSlug/'
+      path: '/org/$orgSlug'
+      fullPath: '/org/$orgSlug/'
+      preLoaderRoute: typeof ProtectedOrgOrgSlugIndexRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_landing/p/$slug/': {
       id: '/_landing/p/$slug/'
       path: '/p/$slug'
@@ -355,6 +452,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPollUpdateSlugRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/org/$orgSlug/members': {
+      id: '/_protected/org/$orgSlug/members'
+      path: '/org/$orgSlug/members'
+      fullPath: '/org/$orgSlug/members'
+      preLoaderRoute: typeof ProtectedOrgOrgSlugMembersRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/org/$orgSlug/invite': {
+      id: '/_protected/org/$orgSlug/invite'
+      path: '/org/$orgSlug/invite'
+      fullPath: '/org/$orgSlug/invite'
+      preLoaderRoute: typeof ProtectedOrgOrgSlugInviteRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_landing/p/$slug/result': {
       id: '/_landing/p/$slug/result'
       path: '/p/$slug/result'
@@ -368,6 +479,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$slug/password'
       preLoaderRoute: typeof LandingPSlugPasswordRouteImport
       parentRoute: typeof LandingRoute
+    }
+    '/_protected/org/$orgSlug/polls/new': {
+      id: '/_protected/org/$orgSlug/polls/new'
+      path: '/org/$orgSlug/polls/new'
+      fullPath: '/org/$orgSlug/polls/new'
+      preLoaderRoute: typeof ProtectedOrgOrgSlugPollsNewRouteImport
+      parentRoute: typeof ProtectedRoute
     }
   }
 }
@@ -393,26 +511,38 @@ const LandingRouteWithChildren =
 
 interface ProtectedRouteChildren {
   ProtectedDashboardRoute: typeof ProtectedDashboardRoute
+  ProtectedOrgNewRoute: typeof ProtectedOrgNewRoute
   ProtectedPollImportRoute: typeof ProtectedPollImportRoute
   ProtectedPollNewRoute: typeof ProtectedPollNewRoute
   ProtectedUserIdRoute: typeof ProtectedUserIdRoute
   ProtectedUserMeRoute: typeof ProtectedUserMeRoute
   ProtectedUserNewRoute: typeof ProtectedUserNewRoute
+  ProtectedOrgIndexRoute: typeof ProtectedOrgIndexRoute
   ProtectedUserIndexRoute: typeof ProtectedUserIndexRoute
+  ProtectedOrgOrgSlugInviteRoute: typeof ProtectedOrgOrgSlugInviteRoute
+  ProtectedOrgOrgSlugMembersRoute: typeof ProtectedOrgOrgSlugMembersRoute
   ProtectedPollUpdateSlugRoute: typeof ProtectedPollUpdateSlugRoute
   ProtectedUserUpdateIdRoute: typeof ProtectedUserUpdateIdRoute
+  ProtectedOrgOrgSlugIndexRoute: typeof ProtectedOrgOrgSlugIndexRoute
+  ProtectedOrgOrgSlugPollsNewRoute: typeof ProtectedOrgOrgSlugPollsNewRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedDashboardRoute: ProtectedDashboardRoute,
+  ProtectedOrgNewRoute: ProtectedOrgNewRoute,
   ProtectedPollImportRoute: ProtectedPollImportRoute,
   ProtectedPollNewRoute: ProtectedPollNewRoute,
   ProtectedUserIdRoute: ProtectedUserIdRoute,
   ProtectedUserMeRoute: ProtectedUserMeRoute,
   ProtectedUserNewRoute: ProtectedUserNewRoute,
+  ProtectedOrgIndexRoute: ProtectedOrgIndexRoute,
   ProtectedUserIndexRoute: ProtectedUserIndexRoute,
+  ProtectedOrgOrgSlugInviteRoute: ProtectedOrgOrgSlugInviteRoute,
+  ProtectedOrgOrgSlugMembersRoute: ProtectedOrgOrgSlugMembersRoute,
   ProtectedPollUpdateSlugRoute: ProtectedPollUpdateSlugRoute,
   ProtectedUserUpdateIdRoute: ProtectedUserUpdateIdRoute,
+  ProtectedOrgOrgSlugIndexRoute: ProtectedOrgOrgSlugIndexRoute,
+  ProtectedOrgOrgSlugPollsNewRoute: ProtectedOrgOrgSlugPollsNewRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

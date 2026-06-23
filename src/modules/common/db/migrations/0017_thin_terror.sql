@@ -1,0 +1,1 @@
+ALTER TABLE `poll` ADD `organization_id` text REFERENCES organization(id);

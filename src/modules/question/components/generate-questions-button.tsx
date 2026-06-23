@@ -38,7 +38,7 @@ const GenerateQuestionsButton = ({ pollDescription, addQuestion }: Props) => {
 					setContext("");
 				}
 			} catch (error) {
-				console.log(error);
+				console.error(error);
 			}
 		});
 	};

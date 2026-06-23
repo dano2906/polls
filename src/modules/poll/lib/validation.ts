@@ -21,6 +21,7 @@ export const createPollInput = z
 		),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 		userId: z.string(),
+		organizationId: z.string().optional(),
 	})
 	.refine(
 		(data) => {
@@ -55,6 +56,7 @@ export const editPollInput = z
 		description: z.string().max(500).optional(),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 		userId: z.string(),
+		organizationId: z.string().optional(),
 	})
 	.partial()
 	.refine(
@@ -79,6 +81,10 @@ export const pollsSearchFilterWithUserSchema = pollsSearchFiltershSchema.extend(
 		userId: z.string(),
 	},
 );
+
+export const pollsSearchFilterWithOrgSchema = pollsSearchFiltershSchema.extend({
+	organizationId: z.string(),
+});
 
 export const pollPasswordSchema = z.object({
 	password: passwordSchema,

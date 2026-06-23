@@ -1,0 +1,1 @@
+ALTER TABLE `poll` RENAME COLUMN "time-limit" TO "time_limit";

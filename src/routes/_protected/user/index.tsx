@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { ensureSession } from "@/auth/actions/auth";
 import { listUsersColumns } from "@/auth/components/columns";
 import UserTableActions from "@/auth/components/user-table-actions";
 import { listUserOptions } from "@/auth/lib/query";
@@ -8,6 +9,12 @@ import PageHeading from "@/common/components/partials/page-heading";
 import { filtersSchema } from "@/common/lib/validation";
 
 export const Route = createFileRoute("/_protected/user/")({
+	beforeLoad: async () => {
+		const session = await ensureSession();
+		if (session?.user.role !== "admin") {
+			throw redirect({ to: "/dashboard" });
+		}
+	},
 	component: RouteComponent,
 	validateSearch: filtersSchema,
 	loaderDeps: ({ search }) => ({

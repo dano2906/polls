@@ -12,9 +12,6 @@ export const admin = ac.newRole({
 	polls: ["create", "update"],
 	...adminAc.statements,
 });
-export const org_admin = ac.newRole({
-	polls: ["create", "update", "delete"],
-});
 export const user = ac.newRole({
 	polls: ["create"],
 });

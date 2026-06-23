@@ -44,13 +44,11 @@ function formatDateForTabular(dateInput: Date): string {
 	const d = new Date(dateInput);
 	if (Number.isNaN(d.getTime())) return "";
 
-	// Extraemos los componentes en formato LOCAL del navegador (no UTC)
+	// Extraemos los componentes en formato LOCAL del navegador
 	const year = d.getFullYear();
-	// padding para asegurar dos dígitos en mes y día (Ej: 05, 09)
 	const month = String(d.getMonth() + 1).padStart(2, "0");
 	const day = String(d.getDate()).padStart(2, "0");
 
-	// Retorna un string plano "AAAA-MM-DD" que no sufrirá desfases horarias
 	return `${year}-${month}-${day}`;
 }
 

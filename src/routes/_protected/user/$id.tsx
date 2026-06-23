@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { ensureSession } from "@/auth/actions/auth";
 import BanUserInput from "@/auth/components/ban-user-input";
 import ChangePasswordInput from "@/auth/components/change-password-input";
 import ChangeUserAvatar from "@/auth/components/change-user-avatar";
@@ -11,6 +12,12 @@ import { getUserOptions, getUserSessionsOptions } from "@/auth/lib/query";
 import PageHeading from "@/common/components/partials/page-heading";
 
 export const Route = createFileRoute("/_protected/user/$id")({
+	beforeLoad: async () => {
+		const session = await ensureSession();
+		if (session?.user.role !== "admin") {
+			throw redirect({ to: "/dashboard" });
+		}
+	},
 	component: RouteComponent,
 	loader: ({ context, params }) => {
 		context.queryClient.ensureQueryData(getUserOptions(params.id));
