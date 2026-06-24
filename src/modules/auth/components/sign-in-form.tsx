@@ -78,13 +78,12 @@ const SignInForm = ({ setTab }: Props) => {
 				]}
 				// biome-ignore lint/correctness/noChildrenProp: <explanation>
 				children={([canSubmit, isSubmitting]) => (
-					<div className="w-full flex flex-col items-center justify-center gap-4 ">
+					<div className="w-full flex flex-col items-end justify-center gap-4 ">
 						<Button
 							type="submit"
 							variant={"default"}
 							onClick={() => form.handleSubmit()}
 							disabled={!canSubmit}
-							className="w-60 mx-auto"
 						>
 							<LoadingSwap
 								isLoading={isSubmitting as boolean}

@@ -132,12 +132,11 @@ const CreateUserForm = () => {
 				]}
 				// biome-ignore lint/correctness/noChildrenProp: <explanation>
 				children={([canSubmit, isSubmitting]) => (
-					<div className="w-full flex flex-col items-center justify-center gap-4 col-span-1 lg:col-span-2">
+					<div className="w-full flex flex-col items-end justify-center gap-4 col-span-1 lg:col-span-2">
 						<Button
 							type="submit"
 							variant={"default"}
 							disabled={!canSubmit}
-							className="w-60 mx-auto"
 						>
 							<LoadingSwap
 								isLoading={isSubmitting as boolean}

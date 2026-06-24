@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form-start";
-import { redirect, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Key } from "lucide-react";
 import { toast } from "sonner";
 import FormField, { FieldType } from "@/common/components/partials/form-field";
@@ -76,7 +76,7 @@ const PollPasswordForm = ({ slug }: { slug: string }) => {
 				]}
 				// biome-ignore lint/correctness/noChildrenProp: <explanation>
 				children={([canSubmit, _isSubmitting, _errors]) => (
-					<div className="w-full flex items-center justify-center gap-2 ">
+					<div className="w-full flex items-center justify-end gap-2 ">
 						<Button type="submit" variant={"default"} disabled={!canSubmit}>
 							<LoadingSwap
 								isLoading={form.state.isSubmitting}

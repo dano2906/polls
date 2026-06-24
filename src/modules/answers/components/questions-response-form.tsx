@@ -85,7 +85,8 @@ const QuestionResponseForm = ({ pollData, slug }: Props) => {
 			// 3. Manejamos el éxito
 			setIsFinished(true);
 			toast.success("Tus respuestas fueron validadas y guardadas con éxito.");
-		} catch {
+		} catch (error) {
+			console.error(error);
 			toast.error(
 				"Hubo un problema al enviar tus respuestas. Inténtalo de nuevo.",
 			);
@@ -403,19 +404,19 @@ const QuestionResponseForm = ({ pollData, slug }: Props) => {
 				>
 					{([canSubmit, isSubmitting]) => {
 						return (
-							<Button
-								type="submit"
-								disabled={!canSubmit || isSubmitting}
-								className="w-full"
-							>
-								<LoadingSwap
-									isLoading={isSubmitting}
-									className="flex items-center gap-2"
-								>
-									<Save />
-									{isSubmitting ? "Enviando respuestas..." : "Enviar Encuesta"}
-								</LoadingSwap>
-							</Button>
+							<div className="w-full flex justify-end">
+								<Button type="submit" disabled={!canSubmit || isSubmitting}>
+									<LoadingSwap
+										isLoading={isSubmitting}
+										className="flex items-center gap-2"
+									>
+										<Save />
+										{isSubmitting
+											? "Enviando respuestas..."
+											: "Enviar Encuesta"}
+									</LoadingSwap>
+								</Button>
+							</div>
 						);
 					}}
 				</form.Subscribe>

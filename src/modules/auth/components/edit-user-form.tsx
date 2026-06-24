@@ -150,14 +150,13 @@ const EditUserForm = ({ user, isolated = true }: EditUserFormProps) => {
 				children={([canSubmit, isSubmitting]) => (
 					<div
 						className={cn(
-							"w-full flex flex-col justify-center items-center gap-4 col-span-1 lg:col-span-2",
+							"w-full flex flex-col justify-center items-end gap-4 col-span-1 lg:col-span-2",
 						)}
 					>
 						<Button
 							type="submit"
 							variant={"default"}
 							disabled={!canSubmit}
-							className="w-60 mx-auto"
 						>
 							<LoadingSwap
 								isLoading={isSubmitting as boolean}
