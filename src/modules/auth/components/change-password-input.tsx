@@ -36,7 +36,7 @@ const ChangePasswordInput = ({ id }: { id: string }) => {
 		onError: (error) => toast.error(error.message),
 	});
 	return (
-		<InputGroup className="px-1 max-w-xs w-full">
+		<InputGroup className="px-1 max-w-lg w-full">
 			<InputGroupInput
 				placeholder="Nueva contraseña..."
 				value={newPassword}
