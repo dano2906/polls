@@ -1,6 +1,6 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { getSession } from "@/auth/actions/auth";
 import { db } from "@/common/db";
 import { poll, question, submission, userAnswer } from "@/common/db/schema";
@@ -33,7 +33,7 @@ export const submitPollAnswers = createServerFn()
 			);
 		}
 
-		// 🔍 [CORRECCIÓN] Recuperamos la sumisión ANTES de la transacción
+		// 🔍 Recuperamos la sumisión ANTES de la transacción
 		const currentSubmission = await db.query.submission.findFirst({
 			where: and(
 				eq(submission.pollId, pollId),
@@ -47,22 +47,13 @@ export const submitPollAnswers = createServerFn()
 			);
 		}
 
-		// 🚀 [CORRECCIÓN] El redirect ahora vive de forma segura fuera de la transacción
-		if (currentSubmission.completedAt) {
-			throw redirect({
-				to: "/p/$slug/result",
-				params: { slug: existingPoll.slug as string },
-			});
-		}
-
-		// ⏱️ VALIDACIÓN DE TIEMPO (También la podemos evaluar fuera)
+		// ⏱️ VALIDACIÓN DE TIEMPO (fuera de la transacción, es solo una verificación previa)
 		if (existingPoll.timeLimit) {
 			const startedAtTime = new Date(currentSubmission.startedAt).getTime();
 			const secondsElapsed = (now.getTime() - startedAtTime) / 1000;
 
-			// Margen de 10 segundos de tolerancia por latencia
 			if (secondsElapsed > existingPoll.timeLimit + 10) {
-				// Aquí manejas si guardas parcial o lanzas error
+				throw new Error("El tiempo para responder esta encuesta ha expirado");
 			}
 		}
 
@@ -79,13 +70,27 @@ export const submitPollAnswers = createServerFn()
 			questionTypesMap = new Map(pollQuestionsData.map((q) => [q.id, q.type]));
 		}
 
-		// 3. Ejecutamos la transacción ÚNICAMENTE para la escritura pesada
+		// 3. Transacción atómica: la verificación de completedAt está DENTRO para evitar TOCTOU
 		return await db.transaction(async (tx) => {
-			// Actualizamos la cabecera marcando la fecha de finalización
-			await tx
+			// Actualizamos la cabecera SOLO si completedAt IS NULL (conditional update)
+			const updateResult = await tx
 				.update(submission)
 				.set({ completedAt: now })
-				.where(eq(submission.id, currentSubmission.id));
+				.where(
+					and(
+						eq(submission.id, currentSubmission.id),
+						isNull(submission.completedAt),
+					),
+				)
+				.returning({ id: submission.id });
+
+			// Si no se actualizó ninguna fila, la submission ya fue completada en otra solicitud
+			if (updateResult.length === 0) {
+				throw redirect({
+					to: "/p/$slug/result",
+					params: { slug: existingPoll.slug as string },
+				});
+			}
 
 			// Transformamos las respuestas crudas filtrando las válidas
 			const answersToInsert = Object.entries(answers)
