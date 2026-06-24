@@ -34,7 +34,9 @@ function RouteComponent() {
 			<PageHeading>Acciones</PageHeading>
 			<div className="w-full flex flex-wrap items-center justify-start gap-1">
 				<BanUserInput id={id} />
-				<ChangePasswordInput id={id} />
+				<div className="max-w-xs">
+					<ChangePasswordInput id={id} />
+				</div>
 				<RevokeSessionsButton mode="all" id={id} buttonVariant="secondary" />
 				<div className="max-w-fit">
 					<RemoveUserButton id={id} buttonVariant="destructive" />

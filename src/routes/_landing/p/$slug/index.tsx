@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_landing/p/$slug/")({
 			await validatePollAccess({
 				data: {
 					slug: params.slug,
-					userId: context.auth.user.id,
+					userId: context?.auth?.user.id,
 				},
 			});
 		} catch (error) {

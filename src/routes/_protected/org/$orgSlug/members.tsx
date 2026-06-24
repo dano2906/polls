@@ -7,6 +7,7 @@ import {
 	getOrganizationBySlug,
 	removeMemberAction,
 } from "@/organization/actions/organization";
+import { RoleBadge } from "@/organization/components/role-badge";
 import { orgMembersOptions } from "@/organization/lib/query";
 import { Badge } from "@/ui/badge";
 import { Button, buttonVariants } from "@/ui/button";
@@ -76,20 +77,7 @@ function RouteComponent() {
 										</div>
 									</div>
 									<div className="flex items-center gap-2">
-										<Badge
-											variant={
-												member.role === "owner"
-													? "default"
-													: member.role === "admin"
-														? "secondary"
-														: "outline"
-											}
-										>
-											{member.role === "owner" && (
-												<Shield className="size-3 mr-1" />
-											)}
-											{member.role}
-										</Badge>
+										<RoleBadge role={member.role} />
 										{member.role !== "owner" && (
 											<Button
 												variant="destructive"

@@ -88,9 +88,11 @@ function RouteComponent() {
 					selector={(state) => [state.canSubmit, state.isSubmitting]}
 				>
 					{([canSubmit, isSubmitting]) => (
-						<Button type="submit" disabled={!canSubmit}>
-							{isSubmitting ? "Enviando..." : "Enviar invitación"}
-						</Button>
+						<div className="flex justify-end">
+							<Button type="submit" disabled={!canSubmit}>
+								{isSubmitting ? "Enviando..." : "Enviar invitación"}
+							</Button>
+						</div>
 					)}
 				</form.Subscribe>
 			</form>
