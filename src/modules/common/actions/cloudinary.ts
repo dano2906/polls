@@ -4,6 +4,9 @@ import { getSession } from "@/auth/actions/auth";
 
 export const getCloudinarySignature = createServerFn({ method: "GET" }).handler(
 	async () => {
+		const session = await getSession();
+		if (!session?.user) throw new Error("UNAUTHORIZED");
+
 		if (!process.env.CLOUDINARY_API_SECRET) {
 			throw new Error(
 				"No se encuentra la variable CLOUDINARY_API_SECRET en las variables de entorno",
