@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import AuthHeader from "@/auth/components/auth-header";
+import { AutoBreadcrumb } from "@/common/components/partials/auto-breadcrumb";
 
 export const Route = createFileRoute("/_landing")({
 	component: RouteComponent,
@@ -12,6 +13,7 @@ function RouteComponent() {
 				<AuthHeader />
 			</header>
 			<main className="max-w-6xl mx-auto flex flex-col items-center justify-center gap-2">
+				<AutoBreadcrumb />
 				<Outlet />
 			</main>
 		</div>
