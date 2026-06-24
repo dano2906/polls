@@ -1,4 +1,29 @@
+import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import {
+	invitation,
+	member,
+	organization,
+	organizationRole,
+	team,
+} from "@/common/db/schema";
+
+export const selectOrganizationSchema = createSelectSchema(organization);
+export const selectMemberSchema = createSelectSchema(member);
+export const selectInvitationSchema = createSelectSchema(invitation);
+export const selectOrganizationRoleSchema = createSelectSchema(organizationRole);
+export const selectTeamSchema = createSelectSchema(team);
+
+export const MEMBER_ROLES = ["admin", "member", "owner"] as const;
+export const memberRoleSchema = z.enum(MEMBER_ROLES);
+
+export const INVITATION_STATUSES = [
+	"pending",
+	"accepted",
+	"rejected",
+	"cancelled",
+] as const;
+export const invitationStatusSchema = z.enum(INVITATION_STATUSES);
 
 export const createOrganizationSchema = z.object({
 	name: z
