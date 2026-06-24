@@ -26,6 +26,15 @@ export const auth = betterAuth({
 		enabled: true,
 		autoSignIn: false,
 	},
+	rateLimit: {
+		enabled: true,
+		window: 10,
+		max: 100,
+		customRules: {
+			"/api/auth/sign-in/email": { window: 60, max: 5 },
+			"/api/auth/sign-up/email": { window: 60, max: 3 },
+		},
+	},
 	plugins: [
 		adminPlugin({
 			ac,
