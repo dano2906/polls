@@ -327,6 +327,9 @@ export const getPollDetails = createServerFn({ method: "GET" })
 export const createPoll = createServerFn({ method: "POST" })
 	.validator(createPollInput)
 	.handler(async ({ data }) => {
+		const session = await getSession();
+		if (!session?.user) throw new Error("UNAUTHORIZED");
+
 		try {
 			const newId = randomUUID();
 			const hasPassword = !!(data.password && data.password.trim().length > 0);
@@ -340,14 +343,20 @@ export const createPoll = createServerFn({ method: "POST" })
 			const [newPoll] = await db
 				.insert(poll)
 				.values({
-					...data,
-					id: newId,
-					timeLimit: data.timeLimit ?? null,
-					password: hashedPassword,
+					name: data.name,
+					description: data.description,
+					userId: session.user.id,
 					slug:
 						data.slug && data.slug.length === 6
 							? data.slug
 							: generateRandomCode(),
+					status: data.status ?? "draft",
+					startDate: data.startDate,
+					endDate: data.endDate ?? null,
+					id: newId,
+					timeLimit: data.timeLimit ?? null,
+					password: hashedPassword,
+					organizationId: data.organizationId ?? null,
 				})
 				.returning();
 			if (newPoll) {
@@ -368,18 +377,25 @@ export const updatePoll = createServerFn({ method: "POST" })
 		updatedData: editPollInput.parse(values),
 	}))
 	.handler(async ({ data }) => {
+		const session = await getSession();
+		if (!session?.user) throw new Error("UNAUTHORIZED");
+
 		try {
 			if (!data.slug) {
 				throw new Error("El slug es necesario para identificar la encuesta");
 			}
 			const currentPoll = await db
-				.select({ id: poll.id })
+				.select({ id: poll.id, userId: poll.userId })
 				.from(poll)
 				.where(eq(poll.slug, data.slug))
 				.get();
 
 			if (!currentPoll) {
 				throw new Error("La encuesta especificada no existe");
+			}
+
+			if (currentPoll.userId !== session.user.id) {
+				throw new Error("FORBIDDEN");
 			}
 
 			const questionCount = await db
@@ -394,7 +410,12 @@ export const updatePoll = createServerFn({ method: "POST" })
 			const res = await db
 				.update(poll)
 				.set({
-					...data.updatedData,
+					name: data.updatedData.name,
+					description: data.updatedData.description,
+					startDate: data.updatedData.startDate,
+					endDate: data.updatedData.endDate ?? null,
+					status: data.updatedData.status,
+					organizationId: data.updatedData.organizationId ?? null,
 					timeLimit: data.updatedData.timeLimit,
 					updatedAt: new Date(),
 				})
@@ -706,6 +727,8 @@ export const forkPoll = createServerFn({ method: "POST" })
 	.validator(forkPollInput)
 	.handler(async ({ data }) => {
 		const { pollSlug } = data;
+		const session = await getSession();
+		if (!session?.user) throw new Error("UNAUTHORIZED");
 
 		try {
 			const result = await db.transaction(async (tx) => {
@@ -757,7 +780,7 @@ export const forkPoll = createServerFn({ method: "POST" })
 				const [insertedPoll] = await tx
 					.insert(poll)
 					.values({
-						userId: originalPoll.userId,
+						userId: session.user.id,
 						name: originalPoll.name,
 						description: originalPoll.description,
 						slug: nextSlug,
