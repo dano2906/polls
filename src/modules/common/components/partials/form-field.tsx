@@ -1,5 +1,5 @@
 import type { AnyFieldApi } from "@tanstack/react-form-start";
-import type { ClassValue } from "clsx";
+import type { ClassValue } from "cnfast";
 import { format, isValid, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";

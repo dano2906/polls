@@ -1,6 +1,5 @@
 import type { ClassValue } from "clsx";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, twMerge } from "cnfast";
 import { getCloudinarySignature } from "@/common/actions/cloudinary";
 
 export function cn(...inputs: ClassValue[]) {
