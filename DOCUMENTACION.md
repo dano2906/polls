@@ -6,19 +6,19 @@ Aplicación web full-stack para crear, publicar, compartir y responder encuestas
 
 ## Stack Tecnológico
 
-| Capa | Tecnología |
-|------|-----------|
-| Framework | TanStack Start (SSR React) |
-| Ruteo | TanStack React Router (archivos) |
-| Estado Server | TanStack React Query |
-| Formularios | TanStack Form |
-| Base de Datos | Turso / libSQL (SQLite) |
-| ORM | Drizzle ORM |
+| Capa          | Tecnología                         |
+| ------------- | ---------------------------------- |
+| Framework     | TanStack Start (SSR React)         |
+| Ruteo         | TanStack React Router (archivos)   |
+| Estado Server | TanStack React Query               |
+| Formularios   | TanStack Form                      |
+| Base de Datos | Turso / libSQL (SQLite)            |
+| ORM           | Drizzle ORM                        |
 | Autenticación | BetterAuth (email, Google, GitHub) |
-| UI | Tailwind CSS v4 + ShadCN |
-| IA | Vercel AI SDK + OpenRouter |
-| Archivos | Cloudinary |
-| Exportación | SheetJS (XLSX) |
+| UI            | Tailwind CSS v4 + ShadCN           |
+| IA            | Vercel AI SDK + OpenRouter         |
+| Archivos      | Cloudinary                         |
+| Exportación   | SheetJS (XLSX)                     |
 
 ---
 
@@ -73,6 +73,7 @@ src/
 ```
 
 Cada módulo sigue la misma estructura interna:
+
 - **`actions/`** - Server functions (`createServerFn`)
 - **`components/`** - Componentes React
 - **`lib/`** - Validaciones (Zod), queries (React Query), utilerías, constantes
@@ -252,24 +253,24 @@ Cada módulo sigue la misma estructura interna:
 
 **15 tablas** definidas con Drizzle ORM + Zod (`drizzle-zod`):
 
-| Tabla | Campos clave | Relaciones |
-|-------|-------------|------------|
-| **user** | id, name, email, role (admin/user), banned, banReason | -> sessions, accounts, polls, members |
-| **session** | id, token, userId, expiresAt, ipAddress, userAgent, impersonatedBy | -> user |
-| **account** | id, accountId, providerId, userId, password (hash) | -> user |
-| **verification** | id, identifier, value, expiresAt | (standalone) |
-| **organization** | id, name, slug, logo, metadata | -> members, invitations |
-| **member** | id, userId, organizationId, role | -> user, organization |
-| **invitation** | id, email, inviterId, organizationId, role, status, expiresAt | -> organization, user |
-| **organization_role** | id, organizationId, role, permission | -> organization |
-| **team** | id, name, organizationId | -> organization |
-| **team_member** | id, teamId, userId | -> team, user |
-| **poll** | id, userId, rootId, name, slug (único), status, version, timeLimit, password, startDate, endDate, organizationId, metadata | -> user, questions, submissions |
-| **question** | id, type (9 tipos), questionText, hasCorrectAnswers, maxSelections, isRequired, imageUrl, metadata | -> answers, polls (via poll_question) |
-| **poll_question** | pollId, questionId, order | -> poll, question |
-| **answer** | id, questionId, answerText, isCorrect, order, imageUrl, metadata | -> question |
-| **submission** | id, pollId, userId, submittedAt, startedAt, completedAt | -> poll, user |
-| **user_answer** | id, submissionId, questionId, value (JSON) | -> submission, question |
+| Tabla                 | Campos clave                                                                                                               | Relaciones                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **user**              | id, name, email, role (admin/user), banned, banReason                                                                      | -> sessions, accounts, polls, members |
+| **session**           | id, token, userId, expiresAt, ipAddress, userAgent, impersonatedBy                                                         | -> user                               |
+| **account**           | id, accountId, providerId, userId, password (hash)                                                                         | -> user                               |
+| **verification**      | id, identifier, value, expiresAt                                                                                           | (standalone)                          |
+| **organization**      | id, name, slug, logo, metadata                                                                                             | -> members, invitations               |
+| **member**            | id, userId, organizationId, role                                                                                           | -> user, organization                 |
+| **invitation**        | id, email, inviterId, organizationId, role, status, expiresAt                                                              | -> organization, user                 |
+| **organization_role** | id, organizationId, role, permission                                                                                       | -> organization                       |
+| **team**              | id, name, organizationId                                                                                                   | -> organization                       |
+| **team_member**       | id, teamId, userId                                                                                                         | -> team, user                         |
+| **poll**              | id, userId, rootId, name, slug (único), status, version, timeLimit, password, startDate, endDate, organizationId, metadata | -> user, questions, submissions       |
+| **question**          | id, type (9 tipos), questionText, hasCorrectAnswers, maxSelections, isRequired, imageUrl, metadata                         | -> answers, polls (via poll_question) |
+| **poll_question**     | pollId, questionId, order                                                                                                  | -> poll, question                     |
+| **answer**            | id, questionId, answerText, isCorrect, order, imageUrl, metadata                                                           | -> question                           |
+| **submission**        | id, pollId, userId, submittedAt, startedAt, completedAt                                                                    | -> poll, user                         |
+| **user_answer**       | id, submissionId, questionId, value (JSON)                                                                                 | -> submission, question               |
 
 ---
 
@@ -301,7 +302,7 @@ Cada módulo sigue la misma estructura interna:
 
 1. **Página "Mi Perfil" completa**
    - Actualmente es un placeholder (`_protected/user/me.tsx`).
-   - Agregar: foto de avatar, cambio de contraseña, gestión de sesiones activas, historial de encuestas respondidas, preferencias (tema, idioma).
+   - Agregar: historial de encuestas respondidas, preferencias (tema, idioma).
 
 2. **Notificaciones en tiempo real**
    - Notificar al creador cuando alguien responde su encuesta.

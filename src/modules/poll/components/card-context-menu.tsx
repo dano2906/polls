@@ -36,7 +36,7 @@ const CardContextMenu = ({ children, poll, forkVersion }: Props) => {
 			<ContextMenuContent className="grid w-auto">
 				<ContextMenuItem asChild>
 					<Link
-						to="/poll/update/$slug"
+						to="/poll/$slug/update"
 						params={{
 							slug: poll.slug as string,
 						}}

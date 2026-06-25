@@ -27,7 +27,8 @@ import { Route as ProtectedOrgNewRouteImport } from './routes/_protected/org/new
 import { Route as ProtectedOrgOrgSlugIndexRouteImport } from './routes/_protected/org/$orgSlug/index'
 import { Route as LandingPSlugIndexRouteImport } from './routes/_landing/p/$slug/index'
 import { Route as ProtectedUserUpdateIdRouteImport } from './routes/_protected/user/update.$id'
-import { Route as ProtectedPollUpdateSlugRouteImport } from './routes/_protected/poll/update.$slug'
+import { Route as ProtectedPollSlugUpdateRouteImport } from './routes/_protected/poll/$slug.update'
+import { Route as ProtectedPollSlugResultRouteImport } from './routes/_protected/poll/$slug.result'
 import { Route as ProtectedOrgOrgSlugMembersRouteImport } from './routes/_protected/org/$orgSlug/members'
 import { Route as ProtectedOrgOrgSlugInviteRouteImport } from './routes/_protected/org/$orgSlug/invite'
 import { Route as LandingPSlugResultRouteImport } from './routes/_landing/p/$slug/result'
@@ -124,9 +125,14 @@ const ProtectedUserUpdateIdRoute = ProtectedUserUpdateIdRouteImport.update({
   path: '/user/update/$id',
   getParentRoute: () => ProtectedRoute,
 } as any)
-const ProtectedPollUpdateSlugRoute = ProtectedPollUpdateSlugRouteImport.update({
-  id: '/poll/update/$slug',
-  path: '/poll/update/$slug',
+const ProtectedPollSlugUpdateRoute = ProtectedPollSlugUpdateRouteImport.update({
+  id: '/poll/$slug/update',
+  path: '/poll/$slug/update',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedPollSlugResultRoute = ProtectedPollSlugResultRouteImport.update({
+  id: '/poll/$slug/result',
+  path: '/poll/$slug/result',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedOrgOrgSlugMembersRoute =
@@ -176,7 +182,8 @@ export interface FileRoutesByFullPath {
   '/p/$slug/result': typeof LandingPSlugResultRoute
   '/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
   '/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
-  '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
+  '/poll/$slug/result': typeof ProtectedPollSlugResultRoute
+  '/poll/$slug/update': typeof ProtectedPollSlugUpdateRoute
   '/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/p/$slug/': typeof LandingPSlugIndexRoute
   '/org/$orgSlug/': typeof ProtectedOrgOrgSlugIndexRoute
@@ -200,7 +207,8 @@ export interface FileRoutesByTo {
   '/p/$slug/result': typeof LandingPSlugResultRoute
   '/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
   '/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
-  '/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
+  '/poll/$slug/result': typeof ProtectedPollSlugResultRoute
+  '/poll/$slug/update': typeof ProtectedPollSlugUpdateRoute
   '/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/p/$slug': typeof LandingPSlugIndexRoute
   '/org/$orgSlug': typeof ProtectedOrgOrgSlugIndexRoute
@@ -227,7 +235,8 @@ export interface FileRoutesById {
   '/_landing/p/$slug/result': typeof LandingPSlugResultRoute
   '/_protected/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
   '/_protected/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
-  '/_protected/poll/update/$slug': typeof ProtectedPollUpdateSlugRoute
+  '/_protected/poll/$slug/result': typeof ProtectedPollSlugResultRoute
+  '/_protected/poll/$slug/update': typeof ProtectedPollSlugUpdateRoute
   '/_protected/user/update/$id': typeof ProtectedUserUpdateIdRoute
   '/_landing/p/$slug/': typeof LandingPSlugIndexRoute
   '/_protected/org/$orgSlug/': typeof ProtectedOrgOrgSlugIndexRoute
@@ -253,7 +262,8 @@ export interface FileRouteTypes {
     | '/p/$slug/result'
     | '/org/$orgSlug/invite'
     | '/org/$orgSlug/members'
-    | '/poll/update/$slug'
+    | '/poll/$slug/result'
+    | '/poll/$slug/update'
     | '/user/update/$id'
     | '/p/$slug/'
     | '/org/$orgSlug/'
@@ -277,7 +287,8 @@ export interface FileRouteTypes {
     | '/p/$slug/result'
     | '/org/$orgSlug/invite'
     | '/org/$orgSlug/members'
-    | '/poll/update/$slug'
+    | '/poll/$slug/result'
+    | '/poll/$slug/update'
     | '/user/update/$id'
     | '/p/$slug'
     | '/org/$orgSlug'
@@ -303,7 +314,8 @@ export interface FileRouteTypes {
     | '/_landing/p/$slug/result'
     | '/_protected/org/$orgSlug/invite'
     | '/_protected/org/$orgSlug/members'
-    | '/_protected/poll/update/$slug'
+    | '/_protected/poll/$slug/result'
+    | '/_protected/poll/$slug/update'
     | '/_protected/user/update/$id'
     | '/_landing/p/$slug/'
     | '/_protected/org/$orgSlug/'
@@ -445,11 +457,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedUserUpdateIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/poll/update/$slug': {
-      id: '/_protected/poll/update/$slug'
-      path: '/poll/update/$slug'
-      fullPath: '/poll/update/$slug'
-      preLoaderRoute: typeof ProtectedPollUpdateSlugRouteImport
+    '/_protected/poll/$slug/update': {
+      id: '/_protected/poll/$slug/update'
+      path: '/poll/$slug/update'
+      fullPath: '/poll/$slug/update'
+      preLoaderRoute: typeof ProtectedPollSlugUpdateRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/poll/$slug/result': {
+      id: '/_protected/poll/$slug/result'
+      path: '/poll/$slug/result'
+      fullPath: '/poll/$slug/result'
+      preLoaderRoute: typeof ProtectedPollSlugResultRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/org/$orgSlug/members': {
@@ -521,7 +540,8 @@ interface ProtectedRouteChildren {
   ProtectedUserIndexRoute: typeof ProtectedUserIndexRoute
   ProtectedOrgOrgSlugInviteRoute: typeof ProtectedOrgOrgSlugInviteRoute
   ProtectedOrgOrgSlugMembersRoute: typeof ProtectedOrgOrgSlugMembersRoute
-  ProtectedPollUpdateSlugRoute: typeof ProtectedPollUpdateSlugRoute
+  ProtectedPollSlugResultRoute: typeof ProtectedPollSlugResultRoute
+  ProtectedPollSlugUpdateRoute: typeof ProtectedPollSlugUpdateRoute
   ProtectedUserUpdateIdRoute: typeof ProtectedUserUpdateIdRoute
   ProtectedOrgOrgSlugIndexRoute: typeof ProtectedOrgOrgSlugIndexRoute
   ProtectedOrgOrgSlugPollsNewRoute: typeof ProtectedOrgOrgSlugPollsNewRoute
@@ -539,7 +559,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedUserIndexRoute: ProtectedUserIndexRoute,
   ProtectedOrgOrgSlugInviteRoute: ProtectedOrgOrgSlugInviteRoute,
   ProtectedOrgOrgSlugMembersRoute: ProtectedOrgOrgSlugMembersRoute,
-  ProtectedPollUpdateSlugRoute: ProtectedPollUpdateSlugRoute,
+  ProtectedPollSlugResultRoute: ProtectedPollSlugResultRoute,
+  ProtectedPollSlugUpdateRoute: ProtectedPollSlugUpdateRoute,
   ProtectedUserUpdateIdRoute: ProtectedUserUpdateIdRoute,
   ProtectedOrgOrgSlugIndexRoute: ProtectedOrgOrgSlugIndexRoute,
   ProtectedOrgOrgSlugPollsNewRoute: ProtectedOrgOrgSlugPollsNewRoute,

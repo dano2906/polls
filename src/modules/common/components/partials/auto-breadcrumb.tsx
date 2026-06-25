@@ -29,6 +29,7 @@ const routeConfigs: Record<
 	"/poll/new": { label: "Nueva encuesta", parentKey: "/dashboard" },
 	"/poll/update/$slug": { label: "Editar encuesta", parentKey: "/dashboard" },
 	"/poll/import": { label: "Importar encuesta", parentKey: "/dashboard" },
+	"/poll/$slug/result": { label: "Resultados", parentKey: "/user/me" },
 	"/org": { label: "Organizaciones", parentKey: "/dashboard" },
 	"/org/new": { label: "Nueva organización", parentKey: "/org" },
 	"/org/$orgSlug": { label: "Organización", parentKey: "/org" },
