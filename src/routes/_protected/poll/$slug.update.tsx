@@ -4,7 +4,7 @@ import { getPollDetails } from "@/poll/actions/poll";
 import PollForm from "@/poll/components/poll-form";
 import QuestionForm from "@/question/components/question-form";
 
-export const Route = createFileRoute("/_protected/poll/update/$slug")({
+export const Route = createFileRoute("/_protected/poll/$slug/update")({
 	component: RouteComponent,
 	loader: async (ctx) => {
 		const { slug } = ctx.params;

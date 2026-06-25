@@ -13,7 +13,9 @@ import {
 	AvatarImage,
 } from "@/common/components/ui/avatar";
 import { addChecboxSelectColumn } from "@/common/lib/table";
+import type { getUserAnsweredPolls } from "../actions/user";
 import SessionActionsMenu from "./session-actions";
+import UserAnsweredPollsRowActions from "./user-answered-polls-row-actions";
 import UserRowActions from "./user-row-actions";
 
 export const listUsersColumns: ColumnDef<UserWithRole>[] = [
@@ -207,6 +209,43 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 			return (
 				<SessionActionsMenu token={row.original.token} id={row.original.id} />
 			);
+		},
+		meta: { label: "Acciones" },
+	},
+];
+
+export const listUserAnsweredPolls: ColumnDef<
+	Awaited<ReturnType<typeof getUserAnsweredPolls>>[number]
+>[] = [
+	{
+		accessorKey: "name",
+		header: "Nombre",
+		meta: { label: "Nombre" },
+	},
+	{
+		accessorKey: "description",
+		header: "Descripción",
+		meta: { label: "Descripción" },
+	},
+	{
+		accessorKey: "submittedAt",
+		header: "Fecha de respuesta",
+		meta: { label: "Fecha de respuesta" },
+		cell: ({ getValue }) => {
+			const date = getValue<Date | null>();
+			if (!date)
+				return <span className="text-muted-foreground text-sm">-</span>;
+			return (
+				<span>{format(date, "d 'de' MMMM, yyyy - HH:mm", { locale: es })}</span>
+			);
+		},
+	},
+	{
+		id: "actions",
+		accessorKey: "actions",
+		header: "Acciones",
+		cell: ({ row }) => {
+			return <UserAnsweredPollsRowActions slug={row.original.slug as string} />;
 		},
 		meta: { label: "Acciones" },
 	},

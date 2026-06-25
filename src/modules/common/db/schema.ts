@@ -275,13 +275,13 @@ export const submission = sqliteTable(
 		userId: text("userId")
 			.notNull()
 			.references(() => user.id),
-		submittedAt: integer("submitted_at", { mode: "timestamp" }).default(
-			sql`CURRENT_TIMESTAMP`,
-		),
-		startedAt: integer("started_at", { mode: "timestamp" })
-			.default(sql`CURRENT_TIMESTAMP`)
+		submittedAt: integer("submitted_at", {
+			mode: "timestamp_ms",
+		}).default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`),
+		startedAt: integer("started_at", { mode: "timestamp_ms" })
+			.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
 			.notNull(),
-		completedAt: integer("completed_at", { mode: "timestamp" }),
+		completedAt: integer("completed_at", { mode: "timestamp_ms" }),
 	},
 	(table) => [
 		uniqueIndex("user_poll_unique_idx").on(table.userId, table.pollId),

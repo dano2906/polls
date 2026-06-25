@@ -1,7 +1,10 @@
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import { eq } from "drizzle-orm";
 import z from "zod";
+import { db } from "@/common/db";
+import { poll, submission } from "@/common/db/schema";
 import { passwordSchema } from "@/common/lib/validation";
 import { auth } from "../lib/auth";
 import {
@@ -272,4 +275,24 @@ export const updateProfile = createServerFn({ method: "POST" })
 		});
 
 		return { success: true };
+	});
+
+export const getUserAnsweredPolls = createServerFn({ method: "GET" })
+	.validator(({ userId }: { userId: string }) => userId)
+	.handler(async ({ data }) => {
+		try {
+			const result = await db
+				.select({
+					name: poll.name,
+					description: poll.description,
+					slug: poll.slug,
+					submittedAt: submission.submittedAt,
+				})
+				.from(submission)
+				.innerJoin(poll, eq(submission.pollId, poll.id))
+				.where(eq(submission.userId, data));
+			return result;
+		} catch {
+			throw new Error("No se pudieron cargar los tests");
+		}
 	});

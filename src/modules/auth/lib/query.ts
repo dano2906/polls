@@ -1,5 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getUser, listUserSessions } from "../actions/user";
+import {
+	getUser,
+	getUserAnsweredPolls,
+	listUserSessions,
+} from "../actions/user";
 import { authClient } from "./auth-client";
 
 export const listUserOptions = (filters: {
@@ -28,4 +32,10 @@ export const getUserSessionsOptions = (id: string) =>
 	queryOptions({
 		queryKey: ["user", "sessions", id],
 		queryFn: async () => listUserSessions({ data: { id } }),
+	});
+
+export const getUserAnsweredPollsOptions = (id: string) =>
+	queryOptions({
+		queryKey: ["user", "polls", id],
+		queryFn: () => getUserAnsweredPolls({ data: { userId: id } }),
 	});
