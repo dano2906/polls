@@ -1,4 +1,4 @@
-import { useForm } from "@tanstack/react-form-start";
+import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import type { UserWithRole } from "better-auth/plugins";
@@ -153,11 +153,7 @@ const EditUserForm = ({ user, isolated = true }: EditUserFormProps) => {
 							"w-full flex flex-col justify-center items-end gap-4 col-span-1 lg:col-span-2",
 						)}
 					>
-						<Button
-							type="submit"
-							variant={"default"}
-							disabled={!canSubmit}
-						>
+						<Button type="submit" variant={"default"} disabled={!canSubmit}>
 							<LoadingSwap
 								isLoading={isSubmitting as boolean}
 								className="flex items-center gap-2"

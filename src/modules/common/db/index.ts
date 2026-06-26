@@ -10,7 +10,7 @@ if (!process.env.TURSO_CONNECTION_URL) {
 	);
 }
 
-if (!process.env.TURSO_AUTH_TOKEN) {
+if (!process.env.TURSO_AUTH_TOKEN && process.env.NODE_ENV === "production") {
 	throw new Error(
 		"TURSO_AUTH_TOKEN no está definida en las variables de entorno",
 	);

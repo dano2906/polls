@@ -1,4 +1,4 @@
-import type { AnyFieldApi } from "@tanstack/react-form-start";
+import type { AnyFieldApi } from "@tanstack/react-form";
 import type { ClassValue } from "cnfast";
 import { format, isValid, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -9,7 +9,7 @@ import { Button } from "@/ui/button";
 import { Calendar } from "@/ui/calendar";
 import { Checkbox } from "@/ui/checkbox";
 import { DateInput } from "@/ui/date-input";
-import { Field, FieldLabel } from "@/ui/field";
+import { Field, FieldError, FieldLabel } from "@/ui/field";
 import { Input } from "@/ui/input";
 import { NumberInput } from "@/ui/number-input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
@@ -483,14 +483,9 @@ const RenderField = ({
 const FormField = (props: Props) => {
 	const { field, field_type, label, input_classes, required = false } = props;
 
-	// Extraemos la renderización de errores repetitiva en una pequeña constante scannable
-	const renderError = !field.state.meta.isValid && (
-		<em role="alert" className="text-xs text-destructive font-sg mt-1 block">
-			{field.state.meta.errors
-				.map((e) => (typeof e === "object" ? e.message : e))
-				.join(". ")}
-		</em>
-	);
+	const fieldErrors = field.state.meta.errors.map((e) => ({
+		message: typeof e === "object" ? e.message : String(e),
+	}));
 
 	if (field_type === FieldType.CHECKBOX) {
 		return (
@@ -501,7 +496,7 @@ const FormField = (props: Props) => {
 						{label} {required && <span className="text-destructive">*</span>}
 					</FieldLabel>
 				</div>
-				{renderError}
+				<FieldError errors={fieldErrors} />
 			</Field>
 		);
 	}
@@ -512,7 +507,7 @@ const FormField = (props: Props) => {
 				{label} {required && <span className="text-destructive">*</span>}
 			</FieldLabel>
 			<RenderField {...props} />
-			{renderError}
+			<FieldError errors={fieldErrors} />
 		</Field>
 	);
 };
