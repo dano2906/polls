@@ -31,7 +31,7 @@ Strictly adhere to the following guidelines:
 5. Answer in ${lang ?? "spanish"}.
 
 You must output your response to fit the requested JSON schema perfectly. Do not include any conversational text, introductory remarks, or markdown wrappers outside the schema.`,
-						prompt: `Context: \n ${context}`,
+						prompt: `Context: \n ${context.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").slice(0, 2000)}`,
 					});
 					return Response.json(result.output);
 				} catch (error) {

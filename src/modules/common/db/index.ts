@@ -10,10 +10,16 @@ if (!process.env.TURSO_CONNECTION_URL) {
 	);
 }
 
+if (!process.env.TURSO_AUTH_TOKEN) {
+	throw new Error(
+		"TURSO_AUTH_TOKEN no está definida en las variables de entorno",
+	);
+}
+
 export const db = drizzle({
 	connection: {
-		url: process.env.TURSO_CONNECTION_URL as string,
-		authToken: process.env.TURSO_AUTH_TOKEN as string,
+		url: process.env.TURSO_CONNECTION_URL,
+		authToken: process.env.TURSO_AUTH_TOKEN,
 	},
 	schema: {
 		...schemas,

@@ -59,7 +59,7 @@ function RouteComponent() {
 					name="email"
 					validators={{
 						onChange: ({ value }) =>
-							!value.includes("@") ? "Email inválido" : undefined,
+							!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? "Email inválido" : undefined,
 					}}
 				>
 					{(field) => (

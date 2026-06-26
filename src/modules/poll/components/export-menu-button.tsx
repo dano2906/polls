@@ -50,6 +50,7 @@ const ExportMenuButton = ({ format, slug }: Props) => {
 			const exportData: ExportData = {
 				name: poll.name,
 				description: poll.description,
+				password: null,
 				startDate: poll.startDate,
 				endDate: poll.endDate,
 				questions: poll.questions.map((q) => {

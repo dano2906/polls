@@ -27,6 +27,11 @@ function id() {
 }
 
 async function seed() {
+	if (process.env.NODE_ENV === "production") {
+		console.error("No se puede ejecutar el seed en producción");
+		process.exit(1);
+	}
+
 	console.log("Clearing existing data...");
 
 	const tables = [

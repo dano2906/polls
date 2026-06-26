@@ -8,7 +8,7 @@ import {
 } from "@/ui/dropdown-menu";
 import RevokeSessionsButton from "./revoke-sessions-button";
 
-const SessionActionsMenu = ({ token, id }: { token: string; id: string }) => {
+const SessionActionsMenu = ({ id }: { id: string }) => {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -18,7 +18,7 @@ const SessionActionsMenu = ({ token, id }: { token: string; id: string }) => {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
 				<DropdownMenuItem asChild>
-					<RevokeSessionsButton token={token} id={id} />
+					<RevokeSessionsButton id={id} />
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

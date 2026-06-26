@@ -52,16 +52,21 @@ function formatDateForTabular(dateInput: Date): string {
 	return `${year}-${month}-${day}`;
 }
 
-function flattenPollData(poll: ExportData) {
+	function flattenPollData(poll: ExportData) {
+	const sanitize = (value: string) => {
+		if (/^[=+\-@]/.test(value)) return `'${value}`;
+		return value;
+	};
+
 	const rows = [];
 
 	for (const q of poll.questions) {
 		const baseRow = {
-			"Nombre Encuesta": poll.name,
-			"Descripcion Encuesta": poll.description || "",
+			"Nombre Encuesta": sanitize(poll.name),
+			"Descripcion Encuesta": poll.description ? sanitize(poll.description) : "",
 			"Fecha de inicio": formatDateForTabular(poll.startDate),
 			"Fecha de fin": poll.endDate ? formatDateForTabular(poll.endDate) : "",
-			"Texto Pregunta": q.questionText,
+			"Texto Pregunta": sanitize(q.questionText),
 			"Tipo Pregunta": q.type,
 			"Orden Pregunta": q.order ?? 0,
 			"Contiene respuestas correctas": q.hasCorrectAnswers ? "SI" : "NO",
@@ -80,7 +85,7 @@ function flattenPollData(poll: ExportData) {
 			for (const ans of q.answers) {
 				rows.push({
 					...baseRow,
-					"Texto Opcion": ans.answerText || "",
+					"Texto Opcion": sanitize(ans.answerText || ""),
 					"Es Correcta":
 						ans.isCorrect !== null ? (ans.isCorrect ? "SI" : "NO") : "",
 				});
@@ -213,6 +218,7 @@ export async function parsePollFile(file: File): Promise<ExportData> {
 				resolve({
 					name: pollName,
 					description: pollDesc,
+					password: null,
 					startDate,
 					endDate,
 					questions: Array.from(questionsMap.values()),

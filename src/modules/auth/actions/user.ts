@@ -4,7 +4,7 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import { db } from "@/common/db";
-import { poll, submission } from "@/common/db/schema";
+import { poll, session as sessionTable, submission } from "@/common/db/schema";
 import { passwordSchema } from "@/common/lib/validation";
 import { auth } from "../lib/auth";
 import {
@@ -74,12 +74,18 @@ export const revokeUserSession = createServerFn({ method: "POST" })
 		let shouldRedirect = false;
 
 		if (data.mode === "single") {
+			const [found] = await db
+				.select({ token: sessionTable.token })
+				.from(sessionTable)
+				.where(eq(sessionTable.id, data.id))
+				.limit(1);
+			if (!found) throw new Error("Sesión no encontrada");
 			const response = await auth.api.revokeUserSession({
-				body: { sessionToken: data.token },
+				body: { sessionToken: found.token },
 				headers,
 			});
 			success = response.success;
-			shouldRedirect = success && session.session.token === data.token;
+			shouldRedirect = success && session.session.token === found.token;
 		} else {
 			if (session.user.role !== "admin" && session.user.id !== data.id) {
 				throw new Error("FORBIDDEN");

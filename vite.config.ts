@@ -9,7 +9,7 @@ import { defineConfig } from "vite";
 const config = defineConfig({
 	resolve: { tsconfigPaths: true },
 	plugins: [
-		devtools(),
+		...(process.env.NODE_ENV !== "production" ? [devtools()] : []),
 		nitro({ rollupConfig: { external: [/^@sentry\//] }, preset: "vercel" }),
 		tailwindcss(),
 		tanstackStart(),

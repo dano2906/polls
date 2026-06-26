@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { notFound, redirect } from "@tanstack/react-router";
 import { createClientOnlyFn, createServerFn } from "@tanstack/react-start";
 import {
@@ -267,16 +267,14 @@ export const getPollDetails = createServerFn({ method: "GET" })
 
 		// 5. Si no existe, creamos la sumisión con la hora exacta del servidor
 		if (!currentSubmission) {
-			const [newSubmission] = await db
-				.insert(submission)
-				.values({
-					pollId: poll.id,
-					userId: session.session.userId,
-					startedAt: new Date(),
-				})
-				.returning();
-
-			currentSubmission = newSubmission;
+			currentSubmission = {
+				id: randomUUID(),
+				pollId: poll.id,
+				userId: session.session.userId,
+				startedAt: new Date(),
+				submittedAt: null,
+				completedAt: null,
+			};
 		}
 
 		// Mapeo de preguntas (Tu lógica exacta intacta)
@@ -385,7 +383,7 @@ export const updatePoll = createServerFn({ method: "POST" })
 				throw new Error("El slug es necesario para identificar la encuesta");
 			}
 			const currentPoll = await db
-				.select({ id: poll.id, userId: poll.userId })
+				.select({ id: poll.id, userId: poll.userId, status: poll.status })
 				.from(poll)
 				.where(eq(poll.slug, data.slug))
 				.get();
@@ -396,6 +394,19 @@ export const updatePoll = createServerFn({ method: "POST" })
 
 			if (currentPoll.userId !== session.user.id) {
 				throw new Error("FORBIDDEN");
+			}
+
+			if (data.updatedData.status && data.updatedData.status !== currentPoll.status) {
+				const validTransitions: Record<string, string[]> = {
+					draft: ["published", "archived"],
+					published: ["archived"],
+					archived: [],
+				};
+				const currentStatus = currentPoll.status ?? "draft";
+				const allowed = validTransitions[currentStatus] ?? [];
+				if (!allowed.includes(data.updatedData.status)) {
+					throw new Error(`No se puede cambiar de "${currentPoll.status}" a "${data.updatedData.status}"`);
+				}
 			}
 
 			const questionCount = await db
@@ -493,7 +504,26 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 					to: "/p/$slug/password",
 					params: { slug },
 				});
-			const decodedJson = atob(accessCookie);
+			const parts = accessCookie.split(".");
+			if (parts.length !== 2) {
+				deleteCookie(`poll_unlocked_${slug}`);
+				throw redirect({
+					to: "/p/$slug/password",
+					params: { slug },
+				});
+			}
+			const [payload, signature] = parts;
+			const expectedSignature = createHmac("sha256", process.env.BETTER_AUTH_SECRET ?? "")
+				.update(payload)
+				.digest("base64url");
+			if (signature !== expectedSignature) {
+				deleteCookie(`poll_unlocked_${slug}`);
+				throw redirect({
+					to: "/p/$slug/password",
+					params: { slug },
+				});
+			}
+			const decodedJson = atob(payload);
 			const { userId: cookieUserId } = JSON.parse(decodedJson);
 
 			if (cookieUserId !== user.id) {
@@ -615,7 +645,11 @@ export const importPollAction = createServerFn()
 		}
 
 		return await db.transaction(async (tx) => {
-			// 1. Insertar la encuesta principal
+			const hasPassword = !!(data.password && data.password.trim().length > 0);
+			const hashedPassword = hasPassword
+				? await hashPassword({ data: { password: data.password as string } })
+				: null;
+
 			const [newPoll] = await tx
 				.insert(poll)
 				.values({
@@ -627,6 +661,7 @@ export const importPollAction = createServerFn()
 					startDate: data.startDate,
 					endDate: data.endDate,
 					version: 1,
+					password: hashedPassword,
 				})
 				.returning();
 
@@ -751,6 +786,7 @@ export const forkPoll = createServerFn({ method: "POST" })
 				if (!originalPoll) {
 					throw notFound({ throw: true });
 				}
+				if (originalPoll.status !== "published") throw new Error("FORBIDDEN");
 
 				// 2. Identificar el ID raíz de la familia
 				const targetRootId = originalPoll.rootId ?? originalPoll.id;
@@ -1079,13 +1115,17 @@ export const validatePollPassword = createServerFn({ method: "POST" })
 			});
 
 			if (isValid) {
-				const sessionValue = btoa(
+				const payload = btoa(
 					JSON.stringify({
 						slug,
 						userId: session.user.id,
 						unlockedAt: Date.now(),
 					}),
 				);
+				const signature = createHmac("sha256", process.env.BETTER_AUTH_SECRET ?? "")
+					.update(payload)
+					.digest("base64url");
+				const sessionValue = `${payload}.${signature}`;
 
 				setCookie(`poll_unlocked_${slug}`, sessionValue, {
 					httpOnly: true,

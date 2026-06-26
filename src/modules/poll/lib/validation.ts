@@ -36,7 +36,7 @@ export const createPollInput = z
 	.refine(
 		(data) => {
 			if (!data.slug) return true;
-			return data.slug.length < 6;
+			return data.slug.length === 6;
 		},
 		{
 			message: "El slug debe 6 caracteres alfanuméricos.",
@@ -95,6 +95,7 @@ export const questionTypeSchema = z.enum(QUESTION_TYPES);
 export const exportDataSchema = z.object({
 	name: z.string().min(1, "El nombre es obligatorio"),
 	description: z.string().nullable(),
+	password: z.string().nullable().default(null),
 
 	// z.coerce.date() transforma automáticamente los strings del JSON de la red en objetos Date reales
 	startDate: z.coerce.date().default(() => new Date()),

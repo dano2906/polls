@@ -375,7 +375,7 @@ Strictly adhere to the following guidelines:
 ${data.pollDescription && `7. Use the description of the survey (${data.pollDescription}) to fill the info gaps. If there is no description use only the context`}
 
 You must output your response to fit the requested JSON schema perfectly. Do not include any conversational text, introductory remarks, or markdown wrappers outside the schema.`,
-			prompt: `Context: \n ${data.context}`,
+			prompt: `Context: \n ${data.context.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").slice(0, 2000)}`,
 		});
 
 		return result.output;
@@ -398,7 +398,7 @@ Please strictly follow these editing guidelines:
 5. Do Not Extrapolate: Do not invent new facts, add external knowledge, or make assumptions that cannot be verified by the original text.
 6. Answer in ${data.lang ?? "spanish"}.
 Output ONLY the optimized, structured version of the text. Do not include any introductory phrases, explanations, or meta-commentary.`,
-			prompt: `Original Text to Optimize:\n"${data.context}"`,
+			prompt: `Original Text to Optimize:\n"${(data.context ?? "").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "").slice(0, 2000)}"`,
 		});
 
 		return result.output;

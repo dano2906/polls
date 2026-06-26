@@ -9,13 +9,12 @@ export const getCloudinarySignature = createServerFn({ method: "GET" }).handler(
 
 		if (!process.env.CLOUDINARY_API_SECRET) {
 			throw new Error(
-				"No se encuentra la variable CLOUDINARY_API_SECRET en las variables de entorno",
+				"Error de configuración del servidor. Contacta al administrador.",
 			);
 		}
 
 		if (typeof window !== "undefined") return;
 
-		// 2. Importación dinámica del SDK de Node solo en tiempo de ejecución del servidor
 		const { v2: cloudinary } = await import("cloudinary");
 
 		// 3. Lo configuras en caliente justo antes de usarlo
@@ -50,16 +49,6 @@ export const getCloudinarySignature = createServerFn({ method: "GET" }).handler(
 export const deleteImagesFromCloudinary = createServerFn({ method: "POST" })
 	.validator((data: { publicIds: string[] }) => data)
 	.handler(async ({ data }) => {
-		if (!process.env.CLOUDINARY_API_SECRET) {
-			throw new Error(
-				"No se encuentra la variable CLOUDINARY_API_SECRET en las variables de entorno",
-			);
-		}
-
-		if (typeof window !== "undefined") return;
-
-		// 2. Importación dinámica del SDK de Node solo en tiempo de ejecución del servidor
-
 		const session = await getSession();
 		if (!session) throw notFound();
 

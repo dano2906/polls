@@ -8,7 +8,7 @@ export const signInSchema = z.object({
 });
 
 export const signUpSchema = signInSchema.extend({
-	name: z.string(),
+	name: z.string().min(1).max(200),
 });
 
 export const updateAvatarSchema = z.object({
@@ -24,12 +24,8 @@ export const updateAvatarSchema = z.object({
 });
 
 export const revokeSessionSchema = z.union([
-	z.object({ mode: z.literal("single"), token: z.string(), id: z.string() }),
-	z.object({
-		mode: z.literal("all"),
-		id: z.string(),
-		token: z.string().optional(),
-	}),
+	z.object({ mode: z.literal("single"), id: z.string() }),
+	z.object({ mode: z.literal("all"), id: z.string() }),
 ]);
 
 export const banUserSchema = z.object({

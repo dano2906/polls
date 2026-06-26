@@ -17,7 +17,7 @@ const submissionAnswerInput = z.record(
 			lng: z
 				.number({ error: "La longitud debe ser un número" })
 				.min(-180)
-				.max(-180),
+				.max(180),
 		}),
 	]),
 );

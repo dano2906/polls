@@ -4,14 +4,12 @@ import { Button } from "@/common/components/ui/button";
 import { revokeUserSession } from "../actions/user";
 
 const RevokeSessionsButton = ({
-	token,
 	id,
 	mode = "single",
 	buttonVariant = "ghostDestructive",
 }: {
-	token?: string;
 	id: string;
-	mode: "single" | "all";
+	mode?: "single" | "all";
 	buttonVariant?: "ghostDestructive" | "secondary";
 }) => {
 	const qc = useQueryClient();
@@ -19,17 +17,7 @@ const RevokeSessionsButton = ({
 		mutationKey: ["revoke", "user", "sessions", id],
 		mutationFn: () =>
 			revokeUserSession({
-				data:
-					mode === "single"
-						? {
-								id,
-								token,
-								mode,
-							}
-						: {
-								id,
-								mode,
-							},
+				data: { id, mode },
 			}),
 		onSuccess: async (data) => {
 			await qc.invalidateQueries({

@@ -61,19 +61,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body>
 				<TooltipProvider>{children}</TooltipProvider>
 				<Toaster richColors />
-				<TanStackDevtools
-					config={{
-						position: "bottom-right",
-					}}
-					plugins={[
-						{
-							name: "Tanstack Router",
-							render: <TanStackRouterDevtoolsPanel />,
-						},
-						formDevtoolsPlugin(),
-						TanStackQueryDevtools,
-					]}
-				/>
+				{process.env.NODE_ENV !== "production" && (
+					<TanStackDevtools
+						config={{
+							position: "bottom-right",
+						}}
+						plugins={[
+							{
+								name: "Tanstack Router",
+								render: <TanStackRouterDevtoolsPanel />,
+							},
+							formDevtoolsPlugin(),
+							TanStackQueryDevtools,
+						]}
+					/>
+				)}
 				<Scripts />
 			</body>
 		</html>

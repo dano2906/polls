@@ -207,7 +207,7 @@ export const listUserSessionsColumns: ColumnDef<SessionWithImpersonatedBy>[] = [
 		header: "Acciones",
 		cell: ({ row }) => {
 			return (
-				<SessionActionsMenu token={row.original.token} id={row.original.id} />
+				<SessionActionsMenu id={row.original.id} />
 			);
 		},
 		meta: { label: "Acciones" },
