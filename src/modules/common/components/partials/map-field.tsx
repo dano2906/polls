@@ -1,13 +1,13 @@
 import { MapPin } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/common/lib/utils";
 import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
-import {
-	Map as MapComponent,
-	MapControls,
-	MapMarker,
-	MarkerContent,
+import type {
+	MapControls as MapControlsType,
+	MapMarker as MapMarkerType,
+	Map as MapType,
+	MarkerContent as MarkerContentType,
 } from "@/ui/map";
 
 interface MapFieldProps {
@@ -16,55 +16,78 @@ interface MapFieldProps {
 	error?: string | null;
 }
 
+type MapModule = {
+	Map: typeof MapType;
+	MapControls: typeof MapControlsType;
+	MapMarker: typeof MapMarkerType;
+	MarkerContent: typeof MarkerContentType;
+};
+
 export function MapField({ value, onChange, error }: MapFieldProps) {
 	const HABANA_COORDS = { lat: 23.1136, lng: -82.3666 };
 	const currentCoords = value || HABANA_COORDS;
 
-	// 1. Un contador para forzar el re-centrado del mapa SOLO cuando sea necesario
 	const [mapKey, setMapKey] = useState(0);
+	const [mapMod, setMapMod] = useState<MapModule | null>(null);
+	const geolocCalledRef = useRef(false);
+	const onChangeRef = useRef(onChange);
+	onChangeRef.current = onChange;
 
-	// Estados de texto locales para que los inputs no se traben al escribir signos o puntos
 	const [latInput, setLatInput] = useState(currentCoords.lat.toString());
 	const [lngInput, setLngInput] = useState(currentCoords.lng.toString());
 
-	// Sincronizar los inputs de texto cuando el mapa se arrastra (sin alterar el mapKey)
 	useEffect(() => {
 		if (parseFloat(latInput) !== currentCoords.lat)
 			setLatInput(currentCoords.lat.toString());
 		if (parseFloat(lngInput) !== currentCoords.lng)
 			setLngInput(currentCoords.lng.toString());
-	}, [currentCoords.lat, currentCoords.lng]);
+	}, [currentCoords.lat, currentCoords.lng, latInput, lngInput]);
 
-	// Geolocalización inicial
 	useEffect(() => {
-		if (!value) {
+		import("@/ui/map").then((mod) => setMapMod(mod));
+	}, []);
+
+	useEffect(() => {
+		if (!value && !geolocCalledRef.current) {
+			geolocCalledRef.current = true;
 			navigator.geolocation.getCurrentPosition(
 				(pos) => {
-					onChange({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-					setMapKey((prev) => prev + 1); // Forzar que el mapa viaje a la ubicación del usuario
+					onChangeRef.current({
+						lat: pos.coords.latitude,
+						lng: pos.coords.longitude,
+					});
+					setMapKey((prev) => prev + 1);
 				},
 				() => undefined,
 				{ timeout: 5000 },
 			);
 		}
-	}, []);
+	}, [value]);
 
-	const handleInputChange = (field: "lat" | "lng", val: string) => {
-		if (field === "lat") setLatInput(val);
-		if (field === "lng") setLngInput(val);
+	const handleInputChange = useCallback(
+		(field: "lat" | "lng", val: string) => {
+			if (field === "lat") setLatInput(val);
+			if (field === "lng") setLngInput(val);
 
-		const num = parseFloat(val);
-		if (!Number.isNaN(num)) {
-			if (field === "lat" && num >= -90 && num <= 90) {
-				onChange({ ...currentCoords, lat: num });
-				setMapKey((prev) => prev + 1); // ↑ Al escribir un número válido, movemos el mapa
+			const num = parseFloat(val);
+			if (!Number.isNaN(num)) {
+				if (field === "lat" && num >= -90 && num <= 90) {
+					onChangeRef.current({ ...currentCoords, lat: num });
+					setMapKey((prev) => prev + 1);
+				}
+				if (field === "lng" && num >= -180 && num <= 180) {
+					onChangeRef.current({ ...currentCoords, lng: num });
+					setMapKey((prev) => prev + 1);
+				}
 			}
-			if (field === "lng" && num >= -180 && num <= 180) {
-				onChange({ ...currentCoords, lng: num });
-				setMapKey((prev) => prev + 1); // ↑ Al escribir un número válido, movemos el mapa
-			}
-		}
-	};
+		},
+		[currentCoords.lat, currentCoords.lng, currentCoords],
+	);
+
+	const MapComp = mapMod?.Map;
+	const ControlsComp = mapMod?.MapControls;
+	const MarkerComp = mapMod?.MapMarker;
+	const ContentComp = mapMod?.MarkerContent;
 
 	return (
 		<div className="space-y-4">
@@ -101,39 +124,42 @@ export function MapField({ value, onChange, error }: MapFieldProps) {
 					error && "border-destructive",
 				)}
 			>
-				{/* 
-                  El key ahora depende de un ID incremental estático. No cambiará jamás mientras arrastres, 
-                  por lo que el marcador se moverá suavemente a 60fps sin destruir el mapa.
-                */}
-				<MapComponent
-					key={mapKey}
-					center={[currentCoords.lng, currentCoords.lat]}
-					zoom={12}
-				>
-					<MapMarker
-						draggable
-						longitude={currentCoords.lng}
-						latitude={currentCoords.lat}
-						// Al arrastrar, solo mutamos las coordenadas del formulario, el mapa permanece vivo
-						onDrag={(lngLat) => onChange({ lat: lngLat.lat, lng: lngLat.lng })}
+				{MapComp && ControlsComp && MarkerComp && ContentComp ? (
+					<MapComp
+						key={mapKey}
+						center={[currentCoords.lng, currentCoords.lat]}
+						zoom={12}
 					>
-						<MarkerContent>
-							<MapPin
-								className={cn(
-									"stroke-white size-[28px]",
-									error ? "fill-destructive" : "fill-primary",
-								)}
-							/>
-						</MarkerContent>
-					</MapMarker>
-					<MapControls
-						position="top-left"
-						showZoom
-						showCompass
-						showLocate
-						showFullscreen
-					/>
-				</MapComponent>
+						<MarkerComp
+							draggable
+							longitude={currentCoords.lng}
+							latitude={currentCoords.lat}
+							onDrag={(lngLat) =>
+								onChange({ lat: lngLat.lat, lng: lngLat.lng })
+							}
+						>
+							<ContentComp>
+								<MapPin
+									className={cn(
+										"stroke-white size-[28px]",
+										error ? "fill-destructive" : "fill-primary",
+									)}
+								/>
+							</ContentComp>
+						</MarkerComp>
+						<ControlsComp
+							position="top-left"
+							showZoom
+							showCompass
+							showLocate
+							showFullscreen
+						/>
+					</MapComp>
+				) : (
+					<div className="flex h-full items-center justify-center bg-muted animate-pulse text-muted-foreground text-sm">
+						Cargando mapa…
+					</div>
+				)}
 			</div>
 
 			{error && (

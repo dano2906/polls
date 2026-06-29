@@ -9,7 +9,7 @@ import {
 	AvatarImage,
 } from "@/common/components/ui/avatar";
 import { Button } from "@/common/components/ui/button";
-import { uploadToCloudinary } from "@/common/lib/utils";
+import { getOptimizedImageUrl, uploadToCloudinary } from "@/common/lib/utils";
 import { updateAvatarAction } from "../actions/user";
 
 interface Props {
@@ -90,7 +90,7 @@ export default function ChangeUserAvatar({ avatarUrl, email, id }: Props) {
 		fileInputRef.current?.click();
 	};
 
-	const currentDisplaySrc = previewUrl || avatarUrl || undefined;
+	const currentDisplaySrc = previewUrl || getOptimizedImageUrl(avatarUrl, 96) || undefined;
 
 	return (
 		<div className="w-full flex flex-col items-center">

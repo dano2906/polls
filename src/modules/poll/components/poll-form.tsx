@@ -188,8 +188,8 @@ const PollForm = ({
 					state.isSubmitting,
 					state.errors,
 				]}
-				// biome-ignore lint/correctness/noChildrenProp: <explanation>
-				children={([canSubmit]) => (
+			>
+				{([canSubmit]) => (
 					<div className="w-full flex items-center justify-end gap-2 col-span-2">
 						{isEditing && initialData.status && initialData.slug && (
 							<ChangePollStatus
@@ -213,7 +213,7 @@ const PollForm = ({
 						</Button>
 					</div>
 				)}
-			/>
+			</form.Subscribe>
 		</form>
 	);
 };

@@ -15,23 +15,20 @@ export const Route = createFileRoute("/_protected/dashboard")({
 	loaderDeps: ({ search }) => ({
 		q: search.q,
 		status: search.status,
+		view: search.view,
 	}),
 	component: RouteComponent,
 	loader: ({ context, deps }) => {
-		context.queryClient.ensureQueryData(
-			compactPollsOptions({
-				q: deps.q,
-				status: deps.status,
-				userId: context?.auth?.user.id,
-			}),
-		);
-		context.queryClient.ensureQueryData(
-			listPollsOptions({
-				q: deps.q,
-				status: deps.status,
-				userId: context?.auth?.user.id,
-			}),
-		);
+		const userId = context.auth!.user.id;
+		if (deps.view === "list") {
+			context.queryClient.ensureQueryData(
+				listPollsOptions({ q: deps.q, status: deps.status, userId }),
+			);
+		} else {
+			context.queryClient.ensureQueryData(
+				compactPollsOptions({ q: deps.q, status: deps.status, userId }),
+			);
+		}
 	},
 });
 
@@ -39,18 +36,19 @@ function RouteComponent() {
 	const search = Route.useSearch();
 	const context = Route.useRouteContext();
 	const navigate = useNavigate({ from: Route.fullPath });
+	const userId = context.auth!.user.id;
 	const { data: compactData } = useSuspenseQuery(
 		compactPollsOptions({
 			q: search.q,
 			status: search.status,
-			userId: context.auth.user.id,
+			userId,
 		}),
 	);
 	const { data: listData } = useSuspenseQuery(
 		listPollsOptions({
 			q: search.q,
 			status: search.status,
-			userId: context?.auth?.user.id,
+			userId,
 		}),
 	);
 

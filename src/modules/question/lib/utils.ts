@@ -1,6 +1,24 @@
 import type { QuestionMetadata } from "../shared/types";
 
-export const getMetadataForQuestion = (q: any) => {
+interface MetadataQuestionInput {
+	id?: string;
+	type: string;
+	questionText?: string;
+	isRequired?: boolean;
+	hasCorrectAnswers?: boolean;
+	maxSelections?: number;
+	imageUrl?: string | null;
+	imagePublicId?: string | null;
+	minValue?: number;
+	maxValue?: number;
+	minDate?: string | null;
+	maxDate?: string | null;
+	distributionAmount?: number;
+	metadata?: string | Partial<QuestionMetadata> | null;
+	answers?: { id?: string; answerText?: string; isCorrect?: boolean; imageUrl?: string | null; imagePublicId?: string | null }[];
+}
+
+export const getMetadataForQuestion = (q: MetadataQuestionInput) => {
 	switch (q.type) {
 		case "rating":
 			return {
@@ -23,7 +41,7 @@ export const getMetadataForQuestion = (q: any) => {
 };
 
 export const transformInitialQuestionData = (
-	initialData: any[] | undefined,
+	initialData: MetadataQuestionInput[] | undefined,
 	slug: string | null,
 ) => {
 	if (!initialData || initialData.length === 0 || !slug) {
@@ -53,8 +71,7 @@ export const transformInitialQuestionData = (
 					typeof q.metadata === "string"
 						? JSON.parse(q.metadata)
 						: q.metadata || {};
-			} catch (e) {
-				console.error("Error parseando metadata:", e);
+			} catch {
 			}
 
 			// 2. Base común
@@ -68,7 +85,7 @@ export const transformInitialQuestionData = (
 				hasCorrectAnswers: q.hasCorrectAnswers ?? false,
 				maxSelections: q.maxSelections ?? 1,
 				answers:
-					q.answers?.map((a: any) => ({
+					q.answers?.map((a) => ({
 						id: a.id,
 						answerText: a.answerText ?? "",
 						isCorrect: a.isCorrect ?? false,

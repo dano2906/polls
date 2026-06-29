@@ -40,8 +40,7 @@ const PollPasswordForm = ({ slug }: { slug: string }) => {
 					to: "/p/$slug",
 					params: { slug },
 				});
-			} catch (error) {
-				console.error("Error en el submit:", error);
+			} catch {
 				toast.error("Ocurrió un error inesperado. Inténtalo de nuevo.");
 			}
 		},
@@ -74,8 +73,8 @@ const PollPasswordForm = ({ slug }: { slug: string }) => {
 					state.isSubmitting,
 					state.errors,
 				]}
-				// biome-ignore lint/correctness/noChildrenProp: <explanation>
-				children={([canSubmit, _isSubmitting, _errors]) => (
+			>
+				{([canSubmit, _isSubmitting, _errors]) => (
 					<div className="w-full flex items-center justify-end gap-2 ">
 						<Button type="submit" variant={"default"} disabled={!canSubmit}>
 							<LoadingSwap
@@ -88,7 +87,7 @@ const PollPasswordForm = ({ slug }: { slug: string }) => {
 						</Button>
 					</div>
 				)}
-			/>
+			</form.Subscribe>
 		</form>
 	);
 };

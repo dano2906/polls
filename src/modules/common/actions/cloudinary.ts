@@ -70,8 +70,7 @@ export const deleteImagesFromCloudinary = createServerFn({ method: "POST" })
 			await Promise.all(deletionPromises);
 
 			return { success: true };
-		} catch (error) {
-			console.error("Error al eliminar assets en Cloudinary:", error);
+		} catch {
 			return {
 				success: false,
 				error: "No se pudieron eliminar algunas imágenes.",

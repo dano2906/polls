@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import type { ExportData } from "@/poll/shared/types";
 
 function parseFlexibleDate(cellValue: any): Date {
@@ -112,6 +111,7 @@ export async function parsePollFile(file: File): Promise<ExportData> {
 	}
 
 	// --- LEER EXCEL O CSV USANDO SHEETJS ---
+	const XLSX = await import("xlsx");
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
 		reader.onload = (e) => {
@@ -254,8 +254,8 @@ export const exportPoll = {
 	},
 
 	// --- EXPORTAR A EXCEL ---
-	excel: (poll: ExportData, filename: string) => {
-		// Pasamos los datos por el aplanador corregido que asegura strings en metadatos
+	excel: async (poll: ExportData, filename: string) => {
+		const XLSX = await import("xlsx");
 		const flattenedData = cleanAndFlattenPollData(poll);
 		const worksheet = XLSX.utils.json_to_sheet(flattenedData);
 		const workbook = XLSX.utils.book_new();
@@ -281,8 +281,8 @@ export const exportPoll = {
 	},
 
 	// --- EXPORTAR A CSV ---
-	csv: (poll: ExportData, filename: string) => {
-		// Usamos exactamente la misma data limpia que el Excel
+	csv: async (poll: ExportData, filename: string) => {
+		const XLSX = await import("xlsx");
 		const flattenedData = cleanAndFlattenPollData(poll);
 		const worksheet = XLSX.utils.json_to_sheet(flattenedData);
 		const csvOutput = XLSX.utils.sheet_to_csv(worksheet);

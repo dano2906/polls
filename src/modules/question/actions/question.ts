@@ -49,8 +49,8 @@ export const createQuestions = createServerFn({ method: "POST" })
 						...(qData.id ? { id: qData.id } : {}),
 						questionText: qData.questionText,
 						type: qData.type as (typeof QUESTION_TYPES)[number],
-						hasCorrectAnswers: qData.hasCorrectAnswers ?? false,
-						maxSelections: qData.maxSelections ?? 1,
+						hasCorrectAnswers: "hasCorrectAnswers" in qData ? qData.hasCorrectAnswers : false,
+						maxSelections: "maxSelections" in qData ? qData.maxSelections ?? 1 : 1,
 						isRequired: qData.isRequired ?? false,
 						imageUrl: qData.imageUrl ?? null,
 						imagePublicId: qData.imagePublicId ?? null,
@@ -121,7 +121,6 @@ export const saveQuestionsBatch = createServerFn({
 				.limit(1);
 
 			const hasResponses = existingSubmissions.length > 0;
-
 			let targetPollId = currentPoll.id;
 			const isNewVersion = hasResponses;
 			let activeSlug = slug;
@@ -157,61 +156,141 @@ export const saveQuestionsBatch = createServerFn({
 				activeSlug = newSlug;
 			}
 
+			// --- NEW VERSION PATH: BATCH ALL INSERTS ---
+			if (isNewVersion) {
+				const questionValues = questionsData.map((qData) => ({
+					id: crypto.randomUUID(),
+					questionText: qData.questionText,
+					type: qData.type as (typeof QUESTION_TYPES)[number],
+					hasCorrectAnswers: "hasCorrectAnswers" in qData ? qData.hasCorrectAnswers : false,
+					maxSelections: "maxSelections" in qData ? qData.maxSelections ?? 1 : 1,
+					isRequired: qData.isRequired,
+					imageUrl: qData.imageUrl ?? null,
+					imagePublicId: qData.imagePublicId ?? null,
+					metadata: getMetadataForQuestion(qData),
+				}));
+
+				await tx.insert(question).values(questionValues);
+				await tx
+					.insert(pollQuestions)
+					.values(
+						questionValues.map((qv, i) => ({
+							pollId: targetPollId,
+							questionId: qv.id,
+							order: i + 1,
+						})),
+					);
+
+				const answerValues = questionsData.flatMap((qData, i) => {
+					if (
+						!("answers" in qData) ||
+						!Array.isArray(qData.answers)
+					)
+						return [];
+					return qData.answers.map((aData, j) => ({
+						id: crypto.randomUUID(),
+						questionId: questionValues[i].id,
+						answerText: aData.answerText,
+						isCorrect: aData.isCorrect ?? false,
+						order: j,
+						imageUrl: aData.imageUrl ?? null,
+						imagePublicId: aData.imagePublicId ?? null,
+					}));
+				});
+
+				if (answerValues.length > 0) {
+					await tx.insert(answer).values(answerValues);
+				}
+
+				return {
+					success: true,
+					versioned: true,
+					pollId: targetPollId,
+					slug: activeSlug,
+				};
+			}
+
+			// --- IN-PLACE EDIT PATH (BATCHED) ---
 			const currentQuestionIds: string[] = [];
 
-			for (let i = 0; i < questionsData.length; i++) {
-				const qData = questionsData[i];
-				let qId = qData.id;
+			const existingLinks = await tx
+				.select()
+				.from(pollQuestions)
+				.where(eq(pollQuestions.pollId, targetPollId));
 
-				// --- FLUJO DE TRATAMIENTO DE PREGUNTA ---
-				if (qId && !isNewVersion) {
-					// Actualización en caliente (Mismo Formulario, sin respuestas aún)
-					await tx
+			const existingLinkMap = new Map(
+				existingLinks.map((l) => [l.questionId, l]),
+			);
+
+			const updateQuestions: { qId: string; qData: typeof questionsData[number] }[] = [];
+			const insertQuestions: { qData: typeof questionsData[number] }[] = [];
+
+			for (const qData of questionsData) {
+				if (qData.id) {
+					updateQuestions.push({ qId: qData.id, qData });
+				} else {
+					insertQuestions.push({ qData });
+				}
+			}
+
+			await Promise.all(
+				updateQuestions.map(({ qId, qData }) =>
+					tx
 						.update(question)
 						.set({
 							type: qData.type as (typeof QUESTION_TYPES)[number],
 							questionText: qData.questionText,
-							hasCorrectAnswers: qData?.hasCorrectAnswers ?? false,
-							maxSelections: qData?.maxSelections ?? 1,
+							hasCorrectAnswers: "hasCorrectAnswers" in qData ? qData.hasCorrectAnswers : false,
+							maxSelections: "maxSelections" in qData ? qData.maxSelections ?? 1 : 1,
 							isRequired: qData.isRequired,
 							imageUrl: qData.imageUrl ?? null,
 							imagePublicId: qData.imagePublicId ?? null,
 							metadata: getMetadataForQuestion(qData),
 						})
-						.where(eq(question.id, qId));
+						.where(eq(question.id, qId)),
+				),
+			);
+
+			const insertedIds: string[] = [];
+			if (insertQuestions.length > 0) {
+				const insertValues = insertQuestions.map(({ qData }) => ({
+					id: crypto.randomUUID(),
+					questionText: qData.questionText,
+					type: qData.type as (typeof QUESTION_TYPES)[number],
+					hasCorrectAnswers: "hasCorrectAnswers" in qData ? qData.hasCorrectAnswers : false,
+					maxSelections: "maxSelections" in qData ? qData.maxSelections ?? 1 : 1,
+					isRequired: qData.isRequired,
+					imageUrl: qData.imageUrl ?? null,
+					imagePublicId: qData.imagePublicId ?? null,
+					metadata: getMetadataForQuestion(qData),
+				}));
+				await tx.insert(question).values(insertValues);
+				insertedIds.push(...insertValues.map((v) => v.id));
+			}
+
+			let updateIdx = 0;
+			let insertIdx = 0;
+			for (const qData of questionsData) {
+				if (qData.id) {
+					currentQuestionIds.push(updateQuestions[updateIdx].qId);
+					updateIdx++;
 				} else {
-					const [newQ] = await tx
-						.insert(question)
-						.values({
-							questionText: qData.questionText,
-							type: qData.type as (typeof QUESTION_TYPES)[number],
-							hasCorrectAnswers: qData?.hasCorrectAnswers ?? false,
-							maxSelections: qData?.maxSelections ?? 1,
-							isRequired: qData.isRequired,
-							imageUrl: qData.imageUrl ?? null,
-							imagePublicId: qData.imagePublicId ?? null,
-							metadata: getMetadataForQuestion(qData),
-						})
-						.returning();
-
-					qId = newQ.id;
+					currentQuestionIds.push(insertedIds[insertIdx]);
+					insertIdx++;
 				}
-				currentQuestionIds.push(qId);
+			}
 
-				// --- VÍNCULO EN TABLA INTERMEDIA (pollQuestions) ---
-				if (!isNewVersion) {
-					const [existingLink] = await tx
-						.select()
-						.from(pollQuestions)
-						.where(
-							and(
-								eq(pollQuestions.pollId, targetPollId),
-								eq(pollQuestions.questionId, qId),
-							),
-						);
+			// Batch poll_question link updates and new inserts
+			const newLinkValues: { pollId: string; questionId: string; order: number }[] = [];
+			const linkUpdatePromises: Promise<any>[] = [];
 
-					if (existingLink) {
-						await tx
+			for (let i = 0; i < questionsData.length; i++) {
+				const qId = currentQuestionIds[i];
+				const existingLink = existingLinkMap.get(qId);
+
+				if (existingLink) {
+					linkUpdatePromises.push(
+						tx
 							.update(pollQuestions)
 							.set({ order: i + 1 })
 							.where(
@@ -219,134 +298,151 @@ export const saveQuestionsBatch = createServerFn({
 									eq(pollQuestions.pollId, targetPollId),
 									eq(pollQuestions.questionId, qId),
 								),
-							);
-					} else {
-						await tx.insert(pollQuestions).values({
-							pollId: targetPollId,
-							questionId: qId,
-							order: i + 1,
-						});
-					}
+							),
+					);
 				} else {
-					await tx.insert(pollQuestions).values({
+					newLinkValues.push({
 						pollId: targetPollId,
 						questionId: qId,
 						order: i + 1,
 					});
 				}
+			}
 
-				// --- FLUJO DE RESPUESTAS / OPCIONES ---
-				const currentAnswerIds: string[] = [];
+			await Promise.all(linkUpdatePromises);
+
+			if (newLinkValues.length > 0) {
+				await tx.insert(pollQuestions).values(newLinkValues);
+			}
+
+			// Process answers per question (batched)
+			const answerProcessPromises = [];
+
+			for (let i = 0; i < questionsData.length; i++) {
+				const qData = questionsData[i];
+				const qId = currentQuestionIds[i];
 
 				if (
-					"answers" in qData &&
-					Array.isArray(qData.answers) &&
-					qData.answers.length > 0
-				) {
-					for (let j = 0; j < qData.answers.length; j++) {
-						const aData = qData.answers[j];
+					!("answers" in qData) ||
+					!Array.isArray(qData.answers) ||
+					qData.answers.length === 0
+				)
+					continue;
 
-						if (aData.id && !isNewVersion) {
-							// Actualizar respuesta existente en caliente
-							await tx
+				const currentAnswerIds: string[] = [];
+				const updateAnswerPromises: Promise<any>[] = [];
+				const insertAnswerValues: {
+					id: string;
+					questionId: string;
+					answerText: string;
+					isCorrect: boolean;
+					order: number;
+					imageUrl: string | null;
+					imagePublicId: string | null;
+				}[] = [];
+
+				for (let j = 0; j < qData.answers.length; j++) {
+					const aData = qData.answers[j];
+					if (aData.id) {
+						const answerOrder = j;
+						updateAnswerPromises.push(
+							tx
 								.update(answer)
 								.set({
 									answerText: aData.answerText,
 									isCorrect: aData.isCorrect,
-									order: j,
+									order: answerOrder,
 									imageUrl: aData.imageUrl ?? null,
 									imagePublicId: aData.imagePublicId ?? null,
 								})
-								.where(eq(answer.id, aData.id));
-
-							currentAnswerIds.push(aData.id);
-						} else {
-							// Insertar nueva opción o clonarla para la nueva versión del cuestionario
-							const [newA] = await tx
-								.insert(answer)
-								.values({
-									questionId: qId,
-									answerText: aData.answerText,
-									isCorrect: aData.isCorrect ?? false,
-									order: j,
-									imageUrl: aData.imageUrl ?? null,
-									imagePublicId: aData.imagePublicId ?? null,
-								})
-								.returning({ id: answer.id });
-
-							currentAnswerIds.push(newA.id);
-						}
+								.where(eq(answer.id, aData.id)),
+						);
+						currentAnswerIds.push(aData.id);
+					} else {
+						insertAnswerValues.push({
+							id: crypto.randomUUID(),
+							questionId: qId,
+							answerText: aData.answerText,
+							isCorrect: aData.isCorrect ?? false,
+							order: j,
+							imageUrl: aData.imageUrl ?? null,
+							imagePublicId: aData.imagePublicId ?? null,
+						});
 					}
 				}
 
-				// Limpieza de opciones removidas en caliente
-				if (
-					!isNewVersion &&
-					"answers" in qData &&
-					Array.isArray(qData.answers) &&
-					qData.answers.length > 0
-				) {
-					await tx
-						.delete(answer)
-						.where(
-							and(
-								eq(answer.questionId, qId),
-								currentAnswerIds.length > 0
-									? notInArray(answer.id, currentAnswerIds)
-									: undefined,
-							),
-						);
-				}
+				answerProcessPromises.push(
+					Promise.all(updateAnswerPromises).then(async () => {
+						if (insertAnswerValues.length > 0) {
+							await tx.insert(answer).values(insertAnswerValues);
+							currentAnswerIds.push(...insertAnswerValues.map((v) => v.id));
+						}
+
+						if (currentAnswerIds.length > 0) {
+							await tx
+								.delete(answer)
+								.where(
+									and(
+										eq(answer.questionId, qId),
+										notInArray(answer.id, currentAnswerIds),
+									),
+								);
+						}
+					}),
+				);
 			}
 
-			// --- LIMPIEZA FINAL DE PREGUNTAS HUÉRFANAS ---
-			if (!isNewVersion) {
-				const linksToDelete = await tx
-					.select({ qId: pollQuestions.questionId })
-					.from(pollQuestions)
+			await Promise.all(answerProcessPromises);
+
+			// Orphan question cleanup (simplified)
+			const linksToDelete = await tx
+				.select({ qId: pollQuestions.questionId })
+				.from(pollQuestions)
+				.where(
+					and(
+						eq(pollQuestions.pollId, targetPollId),
+						currentQuestionIds.length > 0
+							? notInArray(pollQuestions.questionId, currentQuestionIds)
+							: undefined,
+					),
+				);
+
+			const idsToDelete = linksToDelete.map((l) => l.qId);
+			if (idsToDelete.length > 0) {
+				await tx
+					.delete(pollQuestions)
 					.where(
 						and(
 							eq(pollQuestions.pollId, targetPollId),
-							currentQuestionIds.length > 0
-								? notInArray(pollQuestions.questionId, currentQuestionIds)
-								: undefined,
+							inArray(pollQuestions.questionId, idsToDelete),
 						),
 					);
 
-				const idsToDelete = linksToDelete.map((l) => l.qId);
+				const remainingLinks = await tx
+					.select({ questionId: pollQuestions.questionId })
+					.from(pollQuestions)
+					.where(inArray(pollQuestions.questionId, idsToDelete));
 
-				if (idsToDelete.length > 0) {
+				const stillLinkedIds = new Set(
+					remainingLinks.map((r) => r.questionId),
+				);
+				const orphanIds = idsToDelete.filter(
+					(id) => !stillLinkedIds.has(id),
+				);
+
+				if (orphanIds.length > 0) {
 					await tx
-						.delete(pollQuestions)
-						.where(
-							and(
-								eq(pollQuestions.pollId, targetPollId),
-								inArray(pollQuestions.questionId, idsToDelete),
-							),
-						);
-
-					const remainingLinks = await tx
-						.select({ questionId: pollQuestions.questionId })
-						.from(pollQuestions)
-						.where(inArray(pollQuestions.questionId, idsToDelete));
-
-					const stillLinkedIds = new Set(
-						remainingLinks.map((r) => r.questionId),
-					);
-					const orphanIds = idsToDelete.filter((id) => !stillLinkedIds.has(id));
-
-					if (orphanIds.length > 0) {
-						await tx
-							.delete(answer)
-							.where(inArray(answer.questionId, orphanIds));
-						await tx.delete(question).where(inArray(question.id, orphanIds));
-					}
+						.delete(answer)
+						.where(inArray(answer.questionId, orphanIds));
+					await tx
+						.delete(question)
+						.where(inArray(question.id, orphanIds));
 				}
 			}
 
 			return {
 				success: true,
-				versioned: isNewVersion,
+				versioned: false,
 				pollId: targetPollId,
 				slug: activeSlug,
 			};

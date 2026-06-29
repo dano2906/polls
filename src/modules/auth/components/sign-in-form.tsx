@@ -76,8 +76,8 @@ const SignInForm = ({ setTab }: Props) => {
 					state.isSubmitting,
 					state.errors,
 				]}
-				// biome-ignore lint/correctness/noChildrenProp: <explanation>
-				children={([canSubmit, isSubmitting]) => (
+			>
+				{([canSubmit, isSubmitting]) => (
 					<div className="w-full flex flex-col items-end justify-center gap-4 ">
 						<Button
 							type="submit"
@@ -96,7 +96,7 @@ const SignInForm = ({ setTab }: Props) => {
 						<SocialProviders />
 					</div>
 				)}
-			/>
+			</form.Subscribe>
 		</form>
 	);
 };

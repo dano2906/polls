@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
 import type { getCompactUserPolls } from "@/poll/actions/poll";
@@ -16,7 +17,7 @@ interface Props {
 	polls: Awaited<ReturnType<typeof getCompactUserPolls>>;
 }
 
-export const CompactUserPolls = ({ polls }: Props) => {
+export const CompactUserPolls = memo(function CompactUserPolls({ polls }: Props) {
 	if (Object.keys(polls).length === 0) {
 		return (
 			<Empty className="border border-dashed">
@@ -61,4 +62,4 @@ export const CompactUserPolls = ({ polls }: Props) => {
 			})}
 		</div>
 	);
-};
+});

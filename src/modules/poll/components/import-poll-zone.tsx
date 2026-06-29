@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router"; // Eliminado useRouter no utilizado
 import { format } from "date-fns";
@@ -11,7 +10,7 @@ import {
 	Trash2,
 	Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { parsePollFile } from "@/common/lib/export";
 import type { QuestionType } from "@/question/shared/types";
 import { Badge } from "@/ui/badge";
@@ -43,6 +42,12 @@ export function ImportPollZone() {
 
 	// Estado para guardar la previsualización antes de enviar a DB
 	const [previewData, setPreviewData] = useState<ExportData | null>(null);
+
+	const dropZoneClassName = useMemo(
+		() =>
+			`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl cursor-pointer bg-muted/20 transition-all group relative py-3 ${isDragActive ? "border-primary bg-primary/10 scale-[1.01]" : "border-muted-foreground/30 hover:bg-muted/40"}`,
+		[isDragActive],
+	);
 
 	// Integración de TanStack Query Mutation
 	const {
@@ -89,7 +94,6 @@ export function ImportPollZone() {
 			const structuredData = await parsePollFile(file);
 			setPreviewData(structuredData);
 		} catch (error: any) {
-			console.error(error);
 			setLocalError(
 				error.message || "Error al leer la estructura del archivo.",
 			);
@@ -148,9 +152,7 @@ export function ImportPollZone() {
 					onDragOver={handleDrag}
 					onDragLeave={handleDrag}
 					onDrop={handleDrop}
-					className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-xl cursor-pointer bg-muted/20 transition-all group relative py-3
-                        ${isDragActive ? "border-primary bg-primary/10 scale-[1.01]" : "border-muted-foreground/30 hover:bg-muted/40"}
-                    `}
+					className={dropZoneClassName}
 				>
 					<div className="flex flex-col items-center justify-center text-center px-4 space-y-2 font-sgc">
 						<Upload
@@ -238,7 +240,7 @@ export function ImportPollZone() {
 
 							{previewData.questions.map((q, idx) => (
 								<div
-									key={idx}
+									key={`${q.questionText}-${idx}`}
 									className="p-3 border rounded-lg bg-muted/20 space-y-2"
 								>
 									<div className="flex items-start justify-between gap-4">
@@ -307,7 +309,7 @@ export function ImportPollZone() {
 										<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
 											{q.answers.map((ans, aIdx) => (
 												<div
-													key={aIdx}
+													key={`${ans.answerText}-${aIdx}`}
 													className={`text-xs p-1.5 rounded border flex items-center justify-between ${ans.isCorrect ? "bg-success/5 border-success/20 text-success/70 dark:text-success/40" : "bg-background text-muted-foreground"}`}
 												>
 													<span className="truncate">{ans.answerText}</span>

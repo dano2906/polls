@@ -44,9 +44,9 @@ export enum FieldType {
 
 // 1. Interfaz para definir qué puedes sobreescribir del comportamiento por defecto
 interface OverrideBindings {
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	// biome-ignore lint/suspicious/noExplicitAny: field values are dynamic
 	value?: any;
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	// biome-ignore lint/suspicious/noExplicitAny: field values are dynamic
 	onChange?: (value: any) => void;
 	onBlur?: () => void;
 }

@@ -172,41 +172,49 @@ export const teamMember = sqliteTable("team_member", {
 	createdAt: integer("created_at", { mode: "timestamp_ms" }),
 });
 
-export const poll = sqliteTable("poll", {
-	id: text("id")
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	userId: text("user_id")
-		.notNull()
-		.references(() => user.id, { onDelete: "cascade" }),
-	rootId: text("root_id"),
-	name: text("name").notNull(),
-	description: text("description"),
-	slug: text("slug").unique(),
-	status: text("status", { enum: ["draft", "published", "archived"] }).default(
-		"draft",
-	),
-	version: integer("version").default(1),
-	timeLimit: integer("time_limit"),
-	password: text("password"),
-	startDate: integer("start_date", { mode: "timestamp" })
-		.default(sql`CURRENT_TIMESTAMP`)
-		.notNull(),
-	endDate: integer("end_date", { mode: "timestamp" }),
-	createdAt: integer("created_at", { mode: "timestamp" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
-	updatedAt: integer("updated_at", { mode: "timestamp" }).default(
-		sql`CURRENT_TIMESTAMP`,
-	),
-	organizationId: text("organization_id").references(() => organization.id, {
-		onDelete: "set null",
-	}),
-	metadata: text("metadata", { mode: "json" }).$type<{
-		theme?: string;
-		limitResponses?: number;
-	}>(),
-});
+export const poll = sqliteTable(
+	"poll",
+	{
+		id: text("id")
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		rootId: text("root_id"),
+		name: text("name").notNull(),
+		description: text("description"),
+		slug: text("slug").unique(),
+		status: text("status", { enum: ["draft", "published", "archived"] }).default(
+			"draft",
+		),
+		version: integer("version").default(1),
+		timeLimit: integer("time_limit"),
+		password: text("password"),
+		startDate: integer("start_date", { mode: "timestamp" })
+			.default(sql`CURRENT_TIMESTAMP`)
+			.notNull(),
+		endDate: integer("end_date", { mode: "timestamp" }),
+		createdAt: integer("created_at", { mode: "timestamp" }).default(
+			sql`CURRENT_TIMESTAMP`,
+		),
+		updatedAt: integer("updated_at", { mode: "timestamp" }).default(
+			sql`CURRENT_TIMESTAMP`,
+		),
+		organizationId: text("organization_id").references(() => organization.id, {
+			onDelete: "set null",
+		}),
+		metadata: text("metadata", { mode: "json" }).$type<{
+			theme?: string;
+			limitResponses?: number;
+		}>(),
+	},
+	(table) => [
+		index("poll_user_id_idx").on(table.userId),
+		index("poll_slug_idx").on(table.slug),
+		index("poll_status_idx").on(table.status),
+	],
+);
 
 export const question = sqliteTable("question", {
 	id: text("id")
@@ -233,15 +241,22 @@ export const question = sqliteTable("question", {
 		.notNull(),
 });
 
-export const pollQuestions = sqliteTable("poll_question", {
-	pollId: text("poll_id")
-		.notNull()
-		.references(() => poll.id, { onDelete: "cascade" }),
-	questionId: text("question_id")
-		.notNull()
-		.references(() => question.id),
-	order: integer("order").default(0),
-});
+export const pollQuestions = sqliteTable(
+	"poll_question",
+	{
+		pollId: text("poll_id")
+			.notNull()
+			.references(() => poll.id, { onDelete: "cascade" }),
+		questionId: text("question_id")
+			.notNull()
+			.references(() => question.id),
+		order: integer("order").default(0),
+	},
+	(table) => [
+		index("poll_questions_poll_id_idx").on(table.pollId),
+		index("poll_questions_question_id_idx").on(table.questionId),
+	],
+);
 
 export const answer = sqliteTable("answer", {
 	id: text("id")
@@ -284,22 +299,31 @@ export const submission = sqliteTable(
 		completedAt: integer("completed_at", { mode: "timestamp_ms" }),
 	},
 	(table) => [
+		index("submission_poll_id_idx").on(table.pollId),
+		index("submission_user_id_idx").on(table.userId),
 		uniqueIndex("user_poll_unique_idx").on(table.userId, table.pollId),
 	],
 );
 
-export const userAnswer = sqliteTable("user_answer", {
-	id: text("id")
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	submissionId: text("submission_id")
-		.notNull()
-		.references(() => submission.id, { onDelete: "cascade" }),
-	questionId: text("question_id")
-		.notNull()
-		.references(() => question.id),
-	value: text("value", { mode: "json" }).$type<UserAnswerValue>().notNull(),
-});
+export const userAnswer = sqliteTable(
+	"user_answer",
+	{
+		id: text("id")
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		submissionId: text("submission_id")
+			.notNull()
+			.references(() => submission.id, { onDelete: "cascade" }),
+		questionId: text("question_id")
+			.notNull()
+			.references(() => question.id),
+		value: text("value", { mode: "json" }).$type<UserAnswerValue>().notNull(),
+	},
+	(table) => [
+		index("user_answer_submission_id_idx").on(table.submissionId),
+		index("user_answer_question_id_idx").on(table.questionId),
+	],
+);
 
 export const userRelations = relations(user, ({ many }) => ({
 	sessions: many(session),

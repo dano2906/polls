@@ -1,5 +1,5 @@
 import { Link, useMatches } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -47,7 +47,7 @@ const routeConfigs: Record<
 
 const hiddenRouteIds = new Set(["/_protected/dashboard"]);
 
-export function AutoBreadcrumb() {
+export const AutoBreadcrumb = memo(function AutoBreadcrumb() {
 	const [isMounted, setIsMounted] = useState(false);
 	const matches = useMatches();
 
@@ -122,4 +122,4 @@ export function AutoBreadcrumb() {
 			</BreadcrumbList>
 		</Breadcrumb>
 	);
-}
+});

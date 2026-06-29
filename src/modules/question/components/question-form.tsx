@@ -1,8 +1,5 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, Save, Trash } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -46,6 +43,33 @@ interface Props {
 	initialData?: Awaited<ReturnType<typeof getPollDetails>>["questions"];
 }
 
+interface FormAnswer {
+	id?: string;
+	answerText: string;
+	isCorrect: boolean;
+	imageUrl?: string | null;
+	imagePublicId?: string | null;
+	_localFile?: File | null;
+}
+
+interface FormQuestion {
+	id?: string;
+	questionText: string;
+	isRequired: boolean;
+	type: string;
+	hasCorrectAnswers?: boolean;
+	maxSelections?: number;
+	answers?: FormAnswer[];
+	imageUrl?: string | null;
+	imagePublicId?: string | null;
+	_localFile?: File | null;
+	minValue?: number;
+	maxValue?: number;
+	distributionAmount?: number;
+	minDate?: string | null;
+	maxDate?: string | null;
+}
+
 const OPTION_TYPES = [
 	{
 		label: "Selección simple",
@@ -87,8 +111,8 @@ const OPTION_TYPES = [
 
 const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 	const isEditing = !!initialData;
-	const router = useRouter();
 	const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+	const queryClient = useQueryClient();
 	const questionMutation = useMutation({
 		mutationKey: [isEditing ? "update" : "create", "question"],
 		mutationFn: async (values: QuestionBatchInput) => {
@@ -98,7 +122,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 			return await createQuestions({ data: values });
 		},
 		onSuccess: async () => {
-			await router.invalidate();
+			queryClient.invalidateQueries({ queryKey: ["poll"] });
 			toast.success(
 				isEditing
 					? "Se han editado las preguntas y las respuestas correctamente."
@@ -120,7 +144,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 			try {
 				// 1. Subir imágenes nuevas de preguntas Y respuestas
 				const cleanedQuestions = await Promise.all(
-					value.questions.map(async (q: any) => {
+					value.questions.map(async (q: FormQuestion) => {
 						let imageUrl = q.imageUrl ?? null;
 						let imagePublicId = q.imagePublicId ?? null;
 
@@ -179,7 +203,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 
 						// 🆕 Procesar las imágenes de las RESPUESTAS en paralelo
 						const cleanedAnswers = await Promise.all(
-							(q.answers || []).map(async (a: any) => {
+							(q.answers || []).map(async (a: FormAnswer) => {
 								let ansImageUrl = a.imageUrl ?? null;
 								let ansImagePublicId = a.imagePublicId ?? null;
 
@@ -245,9 +269,9 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 				}
 
 				toast.dismiss("save-questions");
-			} catch (error: any) {
+			} catch {
 				toast.dismiss("save-questions");
-				toast.error(error.message || "Hubo un fallo al procesar los archivos.");
+				toast.error("Hubo un fallo al procesar los archivos.");
 			}
 		},
 	});
@@ -275,9 +299,9 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 						<form.Field name="questions" mode="array">
 							{(field) => (
 								<div className="space-y-4">
-									{field.state.value.map((_: any, i: number) => (
+									{field.state.value.map((q: FormQuestion, i: number) => (
 										<Card
-											key={`${i}`}
+											key={q.id ?? `q-${i}`}
 											className="p-4 border border-dashed shadow-sm relative"
 										>
 											<CardTitle className="text-xl font-sg font-medium mb-4">
@@ -296,6 +320,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 														/>
 													)}
 												</form.Field>
+												{/* biome-ignore lint/suspicious/noExplicitAny: dynamic field path */}
 												<form.Field name={`questions[${i}]._localFile` as any}>
 													{(subField) => (
 														<div className="w-full col-span-2">
@@ -307,6 +332,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																	`questions[${i}].imagePublicId`,
 																)}
 																onFileSelected={(file) =>
+																	// biome-ignore lint/suspicious/noExplicitAny: File type for transient local field
 																	subField.handleChange(file as any)
 																}
 																onImageRemoved={() => {
@@ -530,9 +556,9 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																			)}
 
 																			{answersField.state.value?.map(
-																				(_: any, ai: number) => (
+																				(a: FormAnswer, ai: number) => (
 																					<div
-																						key={`${i}-${ai}`}
+																						key={a.id ?? `a-${i}-${ai}`}
 																						className="w-full grid grid-cols-1 gap-3 items-center bg-primary-foreground/15 p-4 rounded shadow relative group"
 																					>
 																						<CardTitle className="text-sm font-sg font-medium col-span-1 text-muted-foreground">
@@ -553,11 +579,12 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																								/>
 																							)}
 																						</form.Field>
-																						<form.Field
-																							name={
-																								`questions[${i}].answers[${ai}]._localFile` as any
-																							}
-																						>
+														{/* biome-ignore lint/suspicious/noExplicitAny: dynamic field path */}
+														<form.Field
+															name={
+																`questions[${i}].answers[${ai}]._localFile` as any
+															}
+														>
 																							{(subField) => (
 																								<div className="w-full">
 																									<ImageUploader
@@ -568,6 +595,7 @@ const QuestionForm = ({ slug, initialData, pollDescription }: Props) => {
 																											`questions[${i}].answers[${ai}].imagePublicId`,
 																										)}
 																										onFileSelected={(file) =>
+																											// biome-ignore lint/suspicious/noExplicitAny: File type for transient local field
 																											subField.handleChange(
 																												file as any,
 																											)

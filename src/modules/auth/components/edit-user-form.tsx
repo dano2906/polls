@@ -146,8 +146,8 @@ const EditUserForm = ({ user, isolated = true }: EditUserFormProps) => {
 
 			<form.Subscribe
 				selector={(state) => [state.canSubmit, state.isSubmitting]}
-				// biome-ignore lint/correctness/noChildrenProp: <explanation>
-				children={([canSubmit, isSubmitting]) => (
+			>
+				{([canSubmit, isSubmitting]) => (
 					<div
 						className={cn(
 							"w-full flex flex-col justify-center items-end gap-4 col-span-1 lg:col-span-2",
@@ -163,7 +163,7 @@ const EditUserForm = ({ user, isolated = true }: EditUserFormProps) => {
 						</Button>
 					</div>
 				)}
-			/>
+			</form.Subscribe>
 		</form>
 	);
 };

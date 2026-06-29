@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import {
 	Building2,
@@ -10,6 +11,7 @@ import {
 	User,
 } from "lucide-react";
 import ThemeToggle from "@/common/components/partials/theme-toggle";
+import { getOptimizedImageUrl } from "@/common/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";
 import { Button, buttonVariants } from "@/ui/button";
 import {
@@ -27,7 +29,7 @@ import {
 } from "@/ui/dropdown-menu";
 import { authClient } from "../lib/auth-client";
 
-export default function AuthHeader() {
+const AuthHeader = memo(function AuthHeader() {
 	const { auth } = useRouteContext({ from: "__root__" });
 	const router = useRouter();
 
@@ -44,7 +46,7 @@ export default function AuthHeader() {
 						<Avatar size="lg">
 							<AvatarImage
 								src={
-									auth.user.image ||
+									getOptimizedImageUrl(auth.user.image, 96) ||
 									`https://api.dicebear.com/9.x/glass/svg?seed=${auth.user.name}`
 								}
 							/>
@@ -192,4 +194,6 @@ export default function AuthHeader() {
 			</Link>
 		</div>
 	);
-}
+});
+
+export default AuthHeader;

@@ -146,8 +146,7 @@ export const getListedUserPolls = createServerFn({ method: "GET" })
 				.orderBy(asc(poll.startDate));
 
 			return res ?? [];
-		} catch (error) {
-			console.log("Error al obtener encuestas del usuario:", error);
+		} catch {
 			return [];
 		}
 	});
@@ -208,8 +207,7 @@ export const getCompactUserPolls = createServerFn({ method: "GET" })
 			);
 
 			return groupedPolls;
-		} catch (error) {
-			console.log("Error al obtener encuestas del usuario:", error);
+		} catch {
 			return {};
 		}
 	});
@@ -287,12 +285,9 @@ export const getPollDetails = createServerFn({ method: "GET" })
 						typeof item.question.metadata === "string"
 							? JSON.parse(item.question.metadata)
 							: item.question.metadata;
-				} catch (e) {
-					console.error(
-						`Error parseando metadata de la pregunta ${item.question.id}:`,
-						e,
-					);
-				}
+			} catch {
+				// metadata remains empty object on parse failure
+			}
 			}
 
 			return {
@@ -364,7 +359,6 @@ export const createPoll = createServerFn({ method: "POST" })
 			}
 			throw new Error("Failed to create poll");
 		} catch (error) {
-			console.log("error", error);
 			throw error;
 		}
 	});
@@ -453,6 +447,18 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 		// 1. Buscar la encuesta por su slug (incluyendo la nueva columna timeLimit)
 		const currentPoll = await db.query.poll.findFirst({
 			where: eq(poll.slug, slug),
+			columns: {
+				id: true,
+				slug: true,
+				userId: true,
+				name: true,
+				status: true,
+				password: true,
+				startDate: true,
+				endDate: true,
+				timeLimit: true,
+				metadata: true,
+			},
 		});
 
 		// ❌ CASO 1: La encuesta no existe
@@ -630,8 +636,7 @@ export const deletePollBySlug = createServerFn({ method: "POST" })
 				success: true,
 				message: `Encuesta "${deletedPoll[0].name}" eliminada correctamente.`,
 			};
-		} catch (error) {
-			console.error("Error al eliminar la encuesta:", error);
+		} catch {
 			throw new Error("No se pudo eliminar la encuesta.");
 		}
 	});
@@ -892,8 +897,7 @@ export const forkPoll = createServerFn({ method: "POST" })
 			});
 
 			return result;
-		} catch (error) {
-			console.error("Error al duplicar la encuesta:", error);
+		} catch {
 			throw new Error("No se pudo duplicar la encuesta");
 		}
 	});
@@ -963,43 +967,44 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			}
 		}
 
-		// 3. FUSIÓN EN MEMORIA
+		// 3. FUSIÓN EN MEMORIA (optimized with Map lookups)
 		const results = pollStructure.pollQuestions.map((pq) => {
 			const q = pq.question;
-			// Forzamos el tipado para aprovechar el discriminated union
 			const uv = userAnswersMap.get(q.id) as UserAnswerValue | undefined;
 
 			let textResponse: string | null = null;
-			const selectedAnswers: any[] = []; // Usamos any o un tipo extendido para inyectar score/dates
+			const selectedAnswers: any[] = [];
 
-			// Si el usuario respondió, leemos estrictamente según el `type` guardado
 			if (uv) {
+				const answerMap = new Map(
+					q.answers?.map((a) => [a.id, a]) ?? [],
+				);
+
 				switch (uv.type) {
 					case "open_answer":
 						textResponse = uv.textResponse;
 						break;
 
 					case "rating":
-						// Lo metemos en el array para que el frontend lo lea en selectedAnswers[0].score
 						selectedAnswers.push({ score: uv.score });
 						break;
 
 					case "ranking":
 						uv.orderedAnswerIds.forEach((id, index) => {
-							const ans = q.answers.find((a) => a.id === id);
+							const ans = answerMap.get(id);
 							if (ans) {
 								selectedAnswers.push({
-									id: ans.id, // ID compatible con el frontend
+									id: ans.id,
 									answerText: ans.answerText,
 									isCorrect: ans.isCorrect,
-									orderIndex: index, // Clave para que el frontend mantenga el orden
+									orderIndex: index,
 								});
 							}
 						});
 						break;
 
 					case "single_choice": {
-						const ans = q.answers.find((a) => a.id === uv.selectedAnswerId);
+						const ans = answerMap.get(uv.selectedAnswerId);
 						if (ans) {
 							selectedAnswers.push({
 								id: ans.id,
@@ -1012,7 +1017,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 
 					case "multiple_choice":
 						uv.selectedAnswerIds.forEach((id) => {
-							const ans = q.answers.find((a) => a.id === id);
+							const ans = answerMap.get(id);
 							if (ans) {
 								selectedAnswers.push({
 									id: ans.id,
@@ -1025,7 +1030,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 					case "point_distribution":
 						if (uv.points) {
 							Object.entries(uv.points).forEach(([answerId, points]) => {
-								const ans = q.answers.find((a) => a.id === answerId);
+								const ans = answerMap.get(answerId);
 								if (ans) {
 									selectedAnswers.push({
 										id: ans.id,
@@ -1136,8 +1141,7 @@ export const validatePollPassword = createServerFn({ method: "POST" })
 
 				return { success: true };
 			}
-		} catch (error) {
-			console.error("Error al validar la contraseña en el servidor:", error);
+		} catch {
 			return { success: false, message: "Error interno del servidor." };
 		}
 

@@ -6,6 +6,16 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+export function getOptimizedImageUrl(
+	url: string | null | undefined,
+	width?: number,
+): string | undefined {
+	if (!url) return undefined;
+	if (!url.includes("cloudinary")) return url;
+	const transforms = `f_auto,q_auto${width ? `,w_${width}` : ""}`;
+	return url.replace("/image/upload/", `/image/upload/${transforms}/`);
+}
+
 export async function uploadToCloudinary(
 	file: File,
 ): Promise<{ url: string; publicId: string }> {

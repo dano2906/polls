@@ -18,6 +18,7 @@ export const landingPollsOptions = ({
 	queryOptions({
 		queryKey: ["poll", "landing", "published", { q, status }],
 		queryFn: () => getPublishedPolls({ data: { q, status } }),
+		staleTime: 60 * 1000,
 	});
 
 export const compactPollsOptions = ({
@@ -39,6 +40,7 @@ export const compactPollsOptions = ({
 					status,
 				},
 			}),
+		staleTime: 30 * 1000,
 	});
 
 export const listPollsOptions = ({
@@ -60,6 +62,7 @@ export const listPollsOptions = ({
 					status,
 				},
 			}),
+		staleTime: 30 * 1000,
 	});
 
 export const pollDetailsOptions = (slug: string) =>
@@ -71,6 +74,7 @@ export const pollDetailsOptions = (slug: string) =>
 					slug,
 				},
 			}),
+		staleTime: 10 * 1000,
 	});
 
 export const pollResultOptions = ({
@@ -89,4 +93,5 @@ export const pollResultOptions = ({
 					userId,
 				},
 			}),
+		staleTime: 30 * 1000,
 	});
