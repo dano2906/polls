@@ -2,7 +2,8 @@ import { config } from "dotenv";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schemas from "./schema";
 
-config({ path: [".env.local", ".env", ".env.production"] });
+// config({ path: [".env.local", ".env", ".env.production"] });
+/* PRODUCTION */ config({ path: [".env.production"] });
 
 if (!process.env.TURSO_CONNECTION_URL) {
 	throw new Error(
