@@ -17,6 +17,8 @@ import { Toaster } from "@/ui/sonner";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
+	auth?: Awaited<ReturnType<typeof getSession>>;
+	theme?: Awaited<ReturnType<typeof getThemeServerFn>>;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({

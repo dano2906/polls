@@ -1,19 +1,20 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router";
 import QuestionResponseForm from "@/answers/components/questions-response-form";
-import { ensureSession } from "@/auth/actions/auth";
 import { validatePollAccess } from "@/poll/actions/poll";
 import { pollDetailsOptions } from "@/poll/lib/query";
 
 export const Route = createFileRoute("/_landing/p/$slug/")({
 	component: RouteComponent,
 	beforeLoad: async ({ context, params }) => {
+		if (!context.auth) {
+			throw redirect({ to: "/" });
+		}
 		try {
-			await ensureSession();
 			await validatePollAccess({
 				data: {
 					slug: params.slug,
-					userId: context?.auth?.user.id,
+					userId: context.auth.user.id,
 				},
 			});
 		} catch (error) {

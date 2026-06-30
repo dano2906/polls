@@ -1,12 +1,14 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { ensureSession } from "@/auth/actions/auth";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import AuthHeader from "@/auth/components/auth-header";
 import { AutoBreadcrumb } from "@/common/components/partials/auto-breadcrumb";
 
 export const Route = createFileRoute("/_protected")({
 	component: RouteComponent,
-	beforeLoad: async () => {
-		await ensureSession();
+	beforeLoad: async ({ context }) => {
+		if (!context.auth) {
+			throw redirect({ to: "/" });
+		}
+		return { auth: context.auth };
 	},
 });
 

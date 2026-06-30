@@ -1,13 +1,15 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ResponseRenderer } from "@/answers/components/result-response-renderer";
-import { ensureSession } from "@/auth/actions/auth";
 import { pollResultOptions } from "@/poll/lib/query";
 
 export const Route = createFileRoute("/_landing/p/$slug/result")({
 	component: RouteComponent,
-	beforeLoad: async () => {
-		await ensureSession();
+	beforeLoad: async ({ context }) => {
+		if (!context.auth) {
+			throw redirect({ to: "/" });
+		}
+		return { auth: context.auth };
 	},
 	loader: ({ context, params }) => {
 		context.queryClient.ensureQueryData(

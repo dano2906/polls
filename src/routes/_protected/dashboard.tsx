@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_protected/dashboard")({
 	}),
 	component: RouteComponent,
 	loader: ({ context, deps }) => {
-		const userId = context.auth!.user.id;
+		const userId = context.auth.user.id;
 		if (deps.view === "list") {
 			context.queryClient.ensureQueryData(
 				flatPollsOptions({ q: deps.q, status: deps.status, userId }),
@@ -36,7 +36,7 @@ function RouteComponent() {
 	const search = Route.useSearch();
 	const context = Route.useRouteContext();
 	const navigate = useNavigate({ from: Route.fullPath });
-	const userId = context.auth!.user.id;
+	const userId = context.auth.user.id;
 	const { data: compactData } = useSuspenseQuery(
 		compactPollsOptions({
 			q: search.q,

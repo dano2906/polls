@@ -40,9 +40,6 @@ const routeConfigs: Record<
 		parentKey: "/org/$orgSlug",
 	},
 	"/auth": { label: "Acceder", parentKey: null },
-	"/p/$slug": { label: "Encuesta", parentKey: null },
-	"/p/$slug/result": { label: "Resultados", parentKey: null },
-	"/p/$slug/password": { label: "Contraseña", parentKey: null },
 };
 
 const hiddenRouteIds = new Set(["/_protected/dashboard"]);

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_protected/user/me")({
 	component: RouteComponent,
 	loader: ({ context }) => {
 		context.queryClient.ensureQueryData(
-			getUserAnsweredPollsOptions(context?.auth?.user?.id),
+			getUserAnsweredPollsOptions(context.auth.user.id),
 		);
 	},
 });
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_protected/user/me")({
 function RouteComponent() {
 	const { auth } = Route.useRouteContext();
 	const { data: polls } = useSuspenseQuery(
-		getUserAnsweredPollsOptions(auth?.user?.id),
+		getUserAnsweredPollsOptions(auth.user.id),
 	);
 
 	return (
@@ -28,15 +28,15 @@ function RouteComponent() {
 			<div className="w-full space-y-8">
 				<div className="flex justify-center">
 					<ChangeUserAvatar
-						avatarUrl={auth?.user.image}
-						email={auth?.user.email}
-						id={auth?.user.id}
+						avatarUrl={auth.user.image}
+						email={auth.user.email}
+						id={auth.user.id}
 					/>
 				</div>
 
 				<div className="space-y-4">
 					<PageHeading>Editar datos</PageHeading>
-					<UserProfileForm user={auth?.user} />
+					<UserProfileForm user={auth.user} />
 				</div>
 
 				<div className="space-y-4">

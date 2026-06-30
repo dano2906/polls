@@ -14,7 +14,7 @@ function RouteComponent() {
 	return (
 		<div className="p-2 block space-y-4">
 			<PageHeading>Crear encuesta</PageHeading>
-			<PollForm userId={auth?.user.id as string} onCreatePoll={setSlug} />
+			<PollForm userId={auth.user.id} onCreatePoll={setSlug} />
 			<QuestionForm slug={slug} />
 		</div>
 	);

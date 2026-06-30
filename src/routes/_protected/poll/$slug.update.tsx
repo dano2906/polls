@@ -20,7 +20,7 @@ function RouteComponent() {
 		<div className="p-2 block space-y-4">
 			<PageHeading>Detalles de la encuesta {slug.toUpperCase()}</PageHeading>
 			<PollForm
-				userId={auth?.user.id as string}
+				userId={auth.user.id}
 				initialData={{
 					...initialData,
 					password: null,
