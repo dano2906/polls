@@ -1,16 +1,15 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Plus, Shield, User } from "lucide-react";
+import { Plus, User } from "lucide-react";
 import { ensureSession } from "@/auth/actions/auth";
 import PageHeading from "@/common/components/partials/page-heading";
+import { Button, buttonVariants } from "@/common/components/ui/button";
 import {
 	getOrganizationBySlug,
 	removeMemberAction,
 } from "@/organization/actions/organization";
 import { RoleBadge } from "@/organization/components/role-badge";
 import { orgMembersOptions } from "@/organization/lib/query";
-import { Badge } from "@/ui/badge";
-import { Button, buttonVariants } from "@/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Empty, EmptyDescription, EmptyTitle } from "@/ui/empty";
 

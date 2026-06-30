@@ -11,7 +11,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 
-export function OrganizationSwitcher({ currentSlug }: { currentSlug: string }) {
+export function OrganizationSwitcher() {
 	const { data } = useSuspenseQuery(listOrganizationsOptions());
 
 	if (!data || data.length === 0) return null;

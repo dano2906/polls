@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, FilePlus, Users } from "lucide-react";
+import { Building2, FilePlus } from "lucide-react";
 import { ensureSession } from "@/auth/actions/auth";
 import PageHeading from "@/common/components/partials/page-heading";
 import { getOrganizationBySlug } from "@/organization/actions/organization";
