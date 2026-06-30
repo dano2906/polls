@@ -1,6 +1,6 @@
-import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { RefreshCcw } from "lucide-react";
+import { memo } from "react";
 import type { getListedUserPolls } from "@/poll/actions/poll";
 import { buttonVariants } from "@/ui/button";
 import {
@@ -17,7 +17,7 @@ interface Props {
 	polls: Awaited<ReturnType<typeof getListedUserPolls>>;
 }
 
-export const ListUserPolls = memo(function ListUserPolls({ polls }: Props) {
+export const FlatUserPolls = memo(function ListUserPolls({ polls }: Props) {
 	if (polls.length === 0) {
 		return (
 			<Empty className="border border-dashed">

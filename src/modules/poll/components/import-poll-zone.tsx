@@ -19,6 +19,7 @@ import { Input } from "@/ui/input";
 import { Label } from "@/ui/label";
 import { LoadingSwap } from "@/ui/loading-swap";
 import { importPollAction } from "../actions/poll";
+import { pollMKs } from "../lib/query";
 import type { ExportData } from "../shared/types";
 
 const typeLabel: Record<QuestionType, string> = {
@@ -56,6 +57,7 @@ export function ImportPollZone() {
 		error: mutationError,
 		isSuccess,
 	} = useMutation({
+		mutationKey: pollMKs.import(),
 		mutationFn: async (data: ExportData) => {
 			const result = await importPollAction({ data });
 			if (!result?.success) {

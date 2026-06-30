@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { forkPoll } from "@/poll/actions/poll";
 import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
+import { pollMKs } from "../lib/query";
 
 interface Props {
 	slug: string;
@@ -13,7 +14,7 @@ interface Props {
 const ForkVersionButton = ({ slug, version }: Props) => {
 	const qc = useQueryClient();
 	const forkPollMutation = useMutation({
-		mutationKey: ["fork", "poll"],
+		mutationKey: pollMKs.fork(slug),
 		mutationFn: async () => {
 			return await forkPoll({
 				data: {

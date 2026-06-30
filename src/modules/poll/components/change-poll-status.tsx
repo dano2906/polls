@@ -6,6 +6,7 @@ import { cn } from "@/common/lib/utils";
 import { updatePoll } from "@/poll/actions/poll";
 import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
+import { pollMKs } from "../lib/query";
 import { POLL_STATUS_FLOW, type PollStatus } from "../shared/types";
 
 const statusLabels: Record<PollStatus, string> = {
@@ -59,13 +60,12 @@ export const ChangePollStatus = ({
 		| undefined;
 
 	const { mutateAsync: changeStatus, isPending } = useMutation({
-		mutationKey: ["change-status", slug],
+		mutationKey: pollMKs.changeStatus(slug),
 		mutationFn: async () => {
 			await updatePoll({
 				data: {
 					slug,
 					values: { status: nextStatus ?? "draft" },
-					scenario: "status",
 				},
 			});
 		},

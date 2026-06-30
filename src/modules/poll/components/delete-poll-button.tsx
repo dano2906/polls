@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { deletePollBySlug } from "@/poll/actions/poll";
 import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
+import { pollMKs } from "../lib/query";
 
 interface Props {
 	slug: string;
@@ -12,7 +13,7 @@ interface Props {
 const DeletePollButton = ({ slug }: Props) => {
 	const qc = useQueryClient();
 	const deletePollMutation = useMutation({
-		mutationKey: ["delete", "poll", slug],
+		mutationKey: pollMKs.remove(slug),
 		mutationFn: async () => {
 			return await deletePollBySlug({
 				data: {

@@ -6,6 +6,7 @@ import { getPollDetails } from "@/poll/actions/poll";
 import { Button } from "@/ui/button";
 import { LoadingSwap } from "@/ui/loading-swap";
 import { exportPollFn } from "../actions/poll";
+import { pollMKs } from "../lib/query";
 import type { ExportData } from "../shared/types";
 
 interface Props {
@@ -40,7 +41,7 @@ const renderIcon = (format: ExportFormat) => {
 
 const ExportMenuButton = ({ format, slug }: Props) => {
 	const exportMutation = useMutation({
-		mutationKey: ["export", format, slug],
+		mutationKey: pollMKs.export({ slug, format }),
 		mutationFn: async () => {
 			const poll = await getPollDetails({
 				data: {

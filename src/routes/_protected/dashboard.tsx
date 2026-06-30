@@ -3,9 +3,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { FilePlus } from "lucide-react";
 import { cn } from "@/common/lib/utils";
 import { CompactUserPolls } from "@/poll/components/compact-user-polls";
-import { ListUserPolls } from "@/poll/components/list-user-polls";
+import { FlatUserPolls } from "@/poll/components/flat-user-polls";
 import { PollFilterBar } from "@/poll/components/poll-filter-bar";
-import { compactPollsOptions, listPollsOptions } from "@/poll/lib/query";
+import { compactPollsOptions, flatPollsOptions } from "@/poll/lib/query";
 import { pollsSearchFiltershSchema } from "@/poll/lib/validation";
 import { buttonVariants } from "@/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_protected/dashboard")({
 		const userId = context.auth!.user.id;
 		if (deps.view === "list") {
 			context.queryClient.ensureQueryData(
-				listPollsOptions({ q: deps.q, status: deps.status, userId }),
+				flatPollsOptions({ q: deps.q, status: deps.status, userId }),
 			);
 		} else {
 			context.queryClient.ensureQueryData(
@@ -45,7 +45,7 @@ function RouteComponent() {
 		}),
 	);
 	const { data: listData } = useSuspenseQuery(
-		listPollsOptions({
+		flatPollsOptions({
 			q: search.q,
 			status: search.status,
 			userId,
@@ -90,7 +90,7 @@ function RouteComponent() {
 					</Link>
 				</TabsList>
 				<TabsContent value="list">
-					<ListUserPolls polls={listData} />
+					<FlatUserPolls polls={listData} />
 				</TabsContent>
 				<TabsContent value="compact">
 					<CompactUserPolls polls={compactData} />
