@@ -3,6 +3,7 @@ import { redirect, useRouteContext } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import { removeUser } from "../actions/user";
+import { userMKs, userQKs } from "../lib/query";
 
 const RemoveUserButton = ({
 	id,
@@ -20,7 +21,7 @@ const RemoveUserButton = ({
 	});
 	const qc = useQueryClient();
 	const { mutate: remove } = useMutation({
-		mutationKey: ["remove", "user", id],
+		mutationKey: userMKs.remove(id),
 		mutationFn: () =>
 			removeUser({
 				data: {
@@ -28,13 +29,11 @@ const RemoveUserButton = ({
 				},
 			}),
 		onSuccess: async (data) => {
-			await qc.invalidateQueries({
-				queryKey: ["user", "list"],
-				exact: false,
+			qc.invalidateQueries({
+				queryKey: userQKs.lists(),
 			});
 			qc.removeQueries({
-				queryKey: ["user", "details", id],
-				exact: false,
+				queryKey: userQKs.detail(id),
 			});
 			if (!data.success) {
 				toast.error("Ha ocurrido un error");

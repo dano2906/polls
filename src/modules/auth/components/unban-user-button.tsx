@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button, buttonVariants } from "@/common/components/ui/button";
-import { cn } from "@/common/lib/utils";
+import { Button } from "@/common/components/ui/button";
 import { unbanUser } from "../actions/user";
+import { userMKs, userQKs } from "../lib/query";
 
 const UnbanUserButton = ({
 	id,
@@ -13,7 +13,7 @@ const UnbanUserButton = ({
 }) => {
 	const qc = useQueryClient();
 	const { mutate: unban } = useMutation({
-		mutationKey: ["unban", "user", id],
+		mutationKey: userMKs.unban(id),
 		mutationFn: () =>
 			unbanUser({
 				data: {
@@ -22,12 +22,10 @@ const UnbanUserButton = ({
 			}),
 		onSuccess: async (data) => {
 			await qc.invalidateQueries({
-				queryKey: ["user", "list"],
-				exact: false,
+				queryKey: userQKs.lists(),
 			});
 			await qc.invalidateQueries({
-				queryKey: ["user", "detail", id],
-				exact: false,
+				queryKey: userQKs.detail(id),
 			});
 			if (!data.success) {
 				toast.error("Ha ocurrido un error");

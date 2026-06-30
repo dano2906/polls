@@ -9,13 +9,14 @@ import {
 	InputGroupInput,
 } from "@/common/components/ui/input-group";
 import { changeUserPassword } from "../actions/user";
+import { userMKs, userQKs } from "../lib/query";
 
 const ChangePasswordInput = ({ id }: { id: string }) => {
 	const [newPassword, setNewPassword] = useState("");
 	const [inputType, setInputType] = useState("password");
 	const qc = useQueryClient();
 	const { mutate: changePassword } = useMutation({
-		mutationKey: ["change-password", "user", id],
+		mutationKey: userMKs.changePass(id),
 		mutationFn: async () => {
 			if (!newPassword || newPassword.length === 0) return;
 
@@ -28,7 +29,7 @@ const ChangePasswordInput = ({ id }: { id: string }) => {
 			if (success) {
 				toast.success("La contraseña ha sido cambiada correctamente");
 				await qc.invalidateQueries({
-					queryKey: ["user", "details", id],
+					queryKey: userQKs.detail(id),
 				});
 				setNewPassword("");
 			}

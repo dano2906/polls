@@ -7,19 +7,21 @@ import FormField, { FieldType } from "@/common/components/partials/form-field";
 import { Button } from "@/common/components/ui/button";
 import { LoadingSwap } from "@/common/components/ui/loading-swap";
 import { updateProfile } from "../actions/user";
+import { userMKs, userQKs } from "../lib/query";
 import ChangePasswordInput from "./change-password-input";
 
 const UserProfileForm = ({ user }: { user: User }) => {
 	const qc = useQueryClient();
 	const router = useRouter();
 	const profileMutation = useMutation({
+		mutationKey: userMKs.updateProfile(user.id),
 		mutationFn: async (values: { name: string }) => {
 			return updateProfile({ data: values });
 		},
 		onSuccess: async () => {
 			toast.success("Perfil actualizado");
 			await router.invalidate();
-			await qc.invalidateQueries({ queryKey: ["user"] });
+			await qc.invalidateQueries({ queryKey: userQKs.detail(user.id) });
 		},
 		onError: (error) => toast.error(error.message),
 	});

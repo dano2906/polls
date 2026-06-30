@@ -17,15 +17,16 @@ import {
 	SelectValue,
 } from "@/common/components/ui/select";
 import { banUser } from "../actions/user";
+import { userMKs, userQKs } from "../lib/query";
 
 const BanUserInput = ({ id }: { id: string }) => {
+	const qc = useQueryClient();
 	const [banReason, setBanReason] = useState("");
 	const [banExpiresIn, setBanExpiresIn] = useState<"1" | "7" | "15" | "31">(
 		"7",
 	);
-	const qc = useQueryClient();
 	const { mutate: ban } = useMutation({
-		mutationKey: ["ban", "user", id],
+		mutationKey: userMKs.ban(id),
 		mutationFn: async () => {
 			if (!banReason || banReason.length === 0) {
 				toast.error("Debe escribir una razón del baneo");
@@ -53,6 +54,9 @@ const BanUserInput = ({ id }: { id: string }) => {
 				setBanReason("");
 				setBanExpiresIn("7");
 			}
+		},
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: userQKs.detail(id) });
 		},
 		onError: (error) => toast.error(error.message),
 	});

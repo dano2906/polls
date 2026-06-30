@@ -9,6 +9,7 @@ import { LoadingSwap } from "@/common/components/ui/loading-swap";
 import { uploadToCloudinary } from "@/common/lib/utils";
 import { createUser } from "../actions/user";
 import { ROLE_OPTIONS } from "../lib/constants";
+import { userQKs } from "../lib/query";
 import { createUserSchema } from "../lib/validation";
 import type { CreateUser } from "../shared/types";
 
@@ -45,8 +46,7 @@ const CreateUserForm = () => {
 				if (result.success) {
 					toast.success("El usuario se ha creado con éxito.");
 					await qc.invalidateQueries({
-						queryKey: ["user", "list"],
-						exact: false,
+						queryKey: userQKs.lists(),
 					});
 					await navigate({
 						to: "/user",

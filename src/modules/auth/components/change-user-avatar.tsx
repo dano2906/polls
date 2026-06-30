@@ -11,6 +11,7 @@ import {
 import { Button } from "@/common/components/ui/button";
 import { getOptimizedImageUrl, uploadToCloudinary } from "@/common/lib/utils";
 import { updateAvatarAction } from "../actions/user";
+import { userMKs, userQKs } from "../lib/query";
 
 interface Props {
 	avatarUrl: string | null | undefined;
@@ -46,7 +47,7 @@ export default function ChangeUserAvatar({ avatarUrl, email, id }: Props) {
 	};
 
 	const { mutate: handleConfirmUpload } = useMutation({
-		mutationKey: ["user", "change-avatar", id],
+		mutationKey: userMKs.changeAvatar(id),
 		mutationFn: async () => {
 			if (!selectedFile) return;
 
@@ -74,7 +75,7 @@ export default function ChangeUserAvatar({ avatarUrl, email, id }: Props) {
 		onSuccess: async () => {
 			toast.success("Su avatar ha sido cambiado satisfactoriamente");
 			await qc.invalidateQueries({
-				queryKey: ["user"],
+				queryKey: userQKs.detail(id),
 			});
 		},
 	});
@@ -90,7 +91,8 @@ export default function ChangeUserAvatar({ avatarUrl, email, id }: Props) {
 		fileInputRef.current?.click();
 	};
 
-	const currentDisplaySrc = previewUrl || getOptimizedImageUrl(avatarUrl, 96) || undefined;
+	const currentDisplaySrc =
+		previewUrl || getOptimizedImageUrl(avatarUrl, 96) || undefined;
 
 	return (
 		<div className="w-full flex flex-col items-center">

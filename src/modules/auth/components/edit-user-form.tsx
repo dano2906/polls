@@ -10,6 +10,7 @@ import { LoadingSwap } from "@/common/components/ui/loading-swap";
 import { cn, uploadToCloudinary } from "@/common/lib/utils";
 import { editUser } from "../actions/user";
 import { ROLE_OPTIONS } from "../lib/constants";
+import { userQKs } from "../lib/query";
 import { editUserSchema } from "../lib/validation";
 import type { EditUser } from "../shared/types";
 
@@ -65,8 +66,7 @@ const EditUserForm = ({ user, isolated = true }: EditUserFormProps) => {
 					toast.success("El usuario se ha actualizado con éxito.");
 
 					await qc.invalidateQueries({
-						queryKey: ["user"],
-						exact: false,
+						queryKey: userQKs.lists(),
 					});
 
 					await navigate({

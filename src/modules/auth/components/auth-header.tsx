@@ -1,4 +1,3 @@
-import { memo } from "react";
 import { Link, useRouteContext, useRouter } from "@tanstack/react-router";
 import {
 	Building2,
@@ -10,6 +9,7 @@ import {
 	LogOut,
 	User,
 } from "lucide-react";
+import { memo } from "react";
 import ThemeToggle from "@/common/components/partials/theme-toggle";
 import { getOptimizedImageUrl } from "@/common/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar";

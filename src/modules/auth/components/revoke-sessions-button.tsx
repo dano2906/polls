@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import { revokeUserSession } from "../actions/user";
+import { userMKs, userQKs } from "../lib/query";
 
 const RevokeSessionsButton = ({
 	id,
@@ -14,15 +15,14 @@ const RevokeSessionsButton = ({
 }) => {
 	const qc = useQueryClient();
 	const { mutate: revoke } = useMutation({
-		mutationKey: ["revoke", "user", "sessions", id],
+		mutationKey: userMKs.revokeSessions(id),
 		mutationFn: () =>
 			revokeUserSession({
 				data: { id, mode },
 			}),
 		onSuccess: async (data) => {
 			await qc.invalidateQueries({
-				queryKey: ["user"],
-				exact: false,
+				queryKey: userQKs.sessions(id),
 			});
 			if (!data.success) {
 				toast.error("Ha ocurrido un error");
