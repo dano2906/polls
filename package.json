@@ -38,6 +38,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/router-generator": "^1.167.17",
     "@tanstack/router-plugin": "^1.168.18",
+    "@vercel/nft": "^1.10.2",
     "@vitejs/plugin-rsc": "^0.5.27",
     "@zxcvbn-ts/language-en": "^4.1.1",
     "ai": "^6.0.216",
