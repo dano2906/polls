@@ -9,7 +9,7 @@ import { validatePollPassword } from "../actions/poll";
 import { pollPasswordSchema } from "../lib/validation";
 
 const PollPasswordForm = ({ slug }: { slug: string }) => {
-	const navigate = useNavigate({ from: "/p/$slug/password" });
+	const navigate = useNavigate({ from: "/poll/$slug/password" });
 	const form = useForm({
 		defaultValues: {
 			password: "",
@@ -37,7 +37,7 @@ const PollPasswordForm = ({ slug }: { slug: string }) => {
 				await new Promise((resolve) => setTimeout(resolve, 2000));
 
 				await navigate({
-					to: "/p/$slug",
+					to: "/poll/$slug",
 					params: { slug },
 				});
 			} catch {

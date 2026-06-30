@@ -1,11 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ensureSession } from "@/auth/actions/auth";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import PollPasswordForm from "@/poll/components/poll-password-form";
 
-export const Route = createFileRoute("/_landing/p/$slug/password")({
+export const Route = createFileRoute("/_landing/poll/$slug/password")({
 	component: RouteComponent,
-	beforeLoad: async () => {
-		await ensureSession();
+	beforeLoad: async ({ context }) => {
+		if (!context.auth) {
+			throw redirect({ to: "/" });
+		}
+		return { auth: context.auth };
 	},
 });
 

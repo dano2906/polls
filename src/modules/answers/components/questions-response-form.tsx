@@ -115,7 +115,7 @@ const QuestionResponseForm = ({ pollData, slug }: Props) => {
 					Tus respuestas fueron validadas y guardadas con éxito.
 				</p>
 				<Link
-					to="/p/$slug/result"
+					to="/poll/$slug/result"
 					params={{ slug }}
 					className="mt-2 text-foreground underline"
 				>

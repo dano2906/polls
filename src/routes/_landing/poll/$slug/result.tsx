@@ -1,10 +1,16 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ResponseRenderer } from "@/answers/components/result-response-renderer";
 import { pollResultOptions } from "@/poll/lib/query";
 
-export const Route = createFileRoute("/_protected/poll/$slug/result")({
+export const Route = createFileRoute("/_landing/poll/$slug/result")({
 	component: RouteComponent,
+	beforeLoad: async ({ context }) => {
+		if (!context.auth) {
+			throw redirect({ to: "/" });
+		}
+		return { auth: context.auth };
+	},
 	loader: ({ context, params }) => {
 		context.queryClient.ensureQueryData(
 			pollResultOptions({

@@ -10,7 +10,7 @@ const GoToPollLink = ({ slug }: Props) => {
 	const { auth } = useRouteContext({ from: "__root__" });
 	return (
 		<Link
-			to="/p/$slug"
+			to="/poll/$slug"
 			params={{
 				slug: slug as string,
 			}}

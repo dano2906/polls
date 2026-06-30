@@ -499,14 +499,14 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			const accessCookie = getCookie(`poll_unlocked_${slug}`);
 			if (!accessCookie)
 				throw redirect({
-					to: "/p/$slug/password",
+					to: "/poll/$slug/password",
 					params: { slug },
 				});
 			const parts = accessCookie.split(".");
 			if (parts.length !== 2) {
 				deleteCookie(`poll_unlocked_${slug}`);
 				throw redirect({
-					to: "/p/$slug/password",
+					to: "/poll/$slug/password",
 					params: { slug },
 				});
 			}
@@ -520,7 +520,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			if (signature !== expectedSignature) {
 				deleteCookie(`poll_unlocked_${slug}`);
 				throw redirect({
-					to: "/p/$slug/password",
+					to: "/poll/$slug/password",
 					params: { slug },
 				});
 			}
@@ -530,7 +530,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			if (cookieUserId !== user.id) {
 				deleteCookie(`poll_unlocked_${slug}`);
 				throw redirect({
-					to: "/p/$slug/password",
+					to: "/poll/$slug/password",
 					params: { slug },
 				});
 			}
@@ -548,7 +548,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 			// Condición A: Si la encuesta ya fue explícitamente terminada/enviada
 			if (existingSubmission.completedAt) {
 				throw redirect({
-					to: "/p/$slug/result",
+					to: "/poll/$slug/result",
 					params: { slug },
 				});
 			}
@@ -568,7 +568,7 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 						.set({ completedAt: now })
 						.where(eq(submission.id, existingSubmission.id));
 					throw redirect({
-						to: "/p/$slug/result",
+						to: "/poll/$slug/result",
 						params: { slug },
 					});
 				}

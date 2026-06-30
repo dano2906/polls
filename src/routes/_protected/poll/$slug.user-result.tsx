@@ -1,16 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ResponseRenderer } from "@/answers/components/result-response-renderer";
 import { pollResultOptions } from "@/poll/lib/query";
 
-export const Route = createFileRoute("/_landing/p/$slug/result")({
+export const Route = createFileRoute("/_protected/poll/$slug/user-result")({
 	component: RouteComponent,
-	beforeLoad: async ({ context }) => {
-		if (!context.auth) {
-			throw redirect({ to: "/" });
-		}
-		return { auth: context.auth };
-	},
 	loader: ({ context, params }) => {
 		context.queryClient.ensureQueryData(
 			pollResultOptions({
@@ -48,14 +42,12 @@ function RouteComponent() {
 				)}
 			</div>
 
-			{/* Listado de Preguntas */}
 			<div className="space-y-4">
 				{results.map((q, index) => (
 					<div
 						key={q.order}
 						className="bg-card text-card-foreground border rounded-xl p-5 shadow-xs transition-all"
 					>
-						{/* Enunciado de la Pregunta */}
 						<div className="flex items-start gap-3 mb-4">
 							<span className="shrink-0 bg-muted text-muted-foreground text-xs font-bold px-2 py-1 rounded-md mt-0.5">
 								P{index + 1}
@@ -65,7 +57,6 @@ function RouteComponent() {
 							</h3>
 						</div>
 
-						{/* Renderizado condicional según el tipo de componente */}
 						<div className="pl-0 md:pl-8">
 							<ResponseRenderer question={q} />
 						</div>

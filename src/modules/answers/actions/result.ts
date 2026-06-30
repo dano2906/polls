@@ -87,7 +87,7 @@ export const submitPollAnswers = createServerFn()
 			// Si no se actualizó ninguna fila, la submission ya fue completada en otra solicitud
 			if (updateResult.length === 0) {
 				throw redirect({
-					to: "/p/$slug/result",
+					to: "/poll/$slug/result",
 					params: { slug: existingPoll.slug as string },
 				});
 			}

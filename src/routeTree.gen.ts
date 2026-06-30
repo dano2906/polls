@@ -25,14 +25,14 @@ import { Route as ProtectedPollNewRouteImport } from './routes/_protected/poll/n
 import { Route as ProtectedPollImportRouteImport } from './routes/_protected/poll/import'
 import { Route as ProtectedOrgNewRouteImport } from './routes/_protected/org/new'
 import { Route as ProtectedOrgOrgSlugIndexRouteImport } from './routes/_protected/org/$orgSlug/index'
-import { Route as LandingPSlugIndexRouteImport } from './routes/_landing/p/$slug/index'
+import { Route as LandingPollSlugIndexRouteImport } from './routes/_landing/poll/$slug/index'
 import { Route as ProtectedUserUpdateIdRouteImport } from './routes/_protected/user/update.$id'
+import { Route as ProtectedPollSlugUserResultRouteImport } from './routes/_protected/poll/$slug.user-result'
 import { Route as ProtectedPollSlugUpdateRouteImport } from './routes/_protected/poll/$slug.update'
-import { Route as ProtectedPollSlugResultRouteImport } from './routes/_protected/poll/$slug.result'
 import { Route as ProtectedOrgOrgSlugMembersRouteImport } from './routes/_protected/org/$orgSlug/members'
 import { Route as ProtectedOrgOrgSlugInviteRouteImport } from './routes/_protected/org/$orgSlug/invite'
-import { Route as LandingPSlugResultRouteImport } from './routes/_landing/p/$slug/result'
-import { Route as LandingPSlugPasswordRouteImport } from './routes/_landing/p/$slug/password'
+import { Route as LandingPollSlugResultRouteImport } from './routes/_landing/poll/$slug/result'
+import { Route as LandingPollSlugPasswordRouteImport } from './routes/_landing/poll/$slug/password'
 import { Route as ProtectedOrgOrgSlugPollsNewRouteImport } from './routes/_protected/org/$orgSlug/polls.new'
 
 const ProtectedRoute = ProtectedRouteImport.update({
@@ -115,9 +115,9 @@ const ProtectedOrgOrgSlugIndexRoute =
     path: '/org/$orgSlug/',
     getParentRoute: () => ProtectedRoute,
   } as any)
-const LandingPSlugIndexRoute = LandingPSlugIndexRouteImport.update({
-  id: '/p/$slug/',
-  path: '/p/$slug/',
+const LandingPollSlugIndexRoute = LandingPollSlugIndexRouteImport.update({
+  id: '/poll/$slug/',
+  path: '/poll/$slug/',
   getParentRoute: () => LandingRoute,
 } as any)
 const ProtectedUserUpdateIdRoute = ProtectedUserUpdateIdRouteImport.update({
@@ -125,14 +125,15 @@ const ProtectedUserUpdateIdRoute = ProtectedUserUpdateIdRouteImport.update({
   path: '/user/update/$id',
   getParentRoute: () => ProtectedRoute,
 } as any)
+const ProtectedPollSlugUserResultRoute =
+  ProtectedPollSlugUserResultRouteImport.update({
+    id: '/poll/$slug/user-result',
+    path: '/poll/$slug/user-result',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
 const ProtectedPollSlugUpdateRoute = ProtectedPollSlugUpdateRouteImport.update({
   id: '/poll/$slug/update',
   path: '/poll/$slug/update',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedPollSlugResultRoute = ProtectedPollSlugResultRouteImport.update({
-  id: '/poll/$slug/result',
-  path: '/poll/$slug/result',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedOrgOrgSlugMembersRoute =
@@ -147,14 +148,14 @@ const ProtectedOrgOrgSlugInviteRoute =
     path: '/org/$orgSlug/invite',
     getParentRoute: () => ProtectedRoute,
   } as any)
-const LandingPSlugResultRoute = LandingPSlugResultRouteImport.update({
-  id: '/p/$slug/result',
-  path: '/p/$slug/result',
+const LandingPollSlugResultRoute = LandingPollSlugResultRouteImport.update({
+  id: '/poll/$slug/result',
+  path: '/poll/$slug/result',
   getParentRoute: () => LandingRoute,
 } as any)
-const LandingPSlugPasswordRoute = LandingPSlugPasswordRouteImport.update({
-  id: '/p/$slug/password',
-  path: '/p/$slug/password',
+const LandingPollSlugPasswordRoute = LandingPollSlugPasswordRouteImport.update({
+  id: '/poll/$slug/password',
+  path: '/poll/$slug/password',
   getParentRoute: () => LandingRoute,
 } as any)
 const ProtectedOrgOrgSlugPollsNewRoute =
@@ -178,14 +179,14 @@ export interface FileRoutesByFullPath {
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/org/': typeof ProtectedOrgIndexRoute
   '/user/': typeof ProtectedUserIndexRoute
-  '/p/$slug/password': typeof LandingPSlugPasswordRoute
-  '/p/$slug/result': typeof LandingPSlugResultRoute
+  '/poll/$slug/password': typeof LandingPollSlugPasswordRoute
+  '/poll/$slug/result': typeof LandingPollSlugResultRoute
   '/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
   '/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
-  '/poll/$slug/result': typeof ProtectedPollSlugResultRoute
   '/poll/$slug/update': typeof ProtectedPollSlugUpdateRoute
+  '/poll/$slug/user-result': typeof ProtectedPollSlugUserResultRoute
   '/user/update/$id': typeof ProtectedUserUpdateIdRoute
-  '/p/$slug/': typeof LandingPSlugIndexRoute
+  '/poll/$slug/': typeof LandingPollSlugIndexRoute
   '/org/$orgSlug/': typeof ProtectedOrgOrgSlugIndexRoute
   '/org/$orgSlug/polls/new': typeof ProtectedOrgOrgSlugPollsNewRoute
 }
@@ -203,14 +204,14 @@ export interface FileRoutesByTo {
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/org': typeof ProtectedOrgIndexRoute
   '/user': typeof ProtectedUserIndexRoute
-  '/p/$slug/password': typeof LandingPSlugPasswordRoute
-  '/p/$slug/result': typeof LandingPSlugResultRoute
+  '/poll/$slug/password': typeof LandingPollSlugPasswordRoute
+  '/poll/$slug/result': typeof LandingPollSlugResultRoute
   '/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
   '/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
-  '/poll/$slug/result': typeof ProtectedPollSlugResultRoute
   '/poll/$slug/update': typeof ProtectedPollSlugUpdateRoute
+  '/poll/$slug/user-result': typeof ProtectedPollSlugUserResultRoute
   '/user/update/$id': typeof ProtectedUserUpdateIdRoute
-  '/p/$slug': typeof LandingPSlugIndexRoute
+  '/poll/$slug': typeof LandingPollSlugIndexRoute
   '/org/$orgSlug': typeof ProtectedOrgOrgSlugIndexRoute
   '/org/$orgSlug/polls/new': typeof ProtectedOrgOrgSlugPollsNewRoute
 }
@@ -231,14 +232,14 @@ export interface FileRoutesById {
   '/api/poll/generate-questions': typeof ApiPollGenerateQuestionsRoute
   '/_protected/org/': typeof ProtectedOrgIndexRoute
   '/_protected/user/': typeof ProtectedUserIndexRoute
-  '/_landing/p/$slug/password': typeof LandingPSlugPasswordRoute
-  '/_landing/p/$slug/result': typeof LandingPSlugResultRoute
+  '/_landing/poll/$slug/password': typeof LandingPollSlugPasswordRoute
+  '/_landing/poll/$slug/result': typeof LandingPollSlugResultRoute
   '/_protected/org/$orgSlug/invite': typeof ProtectedOrgOrgSlugInviteRoute
   '/_protected/org/$orgSlug/members': typeof ProtectedOrgOrgSlugMembersRoute
-  '/_protected/poll/$slug/result': typeof ProtectedPollSlugResultRoute
   '/_protected/poll/$slug/update': typeof ProtectedPollSlugUpdateRoute
+  '/_protected/poll/$slug/user-result': typeof ProtectedPollSlugUserResultRoute
   '/_protected/user/update/$id': typeof ProtectedUserUpdateIdRoute
-  '/_landing/p/$slug/': typeof LandingPSlugIndexRoute
+  '/_landing/poll/$slug/': typeof LandingPollSlugIndexRoute
   '/_protected/org/$orgSlug/': typeof ProtectedOrgOrgSlugIndexRoute
   '/_protected/org/$orgSlug/polls/new': typeof ProtectedOrgOrgSlugPollsNewRoute
 }
@@ -258,14 +259,14 @@ export interface FileRouteTypes {
     | '/api/poll/generate-questions'
     | '/org/'
     | '/user/'
-    | '/p/$slug/password'
-    | '/p/$slug/result'
+    | '/poll/$slug/password'
+    | '/poll/$slug/result'
     | '/org/$orgSlug/invite'
     | '/org/$orgSlug/members'
-    | '/poll/$slug/result'
     | '/poll/$slug/update'
+    | '/poll/$slug/user-result'
     | '/user/update/$id'
-    | '/p/$slug/'
+    | '/poll/$slug/'
     | '/org/$orgSlug/'
     | '/org/$orgSlug/polls/new'
   fileRoutesByTo: FileRoutesByTo
@@ -283,14 +284,14 @@ export interface FileRouteTypes {
     | '/api/poll/generate-questions'
     | '/org'
     | '/user'
-    | '/p/$slug/password'
-    | '/p/$slug/result'
+    | '/poll/$slug/password'
+    | '/poll/$slug/result'
     | '/org/$orgSlug/invite'
     | '/org/$orgSlug/members'
-    | '/poll/$slug/result'
     | '/poll/$slug/update'
+    | '/poll/$slug/user-result'
     | '/user/update/$id'
-    | '/p/$slug'
+    | '/poll/$slug'
     | '/org/$orgSlug'
     | '/org/$orgSlug/polls/new'
   id:
@@ -310,14 +311,14 @@ export interface FileRouteTypes {
     | '/api/poll/generate-questions'
     | '/_protected/org/'
     | '/_protected/user/'
-    | '/_landing/p/$slug/password'
-    | '/_landing/p/$slug/result'
+    | '/_landing/poll/$slug/password'
+    | '/_landing/poll/$slug/result'
     | '/_protected/org/$orgSlug/invite'
     | '/_protected/org/$orgSlug/members'
-    | '/_protected/poll/$slug/result'
     | '/_protected/poll/$slug/update'
+    | '/_protected/poll/$slug/user-result'
     | '/_protected/user/update/$id'
-    | '/_landing/p/$slug/'
+    | '/_landing/poll/$slug/'
     | '/_protected/org/$orgSlug/'
     | '/_protected/org/$orgSlug/polls/new'
   fileRoutesById: FileRoutesById
@@ -443,11 +444,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedOrgOrgSlugIndexRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_landing/p/$slug/': {
-      id: '/_landing/p/$slug/'
-      path: '/p/$slug'
-      fullPath: '/p/$slug/'
-      preLoaderRoute: typeof LandingPSlugIndexRouteImport
+    '/_landing/poll/$slug/': {
+      id: '/_landing/poll/$slug/'
+      path: '/poll/$slug'
+      fullPath: '/poll/$slug/'
+      preLoaderRoute: typeof LandingPollSlugIndexRouteImport
       parentRoute: typeof LandingRoute
     }
     '/_protected/user/update/$id': {
@@ -457,18 +458,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedUserUpdateIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
+    '/_protected/poll/$slug/user-result': {
+      id: '/_protected/poll/$slug/user-result'
+      path: '/poll/$slug/user-result'
+      fullPath: '/poll/$slug/user-result'
+      preLoaderRoute: typeof ProtectedPollSlugUserResultRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
     '/_protected/poll/$slug/update': {
       id: '/_protected/poll/$slug/update'
       path: '/poll/$slug/update'
       fullPath: '/poll/$slug/update'
       preLoaderRoute: typeof ProtectedPollSlugUpdateRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/poll/$slug/result': {
-      id: '/_protected/poll/$slug/result'
-      path: '/poll/$slug/result'
-      fullPath: '/poll/$slug/result'
-      preLoaderRoute: typeof ProtectedPollSlugResultRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/org/$orgSlug/members': {
@@ -485,18 +486,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedOrgOrgSlugInviteRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_landing/p/$slug/result': {
-      id: '/_landing/p/$slug/result'
-      path: '/p/$slug/result'
-      fullPath: '/p/$slug/result'
-      preLoaderRoute: typeof LandingPSlugResultRouteImport
+    '/_landing/poll/$slug/result': {
+      id: '/_landing/poll/$slug/result'
+      path: '/poll/$slug/result'
+      fullPath: '/poll/$slug/result'
+      preLoaderRoute: typeof LandingPollSlugResultRouteImport
       parentRoute: typeof LandingRoute
     }
-    '/_landing/p/$slug/password': {
-      id: '/_landing/p/$slug/password'
-      path: '/p/$slug/password'
-      fullPath: '/p/$slug/password'
-      preLoaderRoute: typeof LandingPSlugPasswordRouteImport
+    '/_landing/poll/$slug/password': {
+      id: '/_landing/poll/$slug/password'
+      path: '/poll/$slug/password'
+      fullPath: '/poll/$slug/password'
+      preLoaderRoute: typeof LandingPollSlugPasswordRouteImport
       parentRoute: typeof LandingRoute
     }
     '/_protected/org/$orgSlug/polls/new': {
@@ -512,17 +513,17 @@ declare module '@tanstack/react-router' {
 interface LandingRouteChildren {
   LandingAuthRoute: typeof LandingAuthRoute
   LandingIndexRoute: typeof LandingIndexRoute
-  LandingPSlugPasswordRoute: typeof LandingPSlugPasswordRoute
-  LandingPSlugResultRoute: typeof LandingPSlugResultRoute
-  LandingPSlugIndexRoute: typeof LandingPSlugIndexRoute
+  LandingPollSlugPasswordRoute: typeof LandingPollSlugPasswordRoute
+  LandingPollSlugResultRoute: typeof LandingPollSlugResultRoute
+  LandingPollSlugIndexRoute: typeof LandingPollSlugIndexRoute
 }
 
 const LandingRouteChildren: LandingRouteChildren = {
   LandingAuthRoute: LandingAuthRoute,
   LandingIndexRoute: LandingIndexRoute,
-  LandingPSlugPasswordRoute: LandingPSlugPasswordRoute,
-  LandingPSlugResultRoute: LandingPSlugResultRoute,
-  LandingPSlugIndexRoute: LandingPSlugIndexRoute,
+  LandingPollSlugPasswordRoute: LandingPollSlugPasswordRoute,
+  LandingPollSlugResultRoute: LandingPollSlugResultRoute,
+  LandingPollSlugIndexRoute: LandingPollSlugIndexRoute,
 }
 
 const LandingRouteWithChildren =
@@ -540,8 +541,8 @@ interface ProtectedRouteChildren {
   ProtectedUserIndexRoute: typeof ProtectedUserIndexRoute
   ProtectedOrgOrgSlugInviteRoute: typeof ProtectedOrgOrgSlugInviteRoute
   ProtectedOrgOrgSlugMembersRoute: typeof ProtectedOrgOrgSlugMembersRoute
-  ProtectedPollSlugResultRoute: typeof ProtectedPollSlugResultRoute
   ProtectedPollSlugUpdateRoute: typeof ProtectedPollSlugUpdateRoute
+  ProtectedPollSlugUserResultRoute: typeof ProtectedPollSlugUserResultRoute
   ProtectedUserUpdateIdRoute: typeof ProtectedUserUpdateIdRoute
   ProtectedOrgOrgSlugIndexRoute: typeof ProtectedOrgOrgSlugIndexRoute
   ProtectedOrgOrgSlugPollsNewRoute: typeof ProtectedOrgOrgSlugPollsNewRoute
@@ -559,8 +560,8 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedUserIndexRoute: ProtectedUserIndexRoute,
   ProtectedOrgOrgSlugInviteRoute: ProtectedOrgOrgSlugInviteRoute,
   ProtectedOrgOrgSlugMembersRoute: ProtectedOrgOrgSlugMembersRoute,
-  ProtectedPollSlugResultRoute: ProtectedPollSlugResultRoute,
   ProtectedPollSlugUpdateRoute: ProtectedPollSlugUpdateRoute,
+  ProtectedPollSlugUserResultRoute: ProtectedPollSlugUserResultRoute,
   ProtectedUserUpdateIdRoute: ProtectedUserUpdateIdRoute,
   ProtectedOrgOrgSlugIndexRoute: ProtectedOrgOrgSlugIndexRoute,
   ProtectedOrgOrgSlugPollsNewRoute: ProtectedOrgOrgSlugPollsNewRoute,

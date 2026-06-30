@@ -4,7 +4,7 @@ import QuestionResponseForm from "@/answers/components/questions-response-form";
 import { validatePollAccess } from "@/poll/actions/poll";
 import { pollDetailsOptions } from "@/poll/lib/query";
 
-export const Route = createFileRoute("/_landing/p/$slug/")({
+export const Route = createFileRoute("/_landing/poll/$slug/")({
 	component: RouteComponent,
 	beforeLoad: async ({ context, params }) => {
 		if (!context.auth) {
