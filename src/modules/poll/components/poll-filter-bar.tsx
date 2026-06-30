@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "@/common/hooks/useDebounce"; // O implementado inline abajo si no tienes uno
 import {
 	InputGroup,
@@ -45,9 +45,15 @@ export function PollFilterBar({ showStateSelector = false, from }: Props) {
 	// 2. Estado local para el input de texto (para que la escritura sea fluida)
 	const [textFilter, setTextFilter] = useState(currentQ);
 
-	// Sincronizar el estado local si la URL cambia externamente (ej. limpieza de filtros)
+	// Ref para rastrear el último valor que el componente envió a la URL
+	const lastNavigatedQRef = useRef(currentQ);
+
+	// Sincronizar el estado local si la URL cambia externamente (ej. navegación con atrás/adelante)
+	// No se ejecuta cuando el cambio viene del propio debounce
 	useEffect(() => {
-		setTextFilter(currentQ);
+		if (currentQ !== lastNavigatedQRef.current) {
+			setTextFilter(currentQ);
+		}
 	}, [currentQ]);
 
 	// 3. Debounce del texto de búsqueda
@@ -56,6 +62,7 @@ export function PollFilterBar({ showStateSelector = false, from }: Props) {
 	// 4. Efecto para actualizar la URL cuando el término deboneado cambia
 	useEffect(() => {
 		if (debouncedSearchTerm !== currentQ) {
+			lastNavigatedQRef.current = debouncedSearchTerm;
 			navigate({
 				search: (prev: Filter) => ({
 					...prev,

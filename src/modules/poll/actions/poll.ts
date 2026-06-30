@@ -7,6 +7,7 @@ import {
 	setCookie,
 } from "@tanstack/react-start/server";
 import { and, asc, desc, eq, like, or, sql } from "drizzle-orm";
+import { createSubmission } from "@/answers/actions/submission";
 import type { UserAnswerValue } from "@/answers/shared/types";
 import {
 	ensureSession,
@@ -254,26 +255,12 @@ export const getPollDetails = createServerFn({ method: "GET" })
 			throw notFound();
 		}
 
-		// 4. Buscamos si el usuario ya inició un intento para esta encuesta
-		let currentSubmission = await db.query.submission.findFirst({
-			where: (submission, { eq, and }) =>
-				and(
-					eq(submission.pollId, poll.id),
-					eq(submission.userId, session.session.userId),
-				),
-		});
-
-		// 5. Si no existe, creamos la sumisión con la hora exacta del servidor
-		if (!currentSubmission) {
-			currentSubmission = {
-				id: randomUUID(),
+		const currentSubmission = await createSubmission({
+			data: {
 				pollId: poll.id,
-				userId: session.session.userId,
-				startedAt: new Date(),
-				submittedAt: null,
-				completedAt: null,
-			};
-		}
+				userId: session.user.id,
+			},
+		});
 
 		// Mapeo de preguntas (Tu lógica exacta intacta)
 		const questions = poll.pollQuestions.map((item) => {
@@ -285,9 +272,9 @@ export const getPollDetails = createServerFn({ method: "GET" })
 						typeof item.question.metadata === "string"
 							? JSON.parse(item.question.metadata)
 							: item.question.metadata;
-			} catch {
-				// metadata remains empty object on parse failure
-			}
+				} catch {
+					// metadata remains empty object on parse failure
+				}
 			}
 
 			return {
@@ -390,7 +377,10 @@ export const updatePoll = createServerFn({ method: "POST" })
 				throw new Error("FORBIDDEN");
 			}
 
-			if (data.updatedData.status && data.updatedData.status !== currentPoll.status) {
+			if (
+				data.updatedData.status &&
+				data.updatedData.status !== currentPoll.status
+			) {
 				const validTransitions: Record<string, string[]> = {
 					draft: ["published", "archived"],
 					published: ["archived"],
@@ -399,7 +389,9 @@ export const updatePoll = createServerFn({ method: "POST" })
 				const currentStatus = currentPoll.status ?? "draft";
 				const allowed = validTransitions[currentStatus] ?? [];
 				if (!allowed.includes(data.updatedData.status)) {
-					throw new Error(`No se puede cambiar de "${currentPoll.status}" a "${data.updatedData.status}"`);
+					throw new Error(
+						`No se puede cambiar de "${currentPoll.status}" a "${data.updatedData.status}"`,
+					);
 				}
 			}
 
@@ -519,7 +511,10 @@ export const validatePollAccess = createServerFn({ method: "GET" })
 				});
 			}
 			const [payload, signature] = parts;
-			const expectedSignature = createHmac("sha256", process.env.BETTER_AUTH_SECRET ?? "")
+			const expectedSignature = createHmac(
+				"sha256",
+				process.env.BETTER_AUTH_SECRET ?? "",
+			)
 				.update(payload)
 				.digest("base64url");
 			if (signature !== expectedSignature) {
@@ -976,9 +971,7 @@ export const getUserPollResults = createServerFn({ method: "GET" })
 			const selectedAnswers: any[] = [];
 
 			if (uv) {
-				const answerMap = new Map(
-					q.answers?.map((a) => [a.id, a]) ?? [],
-				);
+				const answerMap = new Map(q.answers?.map((a) => [a.id, a]) ?? []);
 
 				switch (uv.type) {
 					case "open_answer":
@@ -1127,7 +1120,10 @@ export const validatePollPassword = createServerFn({ method: "POST" })
 						unlockedAt: Date.now(),
 					}),
 				);
-				const signature = createHmac("sha256", process.env.BETTER_AUTH_SECRET ?? "")
+				const signature = createHmac(
+					"sha256",
+					process.env.BETTER_AUTH_SECRET ?? "",
+				)
 					.update(payload)
 					.digest("base64url");
 				const sessionValue = `${payload}.${signature}`;
